@@ -6,3 +6,4 @@
 
 #include "Vision/Core.h"
 #include "Vision/Application.h"
+#include "Vision/Log.h"

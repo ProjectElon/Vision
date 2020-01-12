@@ -1,16 +1,12 @@
-#include <Vision.h>
+#include "Sandbox.h"
 
-class Sandbox : public Vision::Application
+Sandbox::Sandbox()
 {
-public:
-	Sandbox()
-	{
-	}
+}
 
-	~Sandbox()
-	{
-	}
-};
+Sandbox::~Sandbox()
+{
+}
 
 Vision::Application* Vision::CreateApplication()
 {

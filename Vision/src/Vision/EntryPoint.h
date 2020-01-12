@@ -1,8 +1,7 @@
 #pragma once
 
-#include <stdio.h>
-
 #include "Application.h"
+#include "Log.h"
 
 #ifdef VN_PLATFORM_WINDOWS
 
@@ -10,7 +9,7 @@ extern Vision::Application* Vision::CreateApplication();
 
 int main(int argc, char** argv)
 {
-	printf("Hello, World from Vision !");
+	Vision::Log::Initialize();
 
 	auto app = Vision::CreateApplication();
 	app->Run();

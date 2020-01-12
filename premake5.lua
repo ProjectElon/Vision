@@ -17,7 +17,7 @@ workspace ("Vision")
 		"MultiProcessorCompile"
 	}
 
-	filter "system:windows"
+	filter ("system:windows")
 
 		systemversion "latest"
 
@@ -27,7 +27,7 @@ workspace ("Vision")
 			"VN_PLATFORM_WINDOWS"
 		}
 
-	filter "configurations:Debug"
+	filter ("configurations:Debug")
 		defines "VN_DEBUG"
 		runtime "Debug"
 		symbols "on"
@@ -42,7 +42,10 @@ workspace ("Vision")
 		runtime "Release"
 		optimize "on"
 
-outputdir = "%{cfg.system}-%{cfg.architecture}-%{cfg.bulidcfg}"
+outputdir = "%{cfg.system}-%{cfg.architecture}-%{cfg.buildcfg}"
+
+includedir = {}
+includedir["spdlog"] = "ThirdParty/spdlog/include"
 
 project ("Vision")
 	
@@ -52,8 +55,9 @@ project ("Vision")
 	cppdialect ("C++17")
 	staticruntime ("on")
 
-	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
-	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
+	
+	pchheader ("pch.h")
+	pchsource ("Vision/src/pch.cpp")
 
 	files
 	{
@@ -64,11 +68,15 @@ project ("Vision")
 	includedirs
 	{
 		"%{prj.name}/src",
+		"%{includedir.spdlog}"
 	}
 
 	links
 	{
 	}
+
+	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
+	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
 
 project ("Sandbox")
 
@@ -77,9 +85,6 @@ project ("Sandbox")
 	language "C++"
 	cppdialect "C++17"
 	staticruntime "on"
-
-	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
-	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
 
 	files
 	{
@@ -90,10 +95,15 @@ project ("Sandbox")
 	includedirs
 	{
 		"%{prj.name}/src",
-		"Vision/src"
+		"Vision/src",
+
+		"%{includedir.spdlog}"
 	}
 
 	links
 	{
 		"Vision"
 	}
+
+	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
+	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
