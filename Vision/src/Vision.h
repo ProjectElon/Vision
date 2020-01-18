@@ -1,9 +1,20 @@
 #pragma once
 
 /*---------- EntryPoint ----------*/
-#include "Vision/EntryPoint.h"
+#include "Vision/Platform/EntryPoint.h"
 /*--------------------------------*/
 
-#include "Vision/Core.h"
-#include "Vision/Application.h"
-#include "Vision/Log.h"
+
+/*----------    Core    ----------*/
+#include "Vision/Core/Core.h"
+#include "Vision/Core/Log.h"
+#include "Vision/Core/Application.h"
+/*--------------------------------*/
+
+
+/*----------   Events   ----------*/
+#include "Vision/Events/Event.h"
+#include "Vision/Events/ApplicationEvent.h"
+#include "Vision/Events/KeyEvent.h"
+#include "Vision/Events/MouseEvent.h"
+/*--------------------------------*/
