@@ -71,6 +71,14 @@ namespace Vision
 		inline unsigned int GetX() const { return m_WindowX; }
 		inline unsigned int GetY() const { return m_WindowY; }
 
+		virtual std::string ToString() const override
+		{
+			std::stringstream ss;
+			ss << "WidnowMovedEvent : (" << m_WindowX << ", " << m_WindowY << ")";
+
+			return ss.str();
+		}
+
 		EVENT_TYPE(WindowMoved)
 		EVENT_CATEGORY(EventCategoryApplication)
 

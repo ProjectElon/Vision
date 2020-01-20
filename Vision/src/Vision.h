@@ -4,13 +4,13 @@
 #include "Vision/Platform/EntryPoint.h"
 /*--------------------------------*/
 
-
 /*----------    Core    ----------*/
 #include "Vision/Core/Core.h"
 #include "Vision/Core/Log.h"
 #include "Vision/Core/Application.h"
+#include "Vision/Core/Layer.h"
+#include "Vision/Core/LayerStack.h"
 /*--------------------------------*/
-
 
 /*----------   Events   ----------*/
 #include "Vision/Events/Event.h"

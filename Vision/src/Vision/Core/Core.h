@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Vision/Core/Log.h"
+
 /* Platform Detection */
 
 #ifdef _WIN32
@@ -40,7 +42,7 @@
 
 	#define VN_CORE_ASSERT(x, ...) { if (!x) { VN_CORE_ERROR("Assertion Failed : {0}", __VA_ARGS__); __debugbreak(); } }
 	#define VN_ASSERT(x, ...)      { if (!x) { VN_ERROR("Assertion Failed : {0}", __VA_ARGS__);      __debugbreak(); } }
-
+	
 #else
 	
 	#define VN_CORE_ASSERT(x, ...)

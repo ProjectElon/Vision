@@ -4,10 +4,10 @@
 
 namespace Vision
 {
-	class MouseButtonPressed : public Event
+	class MouseButtonPressedEvent : public Event
 	{
 	public:
-		MouseButtonPressed(unsigned int button)
+		MouseButtonPressedEvent(unsigned int button)
 			:  m_Button(button)
 		{
 		}
@@ -29,10 +29,10 @@ namespace Vision
 		unsigned int m_Button;
 	};
 
-	class MouseButtonReleased : public Event
+	class MouseButtonReleasedEvent : public Event
 	{
 	public:
-		MouseButtonReleased(unsigned int button)
+		MouseButtonReleasedEvent(unsigned int button)
 			: m_Button(button)
 		{
 		}

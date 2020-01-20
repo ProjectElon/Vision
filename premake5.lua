@@ -4,6 +4,7 @@ workspace ("Vision")
 	
 	architecture ("x64")
 	startproject ("Sandbox")
+	systemversion ("latest")
 	
 	configurations
 	{
@@ -19,7 +20,24 @@ workspace ("Vision")
 
 	filter ("system:windows")
 
-		systemversion "latest"
+		defines
+		{
+			"VN_PLATFORM_DESKTOP"
+		}
+
+	filter ("system:linux")
+		
+		defines
+		{
+			"VN_PLATFORM_DESKTOP"
+		}
+
+	filter ("system:macos")
+		
+		defines
+		{
+			"VN_PLATFORM_DESKTOP"
+		}
 
 	filter ("configurations:Debug")
 
@@ -43,6 +61,13 @@ outputdir = "%{cfg.system}-%{cfg.architecture}-%{cfg.buildcfg}"
 
 includedir = {}
 includedir["spdlog"] = "ThirdParty/spdlog/include"
+includedir["GLFW"] = "ThirdParty/GLFW/include"
+
+group ("Dependencies")
+
+	include ("ThirdParty/GLFW")
+	
+group ("")
 
 project ("Vision")
 	
@@ -64,16 +89,20 @@ project ("Vision")
 	includedirs
 	{
 		"%{prj.name}/src",
-		"%{includedir.spdlog}"
+		"%{includedir.spdlog}",
+		"%{includedir.GLFW}"
 	}
 
 	links
 	{
+		"GLFW",
+		"opengl32.lib"
 	}
 
 	defines
 	{
-		"_CRT_SECURE_NO_WARNINGS"
+		"_CRT_SECURE_NO_WARNINGS",
+		"GLFW_INCLUDE_NONE"
 	}
 
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")

@@ -45,7 +45,7 @@ namespace Vision
 			std::stringstream ss;
 			ss << "KeyReleasedEvent : (" << m_KeyCode << ")";
 
-			ss.str();
+			return ss.str();
 		}
 
 		inline unsigned int GetKeyCode() const { return m_KeyCode; }
