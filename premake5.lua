@@ -60,12 +60,18 @@ workspace ("Vision")
 outputdir = "%{cfg.system}-%{cfg.architecture}-%{cfg.buildcfg}"
 
 includedir = {}
+
 includedir["spdlog"] = "ThirdParty/spdlog/include"
-includedir["GLFW"] = "ThirdParty/GLFW/include"
+includedir["GLFW"]   = "ThirdParty/GLFW/include"
+includedir["Glad"]   = "ThirdParty/Glad/include"
+includedir["ImGui"]  = "ThirdParty/imgui"
+includedir["glm"]    = "ThirdParty/glm"
 
 group ("Dependencies")
 
 	include ("ThirdParty/GLFW")
+	include ("ThirdParty/Glad")
+	include ("ThirdParty/imgui")
 	
 group ("")
 
@@ -90,12 +96,17 @@ project ("Vision")
 	{
 		"%{prj.name}/src",
 		"%{includedir.spdlog}",
-		"%{includedir.GLFW}"
+		"%{includedir.GLFW}",
+		"%{includedir.Glad}",
+		"%{includedir.ImGui}",
+		"%{includedir.glm}"
 	}
 
 	links
 	{
 		"GLFW",
+		"Glad",
+		"ImGui",
 		"opengl32.lib"
 	}
 
@@ -126,7 +137,9 @@ project ("Sandbox")
 	{
 		"%{prj.name}/src",
 		"Vision/src",
-		"%{includedir.spdlog}"
+		"ThirdParty",
+		"%{includedir.spdlog}",
+		"%{includedir.glm}"
 	}
 
 	links

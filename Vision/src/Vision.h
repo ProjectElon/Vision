@@ -1,9 +1,5 @@
 #pragma once
 
-/*---------- EntryPoint ----------*/
-#include "Vision/Platform/EntryPoint.h"
-/*--------------------------------*/
-
 /*----------    Core    ----------*/
 #include "Vision/Core/Core.h"
 #include "Vision/Core/Log.h"
@@ -17,4 +13,12 @@
 #include "Vision/Events/ApplicationEvent.h"
 #include "Vision/Events/KeyEvent.h"
 #include "Vision/Events/MouseEvent.h"
+/*--------------------------------*/
+
+/*----------  Platform  ----------*/
+#include "Vision/Platform/Window.h"
+#include "Vision/Platform/Input.h"
+#include "Vision/Platform/KeyCodes.h"
+#include "Vision/Platform/MouseCodes.h"
+#include "Vision/Platform/Timer.h"
 /*--------------------------------*/

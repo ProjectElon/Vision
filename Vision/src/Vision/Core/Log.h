@@ -23,31 +23,31 @@ namespace Vision
 }
 
 #ifndef VN_DIST
-
-#define VN_CORE_TRACE(...) Vision::Log::GetCoreLogger()->trace(__VA_ARGS__)
-#define VN_CORE_INFO(...)  Vision::Log::GetCoreLogger()->info(__VA_ARGS__)
-#define VN_CORE_WARN(...)  Vision::Log::GetCoreLogger()->warn(__VA_ARGS__)
-#define VN_CORE_ERROR(...) Vision::Log::GetCoreLogger()->error(__VA_ARGS__)
-#define VN_CORE_FATAL(...) Vision::Log::GetCoreLogger()->fatal(__VA_ARGS__)
-
-#define VN_TRACE(...) Vision::Log::GetClientLogger()->trace(__VA_ARGS__)
-#define VN_INFO(...)  Vision::Log::GetClientLogger)->info(__VA_ARGS__)
-#define VN_WARN(...)  Vision::Log::GetClientLogger)->warn(__VA_ARGS__)
-#define VN_ERROR(...) Vision::Log::GetClientLogger()->error(__VA_ARGS__)
-#define VN_FATAL(...) Vision::Log::GetClientLogger()->fatal(__VA_ARGS__)
+	
+	#define VN_CORE_TRACE(...) Vision::Log::GetCoreLogger()->trace(__VA_ARGS__)
+	#define VN_CORE_INFO(...)  Vision::Log::GetCoreLogger()->info(__VA_ARGS__)
+	#define VN_CORE_WARN(...)  Vision::Log::GetCoreLogger()->warn(__VA_ARGS__)
+	#define VN_CORE_ERROR(...) Vision::Log::GetCoreLogger()->error(__VA_ARGS__)
+	#define VN_CORE_FATAL(...) Vision::Log::GetCoreLogger()->fatal(__VA_ARGS__)
+	
+	#define VN_TRACE(...) Vision::Log::GetClientLogger()->trace(__VA_ARGS__)
+	#define VN_INFO(...)  Vision::Log::GetClientLogger()->info(__VA_ARGS__)
+	#define VN_WARN(...)  Vision::Log::GetClientLogger()->warn(__VA_ARGS__)
+	#define VN_ERROR(...) Vision::Log::GetClientLogger()->error(__VA_ARGS__)
+	#define VN_FATAL(...) Vision::Log::GetClientLogger()->fatal(__VA_ARGS__)
 
 #else
 
-#define VN_CORE_TRACE(...)
-#define VN_CORE_INFO(...)
-#define VN_CORE_WARN(...)
-#define VN_CORE_ERROR(...)
-#define VN_CORE_FATAL(...)
+	#define VN_CORE_TRACE(...)
+	#define VN_CORE_INFO(...)
+	#define VN_CORE_WARN(...)
+	#define VN_CORE_ERROR(...)
+	#define VN_CORE_FATAL(...)
 
-#define VN_TRACE(...) 
-#define VN_INFO(...)  
-#define VN_WARN(...)
-#define VN_ERROR(...)
-#define VN_FATAL(...)
+	#define VN_TRACE(...) 
+	#define VN_INFO(...)  
+	#define VN_WARN(...)
+	#define VN_ERROR(...)
+	#define VN_FATAL(...)
 
 #endif

@@ -13,6 +13,7 @@ namespace Vision
 	{
 		for (Layer* layer : m_Layers)
 		{
+			layer->Disable();
 			layer->OnDetach();
 			delete layer;
 		}
@@ -31,6 +32,20 @@ namespace Vision
 		return nullptr;
 	}
 
+	bool LayerStack::RemoveLayerByName(const std::string& name)
+	{
+		for (auto it = begin(); it != end(); ++it)
+		{
+			if ((*it)->GetName() == name)
+			{
+				m_Layers.erase(it);
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	void LayerStack::PushLayer(Layer* layer)
 	{
 		m_Layers.emplace(begin() + m_LayerInsertIndex, layer);
@@ -42,6 +57,7 @@ namespace Vision
 		
 		if (it != begin() + m_LayerInsertIndex)
 		{
+			layer->Disable();
 			layer->OnDetach();
 			m_Layers.erase(it);
 			m_LayerInsertIndex--;
@@ -59,6 +75,7 @@ namespace Vision
 		
 		if (it != end())
 		{
+			overlay->Disable();
 			overlay->OnDetach();
 			m_Layers.erase(it);
 		}

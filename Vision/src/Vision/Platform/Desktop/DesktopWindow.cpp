@@ -5,6 +5,8 @@
 #include "Vision/Events/KeyEvent.h"
 #include "Vision/Events/MouseEvent.h"
 
+#include <Glad/glad.h>
+
 namespace Vision
 {
 	static unsigned int s_WindowCount = 0;
@@ -31,10 +33,12 @@ namespace Vision
 
 		const char* title = props.Title.c_str();
 		m_Window = glfwCreateWindow((int)props.Width, (int)props.Height, title, nullptr, nullptr);
-
-		VN_CORE_ASSERT(m_Window, "Unable To Create A Window");
-
+		
 		++s_WindowCount;
+
+		glfwMakeContextCurrent(m_Window);
+		int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+		VN_CORE_ASSERT(status, "Unable To Initialize Glad");
 
 		glfwSetWindowUserPointer(m_Window, &m_Data);
 

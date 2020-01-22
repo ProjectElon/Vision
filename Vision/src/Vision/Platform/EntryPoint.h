@@ -15,7 +15,7 @@ extern Vision::Application* Vision::CreateApplication();
 		auto app = Vision::CreateApplication();
 		app->Run();
 		delete app;
-		
+
 		return 0;
 	}
 

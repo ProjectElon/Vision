@@ -19,6 +19,7 @@ namespace Vision
 		void PopOverlay(Layer* overlay);
 
 		Layer* FindLayerByName(const std::string& name) const;
+		bool RemoveLayerByName(const std::string& name);
 
 		auto begin()  { return m_Layers.begin();  }
 		auto end()    { return m_Layers.end();    }
