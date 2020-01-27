@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Vision/Core/Layer.h"
+#include "Vision/Platform/Window.h"
 
 namespace Vision
 {
@@ -16,5 +17,8 @@ namespace Vision
 
 		void Begin();
 		void End();
+
+	private:
+		Window* m_Window;
 	};
 }

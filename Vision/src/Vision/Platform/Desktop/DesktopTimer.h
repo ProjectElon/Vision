@@ -18,6 +18,6 @@ namespace Vision
 		double m_StartTimePoint;
 		double m_EndTimePoint;
 		double m_ElapsedTime;
-		bool m_Ticking = false;
+		bool m_Ticking;
 	};
 }

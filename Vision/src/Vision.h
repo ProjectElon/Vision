@@ -22,3 +22,8 @@
 #include "Vision/Platform/MouseCodes.h"
 #include "Vision/Platform/Timer.h"
 /*--------------------------------*/
+
+
+/*----------  Renderer  ----------*/
+#include "Vision/Renderer/GraphicsContext.h"
+/*--------------------------------*/

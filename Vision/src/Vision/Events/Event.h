@@ -14,6 +14,9 @@ namespace Vision
 		WindowFocus,
 		WindowLostFoucs,
 		WindowMoved,
+		WindowMinimized,
+		WindowMaximized,
+		WindowRestored,
 
 		KeyPressed,
 		KeyReleased,
@@ -22,7 +25,9 @@ namespace Vision
 		MouseButtonPressed,
 		MouseButtonReleased,
 		MouseMoved,
-		MouseWheelScrolled
+		MouseWheelScrolled,
+		MouseCursorEntered,
+		MouseCursorLeft
 	};
 
 	enum EventCategory

@@ -3,8 +3,8 @@
 workspace ("Vision")
 	
 	architecture ("x64")
-	startproject ("Sandbox")
 	systemversion ("latest")
+	startproject ("Sandbox")
 	
 	configurations
 	{
@@ -41,21 +41,21 @@ workspace ("Vision")
 
 	filter ("configurations:Debug")
 
-		defines "VN_DEBUG"
-		runtime "Debug"
-		symbols "on"
+		defines ("VN_DEBUG")
+		runtime ("Debug")
+		symbols ("on")
 
 	filter ("configurations:Release")
 
-		defines "VN_RELEASE"
-		runtime "Release"
-		optimize "on"
+		defines ("VN_RELEASE")
+		runtime ("Release")
+		optimize ("on")
 
 	filter ("configurations:Dist")
 
-		defines "VN_DIST"
-		runtime "Release"
-		optimize "on"
+		defines ("VN_DIST")
+		runtime ("Release")
+		optimize ("on")
 
 outputdir = "%{cfg.system}-%{cfg.architecture}-%{cfg.buildcfg}"
 

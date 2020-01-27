@@ -28,10 +28,6 @@ void GameLayer::OnUpdate(float dt)
 
 void GameLayer::OnImGuiRender()
 {
-	ImGui::Begin("Example Window");
-	static float v[3];
-	ImGui::SliderFloat3("World Position", v, -10, 10);
-	ImGui::End();
 }
 
 void GameLayer::OnEvent(Vision::Event& event)

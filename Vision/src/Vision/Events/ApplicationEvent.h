@@ -86,4 +86,37 @@ namespace Vision
 		unsigned int m_WindowX;
 		unsigned int m_WindowY;
 	};
+
+	class WindowMinimizedEvent : public Event
+	{
+	public:
+		WindowMinimizedEvent() 
+		{
+		}
+
+		EVENT_TYPE(WindowMinimized)
+		EVENT_CATEGORY(EventCategoryApplication)
+	};
+
+	class WindowMaximizedEvent : public Event
+	{
+	public:
+		WindowMaximizedEvent() 
+		{
+		}
+
+		EVENT_TYPE(WindowMaximized)
+		EVENT_CATEGORY(EventCategoryApplication)
+	};
+
+	class WindowRestoredEvent : public Event
+	{
+	public:
+		WindowRestoredEvent()
+		{
+		}
+
+		EVENT_TYPE(WindowRestored)
+		EVENT_CATEGORY(EventCategoryApplication)
+	};
 }

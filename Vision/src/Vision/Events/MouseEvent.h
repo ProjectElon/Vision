@@ -109,4 +109,26 @@ namespace Vision
 		float m_XOffset;
 		float m_YOffset;
 	};
+
+	class MouseCursorEnteredEvent : public Event
+	{
+	public:
+		MouseCursorEnteredEvent()
+		{
+		}
+
+		EVENT_TYPE(MouseCursorEntered)
+		EVENT_CATEGORY(EventCategoryInput | EventCategoryMouse)
+	};
+
+	class MouseCursorLeftEvent : public Event
+	{
+	public:
+		MouseCursorLeftEvent()
+		{
+		}
+
+		EVENT_TYPE(MouseCursorLeft)
+		EVENT_CATEGORY(EventCategoryInput | EventCategoryMouse)
+	};
 }

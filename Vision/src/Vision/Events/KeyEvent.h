@@ -60,7 +60,7 @@ namespace Vision
 	class KeyTypedEvent : public Event
 	{
 	public:
-		KeyTypedEvent(char key)
+		KeyTypedEvent(unsigned char key)
 			: m_Key(key)
 		{
 		}
@@ -73,10 +73,12 @@ namespace Vision
 			return ss.str();
 		}
 
+		inline unsigned char GetChar() const { return m_Key; }
+
 		EVENT_TYPE(KeyTyped)
 		EVENT_CATEGORY(EventCategoryInput | EventCategoryKeyboard)
 	
 	private:
-		char m_Key;
+		unsigned char m_Key;
 	};
 }

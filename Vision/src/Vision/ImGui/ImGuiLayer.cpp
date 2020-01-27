@@ -14,6 +14,8 @@ namespace Vision
 	ImGuiLayer::ImGuiLayer()
 		: Layer("ImGui")
 	{
+		Application& app = Application::Get();
+		m_Window = &app.GetWindow();
 	}
 
 	void ImGuiLayer::OnAttach()
@@ -36,7 +38,7 @@ namespace Vision
 		}
 
 		Application& app = Application::Get();
-		GLFWwindow* window = static_cast<GLFWwindow*>(app.GetWindow().GetNativeWindow());
+		GLFWwindow* window = static_cast<GLFWwindow*>(app.GetWindow().GetNativeWindowHandle());
 
 		ImGui_ImplGlfw_InitForOpenGL(window, true);
 		ImGui_ImplOpenGL3_Init("#version 410");
@@ -77,7 +79,18 @@ namespace Vision
 
 	void ImGuiLayer::OnImGuiRender()
 	{
-		static bool show = true;
-		ImGui::ShowDemoWindow(&show);
+		ImGui::Begin("Engine Configurations");
+		
+		if (ImGui::Button("Windowed"))
+		{
+			m_Window->SetMode(WindowMode::Windowed);
+		}
+
+		if (ImGui::Button("Fullscreen"))
+		{
+			m_Window->SetMode(WindowMode::Fullscreen);
+		}
+
+		ImGui::End();
 	}
 }

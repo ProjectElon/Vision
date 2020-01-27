@@ -17,21 +17,21 @@ namespace Vision
 		Application();
 		virtual ~Application();
 	
+		void Run();
+
+		void OnEvent(Event& e);
 		void PushLayer(Layer* layer);
 		void PushOverlay(Layer* overlay);
 
-		void OnEvent(Event& e);
-		void Run();
-
-		inline bool IsMinimized()  const { return m_Minimized; }
-		
 		inline Window& GetWindow() const { return (*m_Window); }
-		
-		inline static Application& Get() { return *s_Instance; }
 
+		inline static Application& Get() { return *s_Instance; }
+		
 	private:
 		bool OnWindowResize(WindowResizeEvent& e);
 		bool OnWindowClose(WindowCloseEvent& e);
+		bool OnWindowMinimized(WindowMinimizedEvent& e);
+		bool OnWindowRestored(WindowRestoredEvent& e);
 
 	private:
 		std::unique_ptr<Window> m_Window;
@@ -42,7 +42,8 @@ namespace Vision
 
 		bool m_Running = true;
 		bool m_Minimized = false;
-		
+		bool m_VSync = false;
+
 	private:
 		static Application* s_Instance;
 	};
