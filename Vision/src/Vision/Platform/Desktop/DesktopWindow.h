@@ -68,6 +68,8 @@ namespace Vision
 
 		inline std::pair<int, int> GetPosition() const override { return { m_Data.XPosition, m_Data.YPosition }; }
 		
+		std::vector<VideoMode> GetMonitorVideoModes() const override;
+
 	private:
 		GLFWwindow* m_WindowHandle;
 		WindowData m_Data;

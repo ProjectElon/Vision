@@ -5,8 +5,6 @@
 #include "Vision/Events/KeyEvent.h"
 #include "Vision/Events/MouseEvent.h"
 
-#include <Glad/glad.h>
-
 namespace Vision
 {
 	static unsigned int s_WindowCount = 0;
@@ -312,5 +310,31 @@ namespace Vision
 
 		m_GraphicsContext->SetVSync(enabled);
 		m_Data.VSync = enabled;
+	}
+
+	std::vector<VideoMode> DesktopWindow::GetMonitorVideoModes() const
+	{
+		GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+		
+		int count;
+		const GLFWvidmode* modes = glfwGetVideoModes(monitor, &count);
+
+		std::vector<VideoMode> videoModes;
+		videoModes.reserve(count);
+
+		for (int i = 0; i < count; i++)
+		{
+			VideoMode current;
+			
+			current.Width = modes[i].width;
+			current.Height = modes[i].height;
+			current.RefreshRate = modes[i].refreshRate;
+
+			videoModes.emplace_back(current);
+		}
+
+		std::reverse(videoModes.begin(), videoModes.end());
+
+		return videoModes;
 	}
 }

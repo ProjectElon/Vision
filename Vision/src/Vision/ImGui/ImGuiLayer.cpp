@@ -9,6 +9,14 @@
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
 
+#if VN_PLATFORM_DESKTOP
+
+	#define IMGUI_IMPL_OPENGL_LOADER_GLAD
+	#include <examples/imgui_impl_opengl3.cpp>
+	#include <examples/imgui_impl_glfw.cpp>
+	
+#endif
+
 namespace Vision
 {
 	ImGuiLayer::ImGuiLayer()
@@ -16,6 +24,35 @@ namespace Vision
 	{
 		Application& app = Application::Get();
 		m_Window = &app.GetWindow();
+
+		if (m_Window->GetMode() == WindowMode::Windowed)
+		{
+			m_CurrentWindowModeSelected = m_PreviousWindowModeSelected = 0;
+		}
+		else
+		{
+			m_CurrentWindowModeSelected = m_PreviousWindowModeSelected = 1;
+		}
+
+		m_VideoModes = m_Window->GetMonitorVideoModes();
+		m_VideoModesString.reserve(m_VideoModes.size());
+		m_VideoModesFormat.reserve(m_VideoModes.size());
+
+		for (uint32_t i = 0; i < m_VideoModes.size(); ++i)
+		{
+			const VideoMode& videoMode = m_VideoModes[i];
+
+			if (videoMode.Width == m_Window->GetWidth() && videoMode.Height == m_Window->GetHeight())
+			{
+				m_CurrentWindowSizeSelected = m_PreviousWindowSizeSelected = i;
+			}
+
+			std::stringstream ss;
+			ss << videoMode.Width << "x" << videoMode.Height << " " << videoMode.RefreshRate << " hz";
+
+			m_VideoModesString.emplace_back(ss.str());
+			m_VideoModesFormat.emplace_back(m_VideoModesString.back().c_str());
+		}
 	}
 
 	void ImGuiLayer::OnAttach()
@@ -37,8 +74,7 @@ namespace Vision
 			style.Colors[ImGuiCol_WindowBg].w = 1.0f;
 		}
 
-		Application& app = Application::Get();
-		GLFWwindow* window = static_cast<GLFWwindow*>(app.GetWindow().GetNativeWindowHandle());
+		GLFWwindow* window = static_cast<GLFWwindow*>(m_Window->GetNativeWindowHandle());
 
 		ImGui_ImplGlfw_InitForOpenGL(window, true);
 		ImGui_ImplOpenGL3_Init("#version 410");
@@ -81,14 +117,30 @@ namespace Vision
 	{
 		ImGui::Begin("Engine Configurations");
 		
-		if (ImGui::Button("Windowed"))
+		const char* windowModesItems[] = { "Windowed", "Fullscreen" };
+		ImGui::Combo("Window Mode", &m_CurrentWindowModeSelected, windowModesItems, 2);
+
+		if (m_CurrentWindowModeSelected != m_PreviousWindowModeSelected)
 		{
-			m_Window->SetMode(WindowMode::Windowed);
+			m_PreviousWindowModeSelected = m_CurrentWindowModeSelected;
+			
+			if (m_CurrentWindowModeSelected == 0)
+			{
+				m_Window->SetMode(WindowMode::Windowed);
+			}
+			else if (m_CurrentWindowModeSelected == 1)
+			{
+				m_Window->SetMode(WindowMode::Fullscreen);
+			}
 		}
 
-		if (ImGui::Button("Fullscreen"))
+		ImGui::Combo("Select Resulotion", &m_CurrentWindowSizeSelected, m_VideoModesFormat.data(), m_VideoModes.size());
+
+		if (m_CurrentWindowSizeSelected != m_PreviousWindowSizeSelected)
 		{
-			m_Window->SetMode(WindowMode::Fullscreen);
+			m_PreviousWindowSizeSelected = m_CurrentWindowSizeSelected;
+			const VideoMode& mode = m_VideoModes[m_CurrentWindowSizeSelected];
+			m_Window->SetSize(mode.Width, mode.Height);
 		}
 
 		ImGui::End();

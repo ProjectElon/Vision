@@ -12,8 +12,8 @@ namespace Vision
 		DesktopOpenGLContext(Window* window);
 		virtual ~DesktopOpenGLContext() {}
 		
-		void SwapBuffers() override;
 		void SetVSync(bool enabled) override;
+		void SwapBuffers() override;
 
 	private:
 		GLFWwindow* m_WindowHandle;

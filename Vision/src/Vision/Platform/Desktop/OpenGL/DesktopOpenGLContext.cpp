@@ -15,11 +15,15 @@ namespace Vision
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
+	#if VN_PLATFORM_MACOS
+		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+	#endif
+
 		m_WindowHandle = (GLFWwindow*)window->GetNativeWindowHandle();
 		glfwMakeContextCurrent(m_WindowHandle);
 
 		int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-		VN_CORE_ASSERT(status, "Unable to initialize glad (OpenGL)");
+		VN_CORE_ASSERT(status, "Unable to initialize glad");
 
 		VN_CORE_INFO("GPU Vendor : {0}", glGetString(GL_VENDOR));
 		VN_CORE_INFO("Graphics Device : {0}", glGetString(GL_RENDERER));

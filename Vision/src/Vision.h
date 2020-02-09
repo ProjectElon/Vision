@@ -26,4 +26,10 @@
 
 /*----------  Renderer  ----------*/
 #include "Vision/Renderer/GraphicsContext.h"
+#include "Vision/Renderer/RenderCommand.h"
+#include "Vision/Renderer/Renderer.h"
+#include "Vision/Renderer/Buffers.h"
+#include "Vision/Renderer/VertexLayout.h"
+#include "Vision/Renderer/Shader.h"
+#include "Vision/Renderer/RendererAPI.h"
 /*--------------------------------*/

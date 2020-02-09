@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "GraphicsContext.h"
+#include "Renderer.h"
 
 #if VN_PLATFORM_DESKTOP
 	#include "Vision/Platform/Desktop/OpenGL/DesktopOpenGLContext.h"
@@ -7,13 +8,11 @@
 
 namespace Vision
 {
-	RenderApi GraphicsContext::s_RenderApi;
-
 	std::unique_ptr<GraphicsContext> GraphicsContext::Create(Window* window)
 	{
-		switch (GetRenderApi())
+		switch (Renderer::GetAPI())
 		{
-			case RenderApi::OpenGL:
+			case Renderer::API::OpenGL:
 			{
 				#if VN_PLATFORM_DESKTOP
 					return std::make_unique<DesktopOpenGLContext>(window);		

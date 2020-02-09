@@ -16,7 +16,7 @@ namespace Vision
 		inline unsigned int GetKeyCode()     const { return m_KeyCode; }
 		inline unsigned int GetRepeatCount() const { return m_RepeatCount; }
 
-		std::string ToString() const override
+		const std::string& ToString() const override
 		{
 			std::stringstream ss;
 			ss << "KeyPressedEvent : (" << m_KeyCode << ", " << m_RepeatCount << ")";
@@ -40,7 +40,7 @@ namespace Vision
 		{
 		}
 
-		std::string ToString() const override
+		const std::string& ToString() const override
 		{
 			std::stringstream ss;
 			ss << "KeyReleasedEvent : (" << m_KeyCode << ")";
@@ -65,7 +65,7 @@ namespace Vision
 		{
 		}
 
-		std::string ToString() const override
+		const std::string& ToString() const override
 		{
 			std::stringstream ss;
 			ss << "KeyTypedEvent : (" << m_Key << ")";

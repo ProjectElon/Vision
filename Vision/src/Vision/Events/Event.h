@@ -5,10 +5,8 @@
 
 namespace Vision
 {
-	enum class EventType
+	enum class EventType : uint8_t
 	{
-		None = 0,
-
 		WindowClose,
 		WindowResize,
 		WindowFocus,
@@ -30,10 +28,8 @@ namespace Vision
 		MouseCursorLeft
 	};
 
-	enum EventCategory
+	enum EventCategory : uint8_t
 	{
-		None = 0,
-
 		EventCategoryApplication = BIT(0),
 		EventCategoryInput		 = BIT(1),
 		EventCategoryKeyboard    = BIT(2),
@@ -48,7 +44,7 @@ namespace Vision
 		virtual EventType GetType() const = 0;
 		virtual const char* GetName() const = 0;
 		virtual int GetCategoryFlags() const = 0;
-		virtual std::string ToString() const { return GetName(); }
+		virtual const std::string& ToString() const { return GetName(); }
 
 		inline bool IsInCategory(EventCategory category) const
 		{

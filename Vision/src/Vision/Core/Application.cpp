@@ -4,7 +4,8 @@
 #include "Vision/Core/Core.h"
 #include "Vision/Core/Log.h"
 #include "Vision/Platform/Input.h"
-#include "Vision/Renderer/GraphicsContext.h"
+#include "Vision/Renderer/Renderer.h"
+#include "Vision/Renderer/RenderCommand.h"
 
 namespace Vision
 {
@@ -15,12 +16,16 @@ namespace Vision
 		VN_CORE_ASSERT(!s_Instance, "Application already exists");
 		s_Instance = this;
 
-		GraphicsContext::SetRenderApi(RenderApi::OpenGL);
+		Renderer::SetAPI(Renderer::API::OpenGL);
 
 		m_Window = Window::Create();
 		m_Window->SetEventCallback(BIND_EVENT_FN(Application::OnEvent));
 		m_Window->SetVSync(true);
 		
+		Renderer::Initialize();
+
+		RenderCommand::SetClearColor(glm::vec4(1.0f, 0.0f, 1.0f, 1.0f));
+
 		Input::Initialize();
 
 		m_ImGuiLayer = new ImGuiLayer();
@@ -33,6 +38,7 @@ namespace Vision
 	Application::~Application()
 	{
 		Input::ShutDown();
+		Renderer::Shutdown();
 	}
 
 	void Application::Run()
@@ -113,6 +119,8 @@ namespace Vision
 
 	bool Application::OnWindowResize(WindowResizeEvent& e)
 	{
+		RenderCommand::OnWindowResize(e.GetWidth(), e.GetHeight());
+
 		return false;
 	}
 
