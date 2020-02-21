@@ -2,6 +2,8 @@
 
 #include "Vision/Core/Log.h"
 
+#include <memory>
+
 /* Platform Detection */
 
 #ifdef _WIN32
@@ -52,3 +54,15 @@
 
 #define BIT(x) (1 << (x))
 #define BIND_EVENT_FN(fn) std::bind(&fn, this, std::placeholders::_1)
+
+namespace Vision
+{
+	template<typename T>
+	using Scope = std::unique_ptr<T>;
+
+	template<typename T>
+	using Ref = std::shared_ptr<T>;
+
+	#define MakeScope std::make_unique
+	#define MakeRef std::make_shared
+}

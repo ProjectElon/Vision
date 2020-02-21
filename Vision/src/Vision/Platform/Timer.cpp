@@ -7,10 +7,10 @@
 
 namespace Vision
 {
-	std::unique_ptr<Timer> Timer::Create()
+	Scope<Timer> Timer::Create()
 	{
 	#ifdef VN_PLATFORM_DESKTOP
-		return std::unique_ptr<Timer>(new DesktopTimer);
+		return MakeScope<DesktopTimer>();
 	#endif
 	}
 }

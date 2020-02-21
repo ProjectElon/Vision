@@ -1,76 +1,20 @@
 #include "SandboxApp.h"
-#include <imgui/imgui.h>
 
 GameLayer::GameLayer()
 	: Layer("Game")
 {
+	auto& window = Vision::Application::Get().GetWindow();
+	float aspectRatio = (float)window.GetWidth() / (float)window.GetHeight();
+	m_CameraController = MakeScope<Vision::OrthographicCameraController>(aspectRatio);
 }
 
 void GameLayer::OnAttach()
 {
 	using namespace Vision;
 
-	float vertices[] =
-	{
-		 0.0f,  0.5f, 0.0f,
-		-0.5f, -0.5f, 0.0f,
-		 0.5f, -0.5f, 0.0f
-	};
-
-	VertexLayout layout({ 
-		{ Shader::DataType::Float3, "Position", false } 
-	});
-
-	BufferProps vbDesc
-	{
-		vertices,
-		Shader::DataType::Float,
-		sizeof(vertices),
-		BufferUsage::Static
-	};
-
-	m_VB.reset(VertexBuffer::Create(vbDesc));
-	m_VB->SetLayout(layout);
-
-	uint32_t indices[] =
-	{
-		0, 1, 2
-	};
-
-	BufferProps ibDesc
-	{
-		indices,
-		Shader::DataType::UInt,
-		sizeof(indices),
-		BufferUsage::Static
-	};
-
-	m_IB.reset(IndexBuffer::Create(ibDesc));
-
-	std::string vertexSource = R"(
-		#version 330 core
-		
-		layout (location = 0) in vec3 in_Position;
-		
-		void main()
-		{
-			gl_Position = vec4(in_Position, 1.0f);
-		}
-	)";
-
-	std::string pixelSource = R"(
-		#version 330 core
-
-		out vec4 out_Color;
-		
-		void main()
-		{
-			out_Color = vec4(1.0f, 0.5f, 0.2f, 1.0f);
-		}
-	)";
-
-	m_TriangleShader.reset(Shader::Create("Tringle", vertexSource, pixelSource));
-	m_TriangleShader->Bind();
+	m_SpriteShader = Shader::CreateFromFile("Assets/Shaders/Sprite.shader");
+	m_Brick = Texture::CreateFromFile("Assets/Textures/brick.png");
+	m_Wall = Texture::CreateFromFile("Assets/Textures/wall.jpg");
 }
 
 void GameLayer::OnDetach()
@@ -90,15 +34,37 @@ void GameLayer::OnUpdate(float dt)
 	using namespace Vision;
 
 	RenderCommand::Clear(ClearColorBuffer | ClearDepthBuffer);
-	RenderCommand::DrawIndexed(*(m_VB.get()), *(m_IB.get()));
+	
+	m_CameraController->OnUpdate(dt);
+
+	Renderer::BeginScene2D(m_CameraController->GetCamera());
+	
+	Renderer::DrawSprite(m_SpriteShader, { 0.0f, 0.0f, 0.0f }, 0.0f, { 1.0f, 1.0f }, m_Brick, m_TintColor);
+	Renderer::DrawSprite(m_SpriteShader, { 5.0f, 5.0f, 0.0f }, 0.0f, { 5.0f, 5.0f }, m_Wall, m_TintColor);
+	Renderer::DrawQuad(m_SpriteShader,   {-5.0f, 0.0f, 0.0f }, 45.0f, { 2.0f, 2.0f }, glm::vec4(1.0f, 0.0f, 1.0f, 1.0f));
+
+	Renderer::EndScene2D();
 }
 
 void GameLayer::OnImGuiRender()
 {
+	using namespace Vision;
+
+	m_CameraController->OnImGuiRender();
+
+	ImGui::Begin("Graphics Settings");
+	
+	ImGui::ColorPicker4("Clear Color", &m_ClearColor.r);
+	RenderCommand::SetClearColor(m_ClearColor);
+
+	ImGui::ColorPicker4("Tint Color", &m_TintColor.r);
+	
+	ImGui::End();
 }
 
-void GameLayer::OnEvent(Vision::Event& event)
+void GameLayer::OnEvent(Vision::Event& e)
 {
+	m_CameraController->OnEvent(e);
 }
 
 Sandbox::Sandbox()

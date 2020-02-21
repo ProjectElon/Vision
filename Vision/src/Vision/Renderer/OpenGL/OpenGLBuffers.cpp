@@ -40,6 +40,11 @@ namespace Vision
 		glBindVertexArray(0);
 	}
 
+	void OpenGLVertexBuffer::SetSubData(void* data, uint32_t size, uint32_t offset) const
+	{
+		glBufferSubData(GL_ARRAY_BUFFER, offset, size, data);
+	}
+
 	void OpenGLVertexBuffer::SetLayout(const VertexLayout& layout) const
 	{
 		glBindVertexArray(m_VAO);
@@ -117,6 +122,11 @@ namespace Vision
 	OpenGLIndexBuffer::~OpenGLIndexBuffer()
 	{
 		glDeleteBuffers(1, &m_IBO);
+	}
+
+	void OpenGLIndexBuffer::SetSubData(void* data, uint32_t size, uint32_t offset) const
+	{
+		glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset, size, data);
 	}
 
 	void OpenGLIndexBuffer::Bind() const

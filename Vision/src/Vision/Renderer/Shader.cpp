@@ -55,13 +55,13 @@ namespace Vision
 		}
 	}
 
-	Shader* Shader::Create(const std::string& name, const std::string& vertexSource, const std::string& fragmentSource)
+	Ref<Shader> Shader::CreateFromFile(const std::string& path)
 	{
 		switch (Renderer::GetAPI())
 		{
 			case Renderer::API::OpenGL:
 			{
-				return new OpenGLShader(name, vertexSource, fragmentSource);
+				return MakeRef<OpenGLShader>(path);
 			}
 			break;
 		}

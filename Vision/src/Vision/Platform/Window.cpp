@@ -7,14 +7,10 @@
 
 namespace Vision
 {
-	std::unique_ptr<Window> Window::Create(const WindowProps& props)
+	Scope<Window> Window::Create(const WindowProps& props)
 	{
-
-#ifdef VN_PLATFORM_DESKTOP
-		return std::make_unique<DesktopWindow>(props);
-#else
-		VN_CORE_ASSERT(false, "Unsupported Platform");
-		return nullptr;
-#endif
+	#ifdef VN_PLATFORM_DESKTOP
+		return MakeScope<DesktopWindow>(props);
+	#endif
 	}
 }

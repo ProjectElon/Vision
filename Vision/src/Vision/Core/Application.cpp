@@ -20,13 +20,9 @@ namespace Vision
 
 		m_Window = Window::Create();
 		m_Window->SetEventCallback(BIND_EVENT_FN(Application::OnEvent));
-		m_Window->SetVSync(true);
 		
-		Renderer::Initialize();
-
-		RenderCommand::SetClearColor(glm::vec4(1.0f, 0.0f, 1.0f, 1.0f));
-
-		Input::Initialize();
+		Renderer::Init();
+		Input::Init();
 
 		m_ImGuiLayer = new ImGuiLayer();
 		PushOverlay(m_ImGuiLayer);
@@ -119,8 +115,7 @@ namespace Vision
 
 	bool Application::OnWindowResize(WindowResizeEvent& e)
 	{
-		RenderCommand::OnWindowResize(e.GetWidth(), e.GetHeight());
-
+		Renderer::OnWindowResize(e.GetWidth(), e.GetHeight());
 		return false;
 	}
 

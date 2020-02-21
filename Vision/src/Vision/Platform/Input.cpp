@@ -8,17 +8,17 @@
 
 namespace Vision
 {
-	Input* Input::s_Instance = nullptr;
+	Scope<Input> Input::s_Instance;
 
-	void Input::Initialize()
+	void Input::Init()
 	{
 	#if VN_PLATFORM_DESKTOP
-		s_Instance = new DesktopInput();
+		s_Instance = MakeScope<DesktopInput>();
 	#endif
 	}
 
 	void Input::ShutDown()
 	{
-		delete s_Instance;
+		s_Instance.release();
 	}
 }

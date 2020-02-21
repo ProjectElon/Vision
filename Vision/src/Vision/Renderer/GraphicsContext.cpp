@@ -8,14 +8,14 @@
 
 namespace Vision
 {
-	std::unique_ptr<GraphicsContext> GraphicsContext::Create(Window* window)
+	Scope<GraphicsContext> GraphicsContext::Create(Window* window)
 	{
 		switch (Renderer::GetAPI())
 		{
 			case Renderer::API::OpenGL:
 			{
 				#if VN_PLATFORM_DESKTOP
-					return std::make_unique<DesktopOpenGLContext>(window);		
+					return MakeScope<DesktopOpenGLContext>(window);		
 				#endif
 			}
 			break;

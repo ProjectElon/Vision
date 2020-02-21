@@ -4,6 +4,8 @@
 
 namespace Vision
 {
+	/*---------- Vertex Buffer ----------*/
+
 	class OpenGLVertexBuffer : public VertexBuffer
 	{
 	public:
@@ -12,6 +14,8 @@ namespace Vision
 
 		void Bind() const override;
 		void UnBind() const override;
+
+		void SetSubData(void* data, uint32_t size, uint32_t offset = 0) const override;
 
 		void SetLayout(const VertexLayout& layout) const override;
 
@@ -24,11 +28,15 @@ namespace Vision
 		uint32_t m_SizeInBytes;
 	};
 
+	/*---------- Index Buffer ----------*/
+
 	class OpenGLIndexBuffer : public IndexBuffer
 	{
 	public:
 		OpenGLIndexBuffer(const BufferProps& props);
 		~OpenGLIndexBuffer();
+
+		void SetSubData(void* data, uint32_t size, uint32_t offset = 0) const override;
 
 		void Bind() const override;
 		void UnBind() const override;

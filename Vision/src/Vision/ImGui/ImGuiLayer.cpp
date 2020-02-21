@@ -24,6 +24,7 @@ namespace Vision
 	{
 		Application& app = Application::Get();
 		m_Window = &app.GetWindow();
+		m_Window->SetVSync(m_VSyncSelected);
 
 		if (m_Window->GetMode() == WindowMode::Windowed)
 		{
@@ -141,6 +142,14 @@ namespace Vision
 			m_PreviousWindowSizeSelected = m_CurrentWindowSizeSelected;
 			const VideoMode& mode = m_VideoModes[m_CurrentWindowSizeSelected];
 			m_Window->SetSize(mode.Width, mode.Height);
+		}
+
+		ImGui::Checkbox("VSync", &m_VSyncSelected);
+
+		if (m_PreviousVSyncSelected != m_VSyncSelected)
+		{
+			m_PreviousVSyncSelected = m_VSyncSelected;
+			m_Window->SetVSync(m_VSyncSelected);
 		}
 
 		ImGui::End();

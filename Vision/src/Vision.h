@@ -23,13 +23,24 @@
 #include "Vision/Platform/Timer.h"
 /*--------------------------------*/
 
-
 /*----------  Renderer  ----------*/
 #include "Vision/Renderer/GraphicsContext.h"
 #include "Vision/Renderer/RenderCommand.h"
 #include "Vision/Renderer/Renderer.h"
 #include "Vision/Renderer/Buffers.h"
 #include "Vision/Renderer/VertexLayout.h"
+#include "Vision/Renderer/Texture.h"
 #include "Vision/Renderer/Shader.h"
 #include "Vision/Renderer/RendererAPI.h"
+#include "Vision/Renderer/OrthographicCamera.h"
+#include "Vision/Renderer/OrthographicCameraController.h"
+/*--------------------------------*/
+
+/*----------  ImGui  ----------*/
+#include <imgui/imgui.h>
+/*--------------------------------*/
+
+/*----------  GLM  ----------*/
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 /*--------------------------------*/

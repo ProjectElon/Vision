@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Vision/Core/Core.h"
 #include "Vision/Renderer/VertexLayout.h"
 
 namespace Vision
@@ -24,7 +25,9 @@ namespace Vision
 	public:
 		virtual void Bind() const = 0;
 		virtual void UnBind() const = 0;
-		
+
+		virtual void SetSubData(void* data, uint32_t size, uint32_t offset = 0) const = 0;
+
 		virtual uint32_t GetSizeInBytes() const = 0;
 	};
 
@@ -37,7 +40,7 @@ namespace Vision
 		
 		virtual uint32_t GetVertexCount() const = 0;
 		
-		static VertexBuffer* Create(const BufferProps& props);
+		static Ref<VertexBuffer> Create(const BufferProps& props);
 	};
 
 	class IndexBuffer : public Buffer
@@ -47,6 +50,6 @@ namespace Vision
 
 		virtual uint32_t GetIndexCount() const = 0;
 
-		static IndexBuffer* Create(const BufferProps& props);
+		static Ref<IndexBuffer> Create(const BufferProps& props);
 	};
 }

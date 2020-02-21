@@ -8,25 +8,25 @@
 
 namespace Vision
 {
-	VertexBuffer* VertexBuffer::Create(const BufferProps& props)
+	Ref<VertexBuffer> VertexBuffer::Create(const BufferProps& props)
 	{
 		switch (Renderer::GetAPI())
 		{
 			case Renderer::API::OpenGL:
 			{
-				return new OpenGLVertexBuffer(props);
+				return MakeRef<OpenGLVertexBuffer>(props);
 			}
 			break;
 		}
 	}
 
-	IndexBuffer* IndexBuffer::Create(const BufferProps& props)
+	Ref<IndexBuffer> IndexBuffer::Create(const BufferProps& props)
 	{
 		switch (Renderer::GetAPI())
 		{
 			case Renderer::API::OpenGL:
 			{
-				return new OpenGLIndexBuffer(props);
+				return MakeRef<OpenGLIndexBuffer>(props);
 			}
 			break;
 		}

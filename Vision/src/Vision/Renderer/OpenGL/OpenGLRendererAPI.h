@@ -7,11 +7,13 @@ namespace Vision
 	class OpenGLRendererAPI : public RendererAPI
 	{
 	public:
+		OpenGLRendererAPI();
+
 		void OnWindowResize(uint32_t width, uint32_t height) const override;
 
 		void SetClearColor(const glm::vec4& color) const override;
 		void Clear(uint32_t flags) const override;
 
-		void DrawIndexed(const VertexBuffer& vertexBuffer, const IndexBuffer& indexBuffer) const override;
+		void DrawIndexed(const Ref<VertexBuffer>& vertexBuffer, const Ref<IndexBuffer>& indexBuffer, Primitive primitive) const override;
 	};
 }

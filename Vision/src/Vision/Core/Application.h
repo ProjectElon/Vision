@@ -34,11 +34,11 @@ namespace Vision
 		bool OnWindowRestored(WindowRestoredEvent& e);
 
 	private:
-		std::unique_ptr<Window> m_Window;
+		Scope<Window> m_Window;
 		ImGuiLayer* m_ImGuiLayer;
 
 		LayerStack m_LayerStack;
-		std::unique_ptr<Timer> m_FrameTimer;
+		Scope<Timer> m_FrameTimer;
 
 		bool m_Running = true;
 		bool m_Minimized = false;

@@ -1,13 +1,16 @@
 #pragma once
 
 #include "pch.h"
+#include "Vision/Core/Core.h"
+#include "Vision/Platform/KeyCodes.h"
+#include "Vision/Platform/MouseCodes.h"
 
 namespace Vision
 {
 	class Input
 	{
 	public:
-		static void Initialize();
+		static void Init();
 		static void ShutDown();
 
 		inline static bool IsKeyDown(unsigned int keyCode) { return s_Instance->IsKeyDownImp(keyCode); }
@@ -36,6 +39,6 @@ namespace Vision
 		virtual void SetCursorModeImp(bool visible) const = 0;
 
 	private:
-		static Input* s_Instance;
+		static Scope<Input> s_Instance;
 	};
 }

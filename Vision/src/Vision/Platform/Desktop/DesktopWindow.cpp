@@ -42,6 +42,10 @@ namespace Vision
 
 		glfwWindowHint(GLFW_AUTO_ICONIFY, GLFW_FALSE);
 
+#ifndef VN_DIST
+		glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
+#endif
+
 		const char* title = props.Title.c_str();
 
 		GLFWmonitor* monitor = glfwGetPrimaryMonitor();

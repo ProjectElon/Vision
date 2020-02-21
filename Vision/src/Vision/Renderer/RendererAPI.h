@@ -14,6 +14,17 @@ namespace Vision
 		ClearStencilBuffer = BIT(3)
 	};
 
+	enum class Primitive : uint8_t
+	{
+		Points,
+		Lines,
+		LineStrip,
+		Quads,
+		Triangles,
+		TriangleStrip,
+		TriangleFan
+	};
+
 	class RendererAPI
 	{
 	public:
@@ -22,7 +33,7 @@ namespace Vision
 		virtual void SetClearColor(const glm::vec4& color) const = 0;
 
 		virtual void Clear(uint32_t clearflags) const = 0;
-		
-		virtual void DrawIndexed(const VertexBuffer& vertexBuffer, const IndexBuffer& indexBuffer) const = 0;
+
+		virtual void DrawIndexed(const Ref<VertexBuffer>& vertexBuffer, const Ref<IndexBuffer>& indexBuffer, Primitive primitive = Primitive::Triangles) const = 0;
 	};
 }

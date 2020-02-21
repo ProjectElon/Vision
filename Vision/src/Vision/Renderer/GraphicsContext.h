@@ -15,6 +15,6 @@ namespace Vision
 		virtual void SetVSync(bool enabled) = 0;
 		virtual void SwapBuffers() = 0;
 		
-		static std::unique_ptr<GraphicsContext> Create(Window* window);
+		static Scope<GraphicsContext> Create(Window* window);
 	};
 }

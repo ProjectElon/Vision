@@ -92,12 +92,12 @@ namespace Vision
 		}
 
 		inline float GetXOffset() const { return m_XOffset; }
-		inline float GetYOffset() const { return m_XOffset; }
+		inline float GetYOffset() const { return m_YOffset; }
 
 		const std::string& ToString() const override
 		{
 			std::stringstream ss;
-			ss << "MouseWheelScrolledEvent : (" << m_XOffset << ", " << m_XOffset << ")";
+			ss << "MouseWheelScrolledEvent : (" << m_XOffset << ", " << m_YOffset << ")";
 
 			return ss.str();
 		}

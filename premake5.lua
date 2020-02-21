@@ -66,6 +66,7 @@ includedir["GLFW"]   = "ThirdParty/GLFW/include"
 includedir["Glad"]   = "ThirdParty/Glad/include"
 includedir["ImGui"]  = "ThirdParty/imgui"
 includedir["glm"]    = "ThirdParty/glm"
+includedir["stb_image"] = "ThirdParty/stb"
 
 group ("Dependencies")
 
@@ -99,7 +100,8 @@ project ("Vision")
 		"%{includedir.GLFW}",
 		"%{includedir.Glad}",
 		"%{includedir.ImGui}",
-		"%{includedir.glm}"
+		"%{includedir.glm}",
+		"%{includedir.stb_image}"
 	}
 
 	links

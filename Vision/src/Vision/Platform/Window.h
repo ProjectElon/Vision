@@ -67,6 +67,6 @@ namespace Vision
 		
 		virtual std::vector<VideoMode> GetMonitorVideoModes() const = 0;
 
-		static std::unique_ptr<Window> Create(const WindowProps& props = WindowProps());
+		static Scope<Window> Create(const WindowProps& props = WindowProps());
 	};
 }

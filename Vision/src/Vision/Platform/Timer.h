@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Vision/Core/Core.h"
+
 namespace Vision
 {
 	class Timer
@@ -7,9 +9,10 @@ namespace Vision
 	public:
 		virtual void Start() = 0;
 		virtual void Stop() = 0;
+		
 		virtual const double& GetElapsedTime() = 0;
 		virtual bool IsTicking() const = 0;
 
-		static std::unique_ptr<Timer> Create();
+		static Scope<Timer> Create();
 	};
 }
