@@ -14,7 +14,7 @@ namespace Vision
 		{
 			case Renderer::API::OpenGL:
 			{
-				return MakeRef<OpenGLVertexBuffer>(props);
+				return CreateRef<OpenGLVertexBuffer>(props);
 			}
 			break;
 		}
@@ -26,7 +26,7 @@ namespace Vision
 		{
 			case Renderer::API::OpenGL:
 			{
-				return MakeRef<OpenGLIndexBuffer>(props);
+				return CreateRef<OpenGLIndexBuffer>(props);
 			}
 			break;
 		}

@@ -21,11 +21,13 @@ namespace Vision
 
 		inline uint32_t GetSizeInBytes() const override { return m_SizeInBytes; }
 		inline uint32_t GetVertexCount() const override { return m_Count; }
+		inline Shader::DataType GetDataType() const override { return m_DataType; }
 
 	private:
 		uint32_t m_VBO, m_VAO;
 		uint32_t m_Count;
 		uint32_t m_SizeInBytes;
+		Shader::DataType m_DataType;
 	};
 
 	/*---------- Index Buffer ----------*/
@@ -43,10 +45,12 @@ namespace Vision
 
 		inline uint32_t GetSizeInBytes() const override { return m_SizeInBytes; }
 		inline uint32_t GetIndexCount() const override { return m_Count; }
+		inline Shader::DataType GetDataType() const override { return m_DataType; }
 
 	private:
 		uint32_t m_IBO;
 		uint32_t m_Count;
 		uint32_t m_SizeInBytes;
+		Shader::DataType m_DataType;
 	};
 }

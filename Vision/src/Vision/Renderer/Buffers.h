@@ -7,9 +7,8 @@ namespace Vision
 {
 	enum class BufferUsage
 	{
-		Static,  /* Read only by the GPU */
-		Dynamic, /* Read only by the GPU and Write only CPU */
-		Default  /* Read and 'write' by the GPU */
+		Static,
+		Dynamic
 	};
 
 	struct BufferProps
@@ -29,6 +28,7 @@ namespace Vision
 		virtual void SetSubData(void* data, uint32_t size, uint32_t offset = 0) const = 0;
 
 		virtual uint32_t GetSizeInBytes() const = 0;
+		virtual Shader::DataType GetDataType() const = 0;
 	};
 
 	class VertexBuffer : public Buffer

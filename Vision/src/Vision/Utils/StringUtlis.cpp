@@ -19,4 +19,15 @@ namespace Vision
 	{
 		return RemoveCharsFromLeft(RemoveCharsFromRight(str, chars), chars);
 	}
+
+	bool StringUtils::StartsWith(const std::string& str, const std::string& pattern)
+	{
+		return str.find(pattern) == 0;
+	}
+	
+	bool StringUtils::EndsWith(const std::string& str, const std::string& pattern)
+	{
+		return str.find(pattern) == (str.length() - pattern.length());
+	}
+
 }

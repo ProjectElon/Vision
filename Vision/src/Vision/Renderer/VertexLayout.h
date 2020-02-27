@@ -9,7 +9,7 @@ namespace Vision
 	{
 		Shader::DataType Type;
 		const char* Name;
-		bool Normalized;
+		bool Normalized = false;
 	};
 
 	class VertexLayout

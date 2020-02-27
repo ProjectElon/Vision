@@ -15,7 +15,7 @@ namespace Vision
 			case Renderer::API::OpenGL:
 			{
 				#if VN_PLATFORM_DESKTOP
-					return MakeScope<DesktopOpenGLContext>(window);		
+					return CreateScope<DesktopOpenGLContext>(window);		
 				#endif
 			}
 			break;

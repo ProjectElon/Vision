@@ -19,7 +19,7 @@ namespace Vision
 		Renderer::SetAPI(Renderer::API::OpenGL);
 
 		m_Window = Window::Create();
-		m_Window->SetEventCallback(BIND_EVENT_FN(Application::OnEvent));
+		m_Window->SetEventCallback(VN_BIND_EVENT_FN(Application::OnEvent));
 		
 		Renderer::Init();
 		Input::Init();
@@ -70,10 +70,10 @@ namespace Vision
 	{
 		EventDispatcher dispatcher(e);
 
-		dispatcher.Dispatch<WindowResizeEvent>(BIND_EVENT_FN(Application::OnWindowResize));
-		dispatcher.Dispatch<WindowMinimizedEvent>(BIND_EVENT_FN(Application::OnWindowMinimized));
-		dispatcher.Dispatch<WindowRestoredEvent>(BIND_EVENT_FN(Application::OnWindowRestored));
-		dispatcher.Dispatch<WindowCloseEvent>(BIND_EVENT_FN(Application::OnWindowClose));
+		dispatcher.Dispatch<WindowResizeEvent>(VN_BIND_EVENT_FN(Application::OnWindowResize));
+		dispatcher.Dispatch<WindowMinimizedEvent>(VN_BIND_EVENT_FN(Application::OnWindowMinimized));
+		dispatcher.Dispatch<WindowRestoredEvent>(VN_BIND_EVENT_FN(Application::OnWindowRestored));
+		dispatcher.Dispatch<WindowCloseEvent>(VN_BIND_EVENT_FN(Application::OnWindowClose));
 
 		for (auto it = m_LayerStack.rbegin(); it != m_LayerStack.rend(); ++it)
 		{

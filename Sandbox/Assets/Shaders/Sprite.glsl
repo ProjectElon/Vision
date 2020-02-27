@@ -1,4 +1,4 @@
-#vertex
+#type vertex
 	
 	#version 410 core
 
@@ -17,7 +17,7 @@
 		gl_Position = u_ViewProj * u_Transform * vec4(Position, 1.0f);
 	}
 
-#pixel
+#type pixel
 
 	#version 410 core
 

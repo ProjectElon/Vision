@@ -10,7 +10,7 @@ namespace Vision
 	Scope<Window> Window::Create(const WindowProps& props)
 	{
 	#ifdef VN_PLATFORM_DESKTOP
-		return MakeScope<DesktopWindow>(props);
+		return CreateScope<DesktopWindow>(props);
 	#endif
 	}
 }

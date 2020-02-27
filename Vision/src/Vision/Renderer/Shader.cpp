@@ -12,14 +12,19 @@ namespace Vision
 	{
 		switch (dataType)
 		{
-			case DataType::Bool: { return 1; } break;
-
+			case DataType::Bool:  { return 1; } break;
+			case DataType::Byte:  { return 1; } break;
+			case DataType::UByte: { return 1; } break;
+			
+			case DataType::Short:  { return 2; } break;
+			case DataType::UShort: { return 2; } break;
+			
 			case DataType::Int:  { return 1 * 4; } break;
 			case DataType::Int2: { return 2 * 4; } break;
 			case DataType::Int3: { return 3 * 4; } break;
 			case DataType::Int4: { return 4 * 4; } break;
 
-			case DataType::UInt: { return 1 * 4; } break;
+			case DataType::UInt:  { return 1 * 4; } break;
 			case DataType::UInt2: { return 2 * 4; } break;
 			case DataType::UInt3: { return 3 * 4; } break;
 			case DataType::UInt4: { return 4 * 4; } break;
@@ -38,8 +43,13 @@ namespace Vision
 	{
 		switch (dataType)
 		{
-			case DataType::Bool: { return 1; } break;
+			case DataType::Bool:  { return 1; } break;
+			case DataType::Byte:  { return 1; } break;
+			case DataType::UByte: { return 1; } break;
 
+			case DataType::Short:  { return 1; } break;
+			case DataType::UShort: { return 1; } break;
+			
 			case DataType::Int:  { return 1; } break;
 			case DataType::Int2: { return 2; } break;
 			case DataType::Int3: { return 3; } break;
@@ -61,7 +71,7 @@ namespace Vision
 		{
 			case Renderer::API::OpenGL:
 			{
-				return MakeRef<OpenGLShader>(path);
+				return CreateRef<OpenGLShader>(path);
 			}
 			break;
 		}

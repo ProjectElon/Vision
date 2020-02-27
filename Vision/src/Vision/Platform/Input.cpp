@@ -13,7 +13,7 @@ namespace Vision
 	void Input::Init()
 	{
 	#if VN_PLATFORM_DESKTOP
-		s_Instance = MakeScope<DesktopInput>();
+		s_Instance = CreateScope<DesktopInput>();
 	#endif
 	}
 

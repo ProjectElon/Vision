@@ -19,8 +19,8 @@ namespace Vision
 	{
 		EventDispatcher dispatcher(e);
 		
-		dispatcher.Dispatch<WindowResizeEvent>(BIND_EVENT_FN(OrthographicCameraController::OnWindowResize));
-		dispatcher.Dispatch<MouseWheelScrolledEvent>(BIND_EVENT_FN(OrthographicCameraController::OnMouseWheelScrolled));
+		dispatcher.Dispatch<WindowResizeEvent>(VN_BIND_EVENT_FN(OrthographicCameraController::OnWindowResize));
+		dispatcher.Dispatch<MouseWheelScrolledEvent>(VN_BIND_EVENT_FN(OrthographicCameraController::OnMouseWheelScrolled));
 	}
 
 	void OrthographicCameraController::OnUpdate(float dt)

@@ -4,8 +4,16 @@
 
 #include <map>
 
+#include <glad/glad.h>
+
 namespace Vision
 {
+	struct ShaderData
+	{
+		std::string Source;
+		int32_t RendererID;
+	};
+
 	class OpenGLShader : public Shader
 	{
 	public:
@@ -17,31 +25,31 @@ namespace Vision
 
 		inline const std::string& GetName() const { return m_Name; }
 
-		void UploadUniformInt(const std::string& name, int32_t value) override;
+		void SetInt(const std::string& name, int32_t value) override;
 
-		void UploadUniformFloat(const std::string& name, float value) override;
-		void UploadUniformFloat2(const std::string& name, const glm::vec2& vec2) override;
-		void UploadUniformFloat3(const std::string& name, const glm::vec3& vec3) override;
-		void UploadUniformFloat4(const std::string& name, const glm::vec4& vec4) override;
+		void SetFloat(const std::string& name, float value) override;
+		void SetFloat2(const std::string& name, const glm::vec2& vec2) override;
+		void SetFloat3(const std::string& name, const glm::vec3& vec3) override;
+		void SetFloat4(const std::string& name, const glm::vec4& vec4) override;
 
-		void UploadUniformMatrix3(const std::string& name, const glm::mat3& mat3) override;
-		void UploadUniformMatrix4(const std::string& name, const glm::mat4& mat4) override;
+		void SetMatrix3(const std::string& name, const glm::mat3& mat3) override;
+		void SetMatrix4(const std::string& name, const glm::mat4& mat4) override;
+
+	public:
+		static GLenum GetGLTypeFromShaderType(Shader::DataType dataType);
 
 	private:
-		void CompileSubShader(uint32_t subShader, const std::string& source);
-		void LinkSubShaders();
+		void CompileShader(const ShaderData& shaderData);
+		void LinkShaders();
 
+		GLenum GetShaderTypeFromString(const std::string& type);
 		int32_t GetUniformLocation(const std::string& name);
-
-	private:
-		std::string m_Name;
-
-		uint32_t m_VertexShader;
-		uint32_t m_PixelShader;
-		uint32_t m_GeoShader;
 		
+	private:
 		uint32_t m_RendererID;
 
+		std::string m_Name;
+		std::unordered_map<GLenum, ShaderData> m_Shaders;
 		std::unordered_map<std::string, int32_t> m_UniformLocations;
 	};
 }

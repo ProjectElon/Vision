@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "Vision/Renderer/OpenGL/OpenGLBuffers.h"
-#include "Vision/Renderer/Shader.h"
+#include "Vision/Renderer/OpenGL/OpenGLShader.h"
 #include <glad/glad.h>
 
 namespace Vision
@@ -12,6 +12,7 @@ namespace Vision
 		uint32_t typeSize = Shader::GetDataTypeSize(props.DataType);
 		m_SizeInBytes = props.SizeInBytes;
 		m_Count = props.SizeInBytes / typeSize;
+		m_DataType = props.DataType;
 
 		glCreateVertexArrays(1, &m_VAO);
 		glBindVertexArray(m_VAO);
@@ -55,11 +56,12 @@ namespace Vision
 		for (uint32_t i = 0; i < attributes.size(); ++i)
 		{
 			uint32_t componentCount = Shader::GetComponentCount(attributes[i].Type);
-			
+			GLenum glType = OpenGLShader::GetGLTypeFromShaderType(attributes[i].Type);
+
 			glEnableVertexAttribArray(i);
 			glVertexAttribPointer(i,
 				componentCount,
-				GL_FLOAT,
+				glType,
 				attributes[i].Normalized,
 				layout.GetStride(),
 				(const void*)offset
@@ -94,6 +96,7 @@ namespace Vision
 		uint32_t typeSize = Shader::GetDataTypeSize(props.DataType);
 		m_SizeInBytes = props.SizeInBytes;
 		m_Count = props.SizeInBytes / typeSize;
+		m_DataType = props.DataType;
 
 		glCreateBuffers(1, &m_IBO);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_IBO);

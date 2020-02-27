@@ -9,75 +9,76 @@
 
 namespace Vision
 {
-	OpenGLTexture::OpenGLTexture(glm::vec4* colors, uint32_t width, uint32_t height, const TextureProps& props)
-		: m_Props(props)
+	OpenGLTexture::OpenGLTexture(uint32_t width, uint32_t height, const TextureProps& props)
+		: m_RendererID(0)
+		, m_Width(width)
+		, m_Height(height)
+		, m_Props(props)
 	{
-		glGenTextures(1, &m_RendererID);
-		glBindTexture(GL_TEXTURE_2D, m_RendererID);
+		m_InternalFormat = GL_RGBA8;
+		m_TextureFormat = GL_RGBA;
+
+		glCreateTextures(GL_TEXTURE_2D, 1, &m_RendererID);
+		glTextureStorage2D(m_RendererID, 1, m_InternalFormat, m_Width, m_Height);
+		glGenerateMipmap(GL_TEXTURE_2D);
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GetWrapModeOpenGL(props.WrapX));
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GetWrapModeOpenGL(props.WrapY));
-
 		glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, &props.BorderColor.r);
 
 		ApplyFilter(props.Filter);
-
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_FLOAT, colors);
-		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 
 	OpenGLTexture::OpenGLTexture(const std::string& path, const TextureProps& props)
 		: m_Props(props)
 	{
-		size_t lastSlash = path.find_last_of('/');
-		std::string name = path.substr(lastSlash + 1);
-
-		glGenTextures(1, &m_RendererID);
-		glBindTexture(GL_TEXTURE_2D, m_RendererID);
-
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GetWrapModeOpenGL(props.WrapX));
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GetWrapModeOpenGL(props.WrapY));
-
-		glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, &props.BorderColor.r);
-
-		ApplyFilter(props.Filter);
-
+		size_t lastSlash = path.find_last_of("/\\");
+		m_Name = path.substr(lastSlash + 1);
+		
 		int width, height;
 		int channelCount;
 
 		stbi_set_flip_vertically_on_load(true);
-		uint8_t* imageData = stbi_load(path.c_str(), &width, &height, &channelCount, 0);
+		uint8_t* data = stbi_load(path.c_str(), &width, &height, &channelCount, 0);
 
-		if (imageData)
+		if (data)
 		{
 			m_Width = width;
 			m_Height = height;
 			
-			uint32_t format = 0;
-
 			if (channelCount == 1)
 			{
-				format = GL_RED;
+				m_InternalFormat = GL_R8;
+				m_TextureFormat = GL_RED;
 			}
 			else if (channelCount == 3)
 			{
-				format = GL_RGB;
+				m_InternalFormat = GL_RGB8;
+				m_TextureFormat = GL_RGB;
 			}
 			else if (channelCount == 4)
 			{
-				format = GL_RGBA;
+				m_InternalFormat = GL_RGBA8;
+				m_TextureFormat = GL_RGBA;
 			}
 
-			glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, imageData);
+			glCreateTextures(GL_TEXTURE_2D, 1, &m_RendererID);
+			glTextureStorage2D(m_RendererID, 1, m_InternalFormat, m_Width, m_Height);
+			glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, m_TextureFormat, GL_UNSIGNED_BYTE, data);
 			glGenerateMipmap(GL_TEXTURE_2D);
 
-			stbi_image_free(imageData);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GetWrapModeOpenGL(props.WrapX));
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GetWrapModeOpenGL(props.WrapY));
+			glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, &props.BorderColor.r);
+			ApplyFilter(props.Filter);
+
+			stbi_image_free(data);
 			
-			VN_CORE_TRACE("[TEXTURE]({0}) : Loaded Successfully", name);
+			VN_CORE_TRACE("[TEXTURE]({0}) Loaded Successfully", m_Name);
 		}
 		else
 		{
-			VN_CORE_ERROR("[TEXTURE]({0}) : Failed To Load", name);
+			VN_CORE_ERROR("[TEXTURE]({0}) Failed To Load", m_Name);
 		}
 	}
 
@@ -132,13 +133,19 @@ namespace Vision
 
 	void OpenGLTexture::Bind(uint32_t slot)
 	{
-		glActiveTexture(GL_TEXTURE0 + slot);
-		glBindTexture(GL_TEXTURE_2D, m_RendererID);
+		glBindTextureUnit(slot, m_RendererID);
 	}
 
 	void OpenGLTexture::UnBind()
 	{
 		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+
+	void OpenGLTexture::SetData(void* data, uint32_t sizeInBytes)
+	{
+		uint32_t bytesPerPixel = (m_TextureFormat == GL_RGBA) ? 4 : 3;
+		VN_CORE_ASSERT(bytesPerPixel * m_Width * m_Height == sizeInBytes, "data must have the same size as the texture");
+		glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, m_TextureFormat, GL_UNSIGNED_BYTE, data);
 	}
 
 	uint32_t OpenGLTexture::GetWrapModeOpenGL(WrapMode wrapMode)

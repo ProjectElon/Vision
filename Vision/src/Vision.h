@@ -27,6 +27,7 @@
 #include "Vision/Renderer/GraphicsContext.h"
 #include "Vision/Renderer/RenderCommand.h"
 #include "Vision/Renderer/Renderer.h"
+#include "Vision/Renderer/Renderer2D.h"
 #include "Vision/Renderer/Buffers.h"
 #include "Vision/Renderer/VertexLayout.h"
 #include "Vision/Renderer/Texture.h"
@@ -36,11 +37,6 @@
 #include "Vision/Renderer/OrthographicCameraController.h"
 /*--------------------------------*/
 
-/*----------  ImGui  ----------*/
-#include <imgui/imgui.h>
-/*--------------------------------*/
-
-/*----------  GLM  ----------*/
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+/*---------- Utils ----------*/
+#include "Vision/Utils/StringUtils.h"
 /*--------------------------------*/

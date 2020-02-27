@@ -10,7 +10,7 @@ namespace Vision
 	Scope<Timer> Timer::Create()
 	{
 	#ifdef VN_PLATFORM_DESKTOP
-		return MakeScope<DesktopTimer>();
+		return CreateScope<DesktopTimer>();
 	#endif
 	}
 }

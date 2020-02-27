@@ -1,5 +1,6 @@
 #include "pch.h"
-#include "OpenGLRendererAPI.h"
+#include "Vision/Renderer/OpenGL/OpenGLRendererAPI.h"
+#include "Vision/Renderer/OpenGL/OpenGLShader.h"
 
 #include <glad/glad.h>
 
@@ -79,9 +80,9 @@ namespace Vision
 	#endif
 	}
 
-	void OpenGLRendererAPI::OnWindowResize(uint32_t width, uint32_t height) const
+	void OpenGLRendererAPI::SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height) const
 	{
-		glViewport(0, 0, width, height);
+		glViewport(x, y, width, height);
 	}
 
 	void OpenGLRendererAPI::SetClearColor(const glm::vec4& color) const 
@@ -111,11 +112,8 @@ namespace Vision
 		glClear(glFlags);
 	}
 
-	void OpenGLRendererAPI::DrawIndexed(const Ref<VertexBuffer>& vertexBuffer, const Ref<IndexBuffer>& indexBuffer, Primitive primitive) const
+	void OpenGLRendererAPI::DrawIndexed(const Ref<VertexBuffer>& vertexBuffer, const Ref<IndexBuffer>& indexBuffer, uint32_t count, Primitive primitive) const
 	{
-		vertexBuffer->Bind();
-		indexBuffer->Bind();
-
 		uint32_t glPrimitive = 0;
 
 		switch (primitive)
@@ -127,9 +125,7 @@ namespace Vision
 			case Primitive::Triangles: { glPrimitive = GL_TRIANGLES;  } break;
 		}
 
-		glDrawElements(glPrimitive, indexBuffer->GetIndexCount(), GL_UNSIGNED_INT, (const void*)0);
-
-		indexBuffer->UnBind();
-		vertexBuffer->UnBind();
+		GLenum glType = OpenGLShader::GetGLTypeFromShaderType(indexBuffer->GetDataType());
+		glDrawElements(glPrimitive, count, glType, (const void*)0);
 	}
 }

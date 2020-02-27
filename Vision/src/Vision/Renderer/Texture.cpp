@@ -8,13 +8,13 @@
 
 namespace Vision
 {
-	Ref<Texture> Texture::Create(glm::vec4* colors, uint32_t width, uint32_t height, const TextureProps& props)
+	Ref<Texture> Texture::Create(uint32_t width, uint32_t height, const TextureProps& props)
 	{
 		switch (Renderer::GetAPI())
 		{
 			case Renderer::API::OpenGL:
 			{
-				return MakeRef<OpenGLTexture>(colors, width, height, props);
+				return CreateRef<OpenGLTexture>(width, height, props);
 			}
 			break;
 		}
@@ -26,7 +26,7 @@ namespace Vision
 		{
 			case Renderer::API::OpenGL:
 			{
-				return MakeRef<OpenGLTexture>(path, props);
+				return CreateRef<OpenGLTexture>(path, props);
 			}
 			break;
 		}
