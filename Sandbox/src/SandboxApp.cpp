@@ -1,16 +1,11 @@
 #include "SandboxApp.h"
 #include "GameLayer.h"
 
-Sandbox::Sandbox()
+SandboxApplication::SandboxApplication()
 {
 	PushLayer(new GameLayer);
 }
 
-Sandbox::~Sandbox()
+SandboxApplication::~SandboxApplication()
 {
-}
-
-Vision::Application* Vision::CreateApplication()
-{
-	return new Sandbox();
 }

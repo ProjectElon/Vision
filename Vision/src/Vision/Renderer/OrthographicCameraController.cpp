@@ -18,14 +18,13 @@ namespace Vision
 	void OrthographicCameraController::OnEvent(Event& e)
 	{
 		EventDispatcher dispatcher(e);
-		
 		dispatcher.Dispatch<WindowResizeEvent>(VN_BIND_EVENT_FN(OrthographicCameraController::OnWindowResize));
 		dispatcher.Dispatch<MouseWheelScrolledEvent>(VN_BIND_EVENT_FN(OrthographicCameraController::OnMouseWheelScrolled));
 	}
 
 	void OrthographicCameraController::OnUpdate(float dt)
 	{
-		m_CameraMovementSpeed = m_ZoomLevel;
+		m_CameraMovementSpeed = 1.5f * m_ZoomLevel;
 
 		glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), glm::radians(m_CameraRotation), glm::vec3(0.0f, 0.0f, 1.0f));
 		glm::vec3 up = rotation * glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
@@ -81,11 +80,9 @@ namespace Vision
 
 	void OrthographicCameraController::OnImGuiRender()
 	{
-		ImGui::Begin("Orthographic Camera Controls");
-		
+		ImGui::Begin("Camera Controls");
 		ImGui::Checkbox("Rotation", &m_Rotation);
 		ImGui::SliderFloat("Rotation Speed", &m_CameraRotationSpeed, 0.0f, 360.0f);
-
 		ImGui::End();
 	}
 
@@ -102,7 +99,7 @@ namespace Vision
 		m_ZoomLevel -= e.GetYOffset() * 0.25f;
 		m_ZoomLevel = std::max(m_ZoomLevel, 0.25f);
 		m_Camera.SetProjection(-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel);
-		
+
 		return false;
 	}
 }

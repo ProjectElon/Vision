@@ -1,10 +1,10 @@
 #include "pch.h"
-#include "Vision/Renderer/Buffers.h"
+#include "Vision/Renderer/VertexBuffer.h"
 #include "Vision/Renderer/Renderer.h"
 
 #ifdef VN_PLATFORM_DESKTOP
-	#include "Vision/Renderer/OpenGL/OpenGLBuffers.h"
-#endif
+	#include "Vision/Renderer/OpenGL/OpenGLVertexBuffer.h"
+#endif 
 
 namespace Vision
 {
@@ -15,18 +15,6 @@ namespace Vision
 			case Renderer::API::OpenGL:
 			{
 				return CreateRef<OpenGLVertexBuffer>(props);
-			}
-			break;
-		}
-	}
-
-	Ref<IndexBuffer> IndexBuffer::Create(const BufferProps& props)
-	{
-		switch (Renderer::GetAPI())
-		{
-			case Renderer::API::OpenGL:
-			{
-				return CreateRef<OpenGLIndexBuffer>(props);
 			}
 			break;
 		}

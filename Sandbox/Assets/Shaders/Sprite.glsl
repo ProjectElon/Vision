@@ -1,34 +1,50 @@
 #type vertex
-	
-	#version 410 core
 
-	layout (location = 0) in vec3 Position;
-	layout (location = 1) in vec2 TexCoord;
+    #version 410 core
 
-	out vec2 _TexCoord;
+    layout (location = 0) in vec3 a_Position;
+    layout (location = 1) in vec4 a_Color;
+    layout (location = 2) in vec2 a_TextureCoord;
+    layout (location = 3) in float a_TextureIndex;
+    
+    out VertexOutput
+    {
+        vec4  Color;
+        vec2  TextureCoord;
+        float TextureIndex;
+    }
+    vertexOuput;
 
-	/* uniforms */
-	uniform mat4 u_Transform;
-	uniform mat4 u_ViewProj;
+    uniform mat4 u_ViewProj;
+    // uniform vec3 u_CameraPosition;
 
-	void main()
-	{
-		_TexCoord = TexCoord;
-		gl_Position = u_ViewProj * u_Transform * vec4(Position, 1.0f);
-	}
+    void main()
+    {
+        vertexOuput.Color = a_Color;
+        vertexOuput.TextureCoord = a_TextureCoord;
+        vertexOuput.TextureIndex = a_TextureIndex;
 
-#type pixel
+        gl_Position = u_ViewProj * vec4(a_Position, 1.0f);
+    }
 
-	#version 410 core
+#type fragment
 
-	in vec2 _TexCoord;
-	out vec4 _Color;
+    #version 410 core
 
-	/* uniforms */
-	uniform vec4 u_TintColor;
-	uniform sampler2D u_MainTex;
+    layout (location = 0) out vec4 color;
 
-	void main()
-	{
-		_Color = texture(u_MainTex, _TexCoord) * u_TintColor;
-	}
+    in VertexOutput
+    {
+        vec4  Color;
+        vec2  TextureCoord;
+        float TextureIndex;
+    }
+    fragmentInput;
+    
+    uniform sampler2D u_Textures[gl_MaxTextureImageUnits];
+
+    void main()
+    {
+        int textureIndex = int(fragmentInput.TextureIndex);
+        color = texture(u_Textures[textureIndex], fragmentInput.TextureCoord) * fragmentInput.Color;
+    }

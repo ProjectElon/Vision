@@ -2,6 +2,17 @@
 
 #include <Vision.h>
 
+// temparary for testing 
+struct Entity
+{
+	std::string Name;
+	glm::vec3 Position = { 0.0f, 0.0f, 0.0f };
+	float Rotation = 0.0f;
+	glm::vec2 Scale = { 1.0f, 1.0f };
+	Vision::Ref<Vision::Sprite> Sprite; // Should be by default a pink textures
+	int DrawOrder = 0;
+};
+
 class GameLayer : public Vision::Layer
 {
 public:
@@ -10,28 +21,21 @@ public:
 	virtual void OnAttach() override;
 	virtual void OnDetach() override;
 
-	virtual void OnEnable() override;
-	virtual void OnDisable() override;
-
 	virtual void OnUpdate(float dt) override;
 	virtual void OnImGuiRender() override;
 	virtual void OnEvent(Vision::Event& e) override;
 
 private:
-	Vision::Ref<Vision::Shader> m_SpriteShader;
-	Vision::Ref<Vision::Shader> m_BatchedSpriteShader;
-
-	Vision::Ref<Vision::Texture> m_Brick;
-	Vision::Ref<Vision::Texture> m_Wall;
-
 	Vision::Scope<Vision::OrthographicCameraController> m_CameraController;
 
-	glm::vec4 m_TintColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	glm::vec4 m_ClearColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	Vision::Ref<Vision::Shader> m_SpriteShader;
 	
-	float m_TileOffset = 1.5f;
-	float m_TileSize = 1.5f;
+	Vision::Ref<Vision::Sprite> m_CheckerboardSprite;
+	Vision::Ref<Vision::Sprite> m_DirtSprite;
+	Vision::Ref<Vision::Sprite> m_WoodSprite;
 
-	int m_Rows = 10;
-	int m_Cols = 10;
+	glm::vec4 m_ClearColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	glm::vec4 m_WhiteColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+	
+	std::vector<Entity*> m_Entities;
 };

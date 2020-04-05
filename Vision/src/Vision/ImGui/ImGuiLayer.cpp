@@ -24,8 +24,7 @@ namespace Vision
 	{
 		Application& app = Application::Get();
 		m_Window = &app.GetWindow();
-		m_Window->SetVSync(m_VSyncSelected);
-
+		
 		if (m_Window->GetMode() == WindowMode::Windowed)
 		{
 			m_CurrentWindowModeSelected = m_PreviousWindowModeSelected = 0;
@@ -65,7 +64,8 @@ namespace Vision
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-		ImGui::StyleColorsDark();
+
+		ImGui::StyleColorsClassic();
 
 		ImGuiStyle& style = ImGui::GetStyle();
 		
@@ -75,7 +75,7 @@ namespace Vision
 			style.Colors[ImGuiCol_WindowBg].w = 1.0f;
 		}
 
-		GLFWwindow* window = static_cast<GLFWwindow*>(m_Window->GetNativeWindowHandle());
+		GLFWwindow* window = (GLFWwindow*)m_Window->GetNativeWindowHandle();
 
 		ImGui_ImplGlfw_InitForOpenGL(window, true);
 		ImGui_ImplOpenGL3_Init("#version 410");
@@ -99,8 +99,10 @@ namespace Vision
 	{
 		ImGuiIO& io = ImGui::GetIO();
 
-		Application& app = Application::Get();
-		io.DisplaySize = ImVec2((float)app.GetWindow().GetWidth(), (float)app.GetWindow().GetHeight());
+		auto& app = Application::Get();
+		auto& window = app.GetWindow();
+
+		io.DisplaySize = ImVec2((float)window.GetWidth(), (float)window.GetHeight());
 
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

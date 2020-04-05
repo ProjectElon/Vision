@@ -39,7 +39,7 @@ namespace Vision
 		glfwWindowHint(GLFW_STENCIL_BITS, (int)props.StencilBits);
 		glfwWindowHint(GLFW_SAMPLES,      (int)props.Samples);
 		glfwWindowHint(GLFW_DOUBLEBUFFER, (int)props.BufferCount == 2);
-
+		
 		glfwWindowHint(GLFW_AUTO_ICONIFY, GLFW_FALSE);
 
 #ifndef VN_DIST
@@ -58,7 +58,8 @@ namespace Vision
 		{
 			case WindowMode::Windowed:
 			{
-				m_WindowHandle = glfwCreateWindow((int)props.Width, (int)props.Height, title, nullptr, nullptr);
+				m_WindowHandle = 
+					glfwCreateWindow((int)props.Width, (int)props.Height, title, nullptr, nullptr);
 				
 				int centerX = montiorX + (monitorWidth - props.Width) / 2;
 				int centerY = montiorY + (monitorHeight - props.Height) / 2;
@@ -328,13 +329,13 @@ namespace Vision
 
 		for (int i = 0; i < count; i++)
 		{
-			VideoMode current;
+			VideoMode currentVideoMode;
 			
-			current.Width = modes[i].width;
-			current.Height = modes[i].height;
-			current.RefreshRate = modes[i].refreshRate;
+			currentVideoMode.Width = modes[i].width;
+			currentVideoMode.Height = modes[i].height;
+			currentVideoMode.RefreshRate = modes[i].refreshRate;
 
-			videoModes.emplace_back(current);
+			videoModes.emplace_back(currentVideoMode);
 		}
 
 		std::reverse(videoModes.begin(), videoModes.end());

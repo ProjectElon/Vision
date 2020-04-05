@@ -22,19 +22,36 @@ namespace Vision
 
 	struct WindowProps
 	{
-		std::string Title = "Vision Engine";
-		uint32_t Width = 1280;
-		uint32_t Height = 720;
-		bool VSync = false;
-		WindowMode Mode = WindowMode::Windowed;
-		uint32_t RedBits = 8;
-		uint32_t GreenBits = 8;
-		uint32_t BlueBits = 8;
-		uint32_t AlphaBits = 8;
-		uint32_t DepthBits = 24;
-		uint32_t StencilBits = 8;
-		uint32_t Samples = 0;
-		uint32_t BufferCount = 2;
+		std::string Title;
+		uint32_t Width;
+		uint32_t Height;
+		bool VSync;
+		WindowMode Mode;
+		uint32_t RedBits;
+		uint32_t GreenBits;
+		uint32_t BlueBits;
+		uint32_t AlphaBits;
+		uint32_t DepthBits;
+		uint32_t StencilBits;
+		uint32_t Samples;
+		uint32_t BufferCount;
+
+		WindowProps()
+			: Title("Vision Engine")
+			, Width(1280)
+			, Height(720)
+			, VSync(false)
+			, Mode(WindowMode::Windowed)
+			, RedBits(8)
+			, GreenBits(8)
+			, BlueBits(8)
+			, AlphaBits(8)
+			, DepthBits(24)
+			, StencilBits(8)
+			, Samples(4)
+			, BufferCount(2)
+		{
+		}
 	};
 
 	using EventCallbackFn = std::function<void(Event&)>;

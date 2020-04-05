@@ -9,7 +9,7 @@ namespace Vision
 	class OrthographicCameraController
 	{
 	public:
-		OrthographicCameraController(float aspectRatio, float zoomLevel = 10.0f, bool rotation = false);
+		OrthographicCameraController(float aspectRatio, float zoomLevel = 1.0f, bool rotation = false);
 
 		void OnEvent(Event& e);
 		void OnUpdate(float dt);
@@ -26,10 +26,10 @@ namespace Vision
 
 		OrthographicCamera m_Camera;
 
-		float m_CameraMovementSpeed;
+		float m_CameraMovementSpeed = 1.5f;
 		float m_CameraRotationSpeed = 10.0f;
 
-		glm::vec3 m_CameraPosition = glm::vec3(0.0f);
+		glm::vec3 m_CameraPosition = { 0.0f, 0.0f, 0.0f };
 		float m_CameraRotation = 0.0f;
 
 	private:

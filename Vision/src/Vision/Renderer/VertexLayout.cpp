@@ -5,12 +5,19 @@ namespace Vision
 {
 	VertexLayout::VertexLayout(const std::vector<VertexAttribute>& attributes)
 		: m_Attributes(attributes)
-		, m_Stride(0)
 	{
+	}
+
+	uint32_t VertexLayout::CalculateVertexSize() const
+	{
+		uint32_t vertexSize = 0;
+
 		for (const auto& attribute : m_Attributes)
-		{		
-			m_Stride += Shader::GetDataTypeSize(attribute.Type);
+		{
+			vertexSize += API::GetDataTypeSize(attribute.Type);
 		}
+
+		return vertexSize;
 	}
 
 	VertexLayout::~VertexLayout()

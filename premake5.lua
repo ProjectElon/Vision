@@ -139,7 +139,7 @@ project ("Sandbox")
 	{
 		"%{prj.name}/src",
 		"Vision/src",
-		"ThirdParty",
+		"%{includedir.ImGui}",
 		"%{includedir.spdlog}",
 		"%{includedir.glm}"
 	}

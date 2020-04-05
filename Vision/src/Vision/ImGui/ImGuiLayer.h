@@ -31,7 +31,7 @@ namespace Vision
 		int m_CurrentWindowSizeSelected;
 		int m_PreviousWindowSizeSelected;
 
-		bool m_PreviousVSyncSelected = true;
-		bool m_VSyncSelected = true;
+		bool m_PreviousVSyncSelected = false;
+		bool m_VSyncSelected = false;
 	};
 }

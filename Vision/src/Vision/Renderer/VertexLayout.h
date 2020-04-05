@@ -1,13 +1,13 @@
 #pragma once
 
 #include "pch.h"
-#include "Vision/Renderer/Shader.h"
+#include "Vision/Renderer/APIDefs.h"
 
 namespace Vision
 {
 	struct VertexAttribute
 	{
-		Shader::DataType Type;
+		API::DataType Type;
 		const char* Name;
 		bool Normalized = false;
 	};
@@ -20,10 +20,9 @@ namespace Vision
 		
 		inline const std::vector<VertexAttribute>& GetAttributes() const { return m_Attributes; }
 		
-		inline uint32_t GetStride() const { return m_Stride; }
+		uint32_t CalculateVertexSize() const;
 
 	private:
 		std::vector<VertexAttribute> m_Attributes;
-		uint32_t m_Stride;
 	};
 }

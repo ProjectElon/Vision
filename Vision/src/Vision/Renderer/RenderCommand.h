@@ -22,9 +22,9 @@ namespace Vision
 			Renderer::GetRendererAPI().SetViewport(x, y, width, height);
 		}
 
-		inline static void DrawIndexed(const Ref<VertexBuffer>& vertexBuffer, const Ref<IndexBuffer>& indexBuffer, uint32_t count, Primitive primitive = Primitive::Triangles)
+		inline static void DrawIndexed(const Ref<VertexBuffer>& vertexBuffer, const Ref<IndexBuffer>& indexBuffer, uint32_t indexCount)
 		{
-			Renderer::GetRendererAPI().DrawIndexed(vertexBuffer, indexBuffer, count, primitive);
+			Renderer::GetRendererAPI().DrawIndexed(vertexBuffer, indexBuffer, indexCount);
 		}
 	};
 }

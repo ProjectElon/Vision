@@ -2,9 +2,11 @@
 
 #include <Vision.h>
 
-class Sandbox : public Vision::Application
+class SandboxApplication : public Vision::Application
 {
 public:
-	Sandbox();
-	~Sandbox();
+	SandboxApplication();
+	~SandboxApplication();
 };
+
+RegisterEntryPointClass(SandboxApplication)

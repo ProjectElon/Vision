@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Vision/Renderer/Shader.h"
+#include "Vision/Renderer/RendererAPI.h"
 
 #include <map>
 
@@ -17,7 +18,7 @@ namespace Vision
 	class OpenGLShader : public Shader
 	{
 	public:
-		OpenGLShader(const std::string& path);
+		OpenGLShader(const std::string& filepath);
 		~OpenGLShader();
 
 		void Bind() const override;
@@ -26,6 +27,7 @@ namespace Vision
 		inline const std::string& GetName() const { return m_Name; }
 
 		void SetInt(const std::string& name, int32_t value) override;
+		void SetIntArray(const std::string& name, int32_t* values, uint32_t count) override;
 
 		void SetFloat(const std::string& name, float value) override;
 		void SetFloat2(const std::string& name, const glm::vec2& vec2) override;
@@ -34,9 +36,6 @@ namespace Vision
 
 		void SetMatrix3(const std::string& name, const glm::mat3& mat3) override;
 		void SetMatrix4(const std::string& name, const glm::mat4& mat4) override;
-
-	public:
-		static GLenum GetGLTypeFromShaderType(Shader::DataType dataType);
 
 	private:
 		void CompileShader(const ShaderData& shaderData);

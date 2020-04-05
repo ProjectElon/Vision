@@ -13,7 +13,6 @@ namespace Vision
 	{
 		for (Layer* layer : m_Layers)
 		{
-			layer->Disable();
 			layer->OnDetach();
 			delete layer;
 		}
@@ -57,7 +56,6 @@ namespace Vision
 		
 		if (it != begin() + m_LayerInsertIndex)
 		{
-			layer->Disable();
 			layer->OnDetach();
 			m_Layers.erase(it);
 			m_LayerInsertIndex--;
@@ -75,7 +73,6 @@ namespace Vision
 		
 		if (it != end())
 		{
-			overlay->Disable();
 			overlay->OnDetach();
 			m_Layers.erase(it);
 		}

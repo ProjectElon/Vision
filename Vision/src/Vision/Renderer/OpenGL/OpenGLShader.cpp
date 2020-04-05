@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "Vision/Core/Log.h"
 #include "Vision/Renderer/OpenGL/OpenGLShader.h"
-#include "Vision/Utils/StringUtils.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -10,22 +9,22 @@
 
 namespace Vision
 {
-	OpenGLShader::OpenGLShader(const std::string& filePath)
+	OpenGLShader::OpenGLShader(const std::string& filepath)
 		: m_RendererID(0)
 	{
-		size_t lastSlash = filePath.find_last_of("/\\");
-		size_t lastDot = filePath.rfind('.');
+		size_t lastSlash = filepath.find_last_of("/\\");
+		size_t lastDot = filepath.rfind('.');
 
 		size_t start = (lastSlash == std::string::npos) ? 0 : lastSlash + 1;
-		size_t count = (lastDot == std::string::npos) ? filePath.length() - start : lastDot - start;
+		size_t count = (lastDot == std::string::npos) ? filepath.length() - start : lastDot - start;
 
-		m_Name = filePath.substr(start, count);
+		m_Name = filepath.substr(start, count);
 
-		std::ifstream ifs(filePath, std::ios::in | std::ios::binary);
+		std::ifstream ifs(filepath, std::ios::in | std::ios::binary);
 
 		if (!ifs.is_open())
 		{
-			VN_CORE_ERROR("[SHADER]({0}) Unable to open file : {1}", m_Name, filePath);
+			VN_CORE_ERROR("[SHADER]({0}) Unable to open file : {1}", m_Name, filepath);
 			return;
 		}
 
@@ -34,16 +33,20 @@ namespace Vision
 
 		while (std::getline(ifs, line))
 		{
-			StringUtils::Trim(line);
+			line.erase(0, line.find_first_not_of(" \t\n\r"));
+			line.erase(line.find_last_not_of(" \t\n\r") + 1);
 
 			if (line.empty())
 			{
 				continue;
 			}
-			else if (line.front() == '#' && StringUtils::StartsWith(line, "#type"))
+			else if (line.front() == '#' && line.find("#type") == 0)
 			{
 				std::string typeSignature = line.substr(5);
-				StringUtils::Trim(typeSignature);
+				
+				typeSignature.erase(0, typeSignature.find_first_not_of(" \t\n"));
+				typeSignature.erase(typeSignature.find_last_not_of(" \t\n") + 1);
+
 				currentShaderType = GetShaderTypeFromString(typeSignature);
 			}
 			else 
@@ -89,6 +92,11 @@ namespace Vision
 	void OpenGLShader::SetInt(const std::string& name, int32_t value)
 	{
 		glUniform1i(GetUniformLocation(name), value);
+	}
+
+	void OpenGLShader::SetIntArray(const std::string& name, int32_t* values, uint32_t count)
+	{
+		glUniform1iv(GetUniformLocation(name), count, values);
 	}
 
 	void OpenGLShader::SetFloat(const std::string& name, float value)
@@ -182,6 +190,8 @@ namespace Vision
 		}
 
 		VN_CORE_ASSERT(false, "[SHADER]({0}) Type {1} is not supported", m_Name, type);
+		
+		return GL_NONE;
 	}
 
 	int32_t OpenGLShader::GetUniformLocation(const std::string& name)
@@ -206,37 +216,6 @@ namespace Vision
 		else
 		{
 			return it->second;
-		}
-	}
-
-	GLenum OpenGLShader::GetGLTypeFromShaderType(Shader::DataType dataType)
-	{
-		switch (dataType)
-		{
-			case DataType::Bool:  { return GL_BOOL;          } break;
-			case DataType::Byte:  { return GL_BYTE;          } break;
-			case DataType::UByte: { return GL_UNSIGNED_BYTE; } break;
-
-			case DataType::Short:  { return GL_SHORT;          } break;
-			case DataType::UShort: { return GL_UNSIGNED_SHORT; } break;
-
-			case DataType::Int:  { return GL_INT; } break;
-			case DataType::Int2: { return GL_INT; } break;
-			case DataType::Int3: { return GL_INT; } break;
-			case DataType::Int4: { return GL_INT; } break;
-			
-			case DataType::UInt:  { return GL_UNSIGNED_INT; } break;
-			case DataType::UInt2: { return GL_UNSIGNED_INT; } break;
-			case DataType::UInt3: { return GL_UNSIGNED_INT; } break;
-			case DataType::UInt4: { return GL_UNSIGNED_INT; } break;
-
-			case DataType::Float:  { return GL_FLOAT; } break;
-			case DataType::Float2: { return GL_FLOAT; } break;
-			case DataType::Float3: { return GL_FLOAT; } break;
-			case DataType::Float4: { return GL_FLOAT; } break;
-
-			case DataType::Matrix3: { return GL_FLOAT; } break;
-			case DataType::Matrix4: { return GL_FLOAT; } break;
 		}
 	}
 }

@@ -2,10 +2,9 @@
 #include "Vision/Renderer/Renderer.h"
 #include "Vision/Renderer/Renderer2D.h"
 
-#include "Vision/Renderer/OpenGL/OpenGLRendererAPI.h"
-#include "Vision/Renderer/RenderCommand.h"
-
-#include <glm/gtc/matrix_transform.hpp>
+#ifdef VN_PLATFORM_DESKTOP
+	#include "Vision/Renderer/OpenGL/OpenGLRendererAPI.h"
+#endif
 
 namespace Vision
 {

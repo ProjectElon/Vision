@@ -1,8 +1,8 @@
 #include "GameLayer.h"
-#include <imgui/imgui.h>
+#include "imgui.h"
 
 GameLayer::GameLayer()
-	: Layer("Game")
+	: Layer("Game2D")
 {
 	auto& window = Vision::Application::Get().GetWindow();
 	float aspectRatio = (float)window.GetWidth() / (float)window.GetHeight();
@@ -11,47 +11,74 @@ GameLayer::GameLayer()
 
 void GameLayer::OnAttach()
 {
-	using namespace Vision;
+	m_SpriteShader = Vision::Shader::CreateFromFile("Assets/Shaders/Sprite.glsl");
 
-	m_SpriteShader = Shader::CreateFromFile("Assets/Shaders/Sprite.glsl");
-	m_BatchedSpriteShader = Shader::CreateFromFile("Assets/Shaders/BatchedSprite.glsl");
-	m_Brick = Texture::CreateFromFile("Assets/Textures/brick.png");
-	m_Wall = Texture::CreateFromFile("Assets/Textures/wall.jpg");
+	Vision::TextureProps props;
+	props.WrapX = Vision::WrapMode::Repeat;
+	props.WrapY = Vision::WrapMode::Repeat;
+	props.Filter = Vision::FilterMode::Point;
+
+	m_CheckerboardSprite = Vision::CreateRef<Vision::Sprite>("Checkerboard", 
+		Vision::Texture2D::CreateFromFile("Assets/Textures/Checkerboard.png", props));
+	
+	m_CheckerboardSprite->TopRightUV = glm::vec2(100.0f, 100.0f);
+
+	m_DirtSprite = Vision::CreateRef<Vision::Sprite>("Dirt Sprite", 
+		Vision::Texture2D::CreateFromFile("Assets/Textures/dirt.png", props));
+
+	m_WoodSprite = Vision::CreateRef<Vision::Sprite>("Wood Sprite",
+		Vision::Texture2D::CreateFromFile("Assets/Textures/wood.png", props));
+
+	Entity* checkerBoard = new Entity;
+	checkerBoard->Name = "CheckerBoard";
+	checkerBoard->Sprite = m_CheckerboardSprite;
+	checkerBoard->Scale = glm::vec2(500.0f, 500.0f);
+	checkerBoard->DrawOrder = -10;
+
+	Entity* e0 = new Entity;
+	e0->Name = "Dirt Tile";
+	e0->Sprite = m_DirtSprite;
+	e0->Position = { 1.0f, 0.0f, 0.0f };
+
+	Entity* e1 = new Entity; 
+	e1->Name = "Wood Tile";
+	e1->Sprite = m_WoodSprite;
+	e1->Position = { -1.0f, 0.0f, 0.0f };
+
+	m_Entities.push_back(checkerBoard);
+	m_Entities.push_back(e0);
+	m_Entities.push_back(e1);
 }
 
 void GameLayer::OnDetach()
 {
-}
-
-void GameLayer::OnEnable()
-{
-}
-
-void GameLayer::OnDisable()
-{
+	for (auto e : m_Entities)
+	{
+		delete e;
+	}
 }
 
 void GameLayer::OnUpdate(float dt)
 {
 	using namespace Vision;
 
-	RenderCommand::Clear(ClearColorBuffer | ClearDepthBuffer);
-
 	m_CameraController->OnUpdate(dt);
 
-	Renderer2D::BeginBatchedScene(m_BatchedSpriteShader, m_CameraController->GetCamera());
+	RenderCommand::Clear(API::ClearColorBufferBit | API::ClearDepthBufferBit);
 
-	for (int y = 0; y < m_Rows; ++y)
+	Renderer2D::BeginScene(m_CameraController->GetCamera(), m_SpriteShader);
+
+	std::sort(m_Entities.begin(), m_Entities.end(), [](Entity* e0, Entity* e1)
 	{
-		for (int x = 0; x < m_Cols; ++x)
-		{
-			float spacing = (m_TileOffset + m_TileSize);
-			glm::vec3 position(spacing * x, spacing * y, 0.0f);
-			Renderer2D::SubmitQuad(position, 0.0f, glm::vec2(m_TileSize, m_TileSize), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-		}
+		return e0->DrawOrder < e1->DrawOrder;
+	});
+
+	for (auto e : m_Entities)
+	{
+		Renderer2D::DrawSprite(e->Position, e->Rotation, e->Scale, e->Sprite);
 	}
 
-	Renderer2D::EndBatchedScene();
+	Renderer2D::EndScene();
 }
 
 void GameLayer::OnImGuiRender()
@@ -60,18 +87,55 @@ void GameLayer::OnImGuiRender()
 
 	m_CameraController->OnImGuiRender();
 
+	ImGui::Begin("Metrics");
+	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+	ImGui::End();
+	
 	ImGui::Begin("Graphics Settings");
-
 	ImGui::ColorPicker4("Clear Color", &m_ClearColor.r);
 	RenderCommand::SetClearColor(m_ClearColor);
+	ImGui::End();
 
-	ImGui::ColorPicker4("Tint Color", &m_TintColor.r);
-
-	ImGui::SliderFloat("Tile Offset", &m_TileOffset, 0.01f, 100.0f);
-	ImGui::SliderFloat("Tile Size", &m_TileSize, 0.01f, 100.0f);
+	ImGui::Begin("Entities");
 	
-	ImGui::SliderInt("Tile Rows", &m_Rows, 1, 100);
-	ImGui::SliderInt("Tile Cols", &m_Cols, 1, 100);
+	/* 
+		Note : you can't have two imgui widgets with the same label
+		so we have to add some stuff per entity (ImGui::Text doesn't need that)
+		can be solved by having an inspector window (editor)
+	*/
+
+	int index = 0;
+
+	for (auto e : m_Entities)
+	{
+		std::ostringstream ss;
+		ss << index;
+
+		std::string cur = ss.str() + " ";
+
+		std::string entityName = "Entity : " + e->Name + "\n";
+
+		ImGui::Text(entityName.c_str());
+
+		ImGui::InputFloat3((cur + "Position").c_str(), &e->Position.x);
+		ImGui::InputFloat((cur + "Rotation").c_str(), &e->Rotation);
+		ImGui::InputFloat2((cur + "Scale").c_str(), &e->Scale.x);
+
+		ImGui::Text("\n");
+
+		std::string spriteName = "Sprite : " + e->Sprite->GetName();
+		ImGui::Text(spriteName.c_str());
+		ImGui::ColorPicker4((cur + "Color").c_str(), &(e->Sprite->Color.r));
+		ImGui::InputFloat2((cur + "Bottom Left Point").c_str(), &(e->Sprite->BottomLeftUV.x));
+		ImGui::InputFloat2((cur + "Top Right Point").c_str(), &(e->Sprite->TopRightUV.x));
+		ImGui::Checkbox((cur + "Flip X").c_str(), &(e->Sprite->FlipX));
+		ImGui::Checkbox((cur + "Flip Y").c_str(), &(e->Sprite->FlipY));
+		ImGui::InputInt((cur + "Draw Order").c_str(), &(e->DrawOrder));
+
+		ImGui::Text("-----------------------------------------------\n\n");
+
+		++index;
+	}
 
 	ImGui::End();
 }

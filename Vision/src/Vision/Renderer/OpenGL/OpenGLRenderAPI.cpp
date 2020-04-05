@@ -1,71 +1,33 @@
 #include "pch.h"
 #include "Vision/Renderer/OpenGL/OpenGLRendererAPI.h"
 #include "Vision/Renderer/OpenGL/OpenGLShader.h"
+#include "Vision/Renderer/VertexBuffer.h"
+#include "Vision/Renderer/IndexBuffer.h"
 
 #include <glad/glad.h>
 
 namespace Vision
 {
+
+#ifdef VN_DEBUG
 	static void APIENTRY OpenGLDebugOutput(GLenum source,
-										   GLenum type,
-										   GLuint id,
-										   GLenum severity,
-										   GLsizei length,
-										   const GLchar* message,
-										   const void* userParam)
-	{
-		// ignore non-significant error/warning codes
-		if (id == 131169 || id == 131185 || id == 131218 || id == 131204)
-		{
-			return;
-		}
-
-		VN_CORE_ERROR("[OPENGL ERROR MESSAGE]({0}) : {1}", id, message);
-
-		const char* errorSource;
-
-		switch (source)
-		{
-			case GL_DEBUG_SOURCE_API:			  { errorSource = "API";             } break;
-			case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   { errorSource = "Window System";   } break;
-			case GL_DEBUG_SOURCE_SHADER_COMPILER: { errorSource = "Shader Compiler"; } break;
-			case GL_DEBUG_SOURCE_THIRD_PARTY:     { errorSource = "Third Party";     } break;
-			case GL_DEBUG_SOURCE_APPLICATION:     { errorSource = "Application";     } break;
-			case GL_DEBUG_SOURCE_OTHER:           { errorSource = "Other";           } break;
-		}
-
-		const char* errorType;
-
-		switch (type)
-		{
-			case GL_DEBUG_TYPE_ERROR:              { errorType = "Error";                 } break;
-			case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:{ errorType =  "Deprecated Behaviour"; } break;
-			case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: { errorType = "Undefined Behaviour";   } break;
-			case GL_DEBUG_TYPE_PORTABILITY:        { errorType = "Portability";           } break;
-			case GL_DEBUG_TYPE_PERFORMANCE:        { errorType = "Performance";           } break;
-			case GL_DEBUG_TYPE_MARKER:             { errorType = "Marker";                } break;
-			case GL_DEBUG_TYPE_PUSH_GROUP:         { errorType = "Push Group";            } break;
-			case GL_DEBUG_TYPE_POP_GROUP:          { errorType = "Pop Group";             } break;
-			case GL_DEBUG_TYPE_OTHER:              { errorType = "Other";                 } break;
-		}
-
-		const char* errorSeverity;
-
-		switch (severity)
-		{
-			case GL_DEBUG_SEVERITY_HIGH:		{ errorSeverity = "high";         } break;
-			case GL_DEBUG_SEVERITY_MEDIUM:      { errorSeverity = "medium";       } break;
-			case GL_DEBUG_SEVERITY_LOW:         { errorSeverity = "low";          } break;
-			case GL_DEBUG_SEVERITY_NOTIFICATION:{ errorSeverity = "notification"; } break;
-		}
-
-		VN_CORE_ERROR("[OPENGL] SOURCE : {0}\nTYPE : {1}\nSEVERITY : {2}", errorSource, errorType, errorSeverity);
-	}
+		GLenum type,
+		GLuint id,
+		GLenum severity,
+		GLsizei length,
+		const GLchar* message,
+		const void* userParam);
+#endif
 
 	OpenGLRendererAPI::OpenGLRendererAPI()
 	{
-	#ifndef VN_DIST
-		
+		// To Be Abstracted Later
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glDisable(GL_DEPTH_TEST);
+
+#ifdef VN_DEBUG
+
 		int32_t flags;
 		glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
 
@@ -77,7 +39,7 @@ namespace Vision
 			glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
 		}
 
-	#endif
+#endif
 	}
 
 	void OpenGLRendererAPI::SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height) const
@@ -92,40 +54,73 @@ namespace Vision
 
 	void OpenGLRendererAPI::Clear(uint32_t flags) const
 	{
-		uint32_t glFlags = 0;
+		uint32_t glClearFlags = 0;
+
+		if (flags & API::ClearColorBufferBit)
+		{
+			glClearFlags |= GL_COLOR_BUFFER_BIT;
+		}
 		
-		if (flags & ClearColorBuffer)
+		if (flags & API::ClearDepthBufferBit)
 		{
-			glFlags |= GL_COLOR_BUFFER_BIT;
+			glClearFlags |= GL_DEPTH_BUFFER_BIT;
 		}
 
-		if (flags & ClearDepthBuffer)
+		if (flags & API::ClearStencilBufferBit)
 		{
-			glFlags |= GL_DEPTH_BUFFER_BIT;
+			glClearFlags |= GL_STENCIL_BUFFER_BIT;
 		}
-
-		if (flags & ClearStencilBuffer)
-		{
-			glFlags |= GL_STENCIL_BUFFER_BIT;
-		}
-
-		glClear(glFlags);
+		
+		glClear(glClearFlags);
 	}
 
-	void OpenGLRendererAPI::DrawIndexed(const Ref<VertexBuffer>& vertexBuffer, const Ref<IndexBuffer>& indexBuffer, uint32_t count, Primitive primitive) const
+	void OpenGLRendererAPI::DrawIndexed(const Ref<VertexBuffer>& vertexBuffer, const Ref<IndexBuffer>& indexBuffer, uint32_t count) const
 	{
-		uint32_t glPrimitive = 0;
-
-		switch (primitive)
-		{
-			case Primitive::Points:    { glPrimitive = GL_POINTS;     } break;
-			case Primitive::Lines:     { glPrimitive = GL_LINES;      } break;
-			case Primitive::LineStrip: { glPrimitive = GL_LINE_STRIP; } break;
-			case Primitive::Quads:     { glPrimitive = GL_QUADS;      } break;
-			case Primitive::Triangles: { glPrimitive = GL_TRIANGLES;  } break;
-		}
-
-		GLenum glType = OpenGLShader::GetGLTypeFromShaderType(indexBuffer->GetDataType());
-		glDrawElements(glPrimitive, count, glType, (const void*)0);
+		glDrawElements(GL_TRIANGLES, count, s_TypeMap[(int)indexBuffer->GetDataType()], (const void*)0);
 	}
+
+	int32_t OpenGLRendererAPI::GetMaxTextureSlots() const
+	{
+		int32_t textureSlots;
+		glGetIntegerv(GL_MAX_IMAGE_UNITS, &textureSlots);
+		return textureSlots;
+	}
+
+	uint32_t OpenGLRendererAPI::s_TypeMap[] =
+	{
+		GL_BOOL,
+		GL_BYTE,
+		GL_UNSIGNED_BYTE,
+		GL_SHORT,
+		GL_UNSIGNED_SHORT,
+		GL_INT,
+		GL_UNSIGNED_INT,
+		GL_FLOAT,
+		GL_FLOAT,
+		GL_FLOAT,
+		GL_FLOAT,
+		GL_FLOAT,
+		GL_FLOAT
+	};
+
+#ifdef VN_DEBUG
+
+	static void APIENTRY OpenGLDebugOutput(GLenum source,
+										   GLenum type,
+										   GLuint id,
+										   GLenum severity,
+										   GLsizei length,
+										   const GLchar* message,
+										   const void* userParam)
+	{
+		switch (severity)
+		{
+			case GL_DEBUG_SEVERITY_HIGH:		 VN_CORE_CRITICAL(message); break;
+			case GL_DEBUG_SEVERITY_MEDIUM:		 VN_CORE_ERROR(message);    break;
+			case GL_DEBUG_SEVERITY_LOW:			 VN_CORE_WARN(message);     break;
+			case GL_DEBUG_SEVERITY_NOTIFICATION: VN_CORE_TRACE(message);    break;
+		}
+	}
+
+#endif
 }

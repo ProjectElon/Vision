@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "Application.h"
-#include "Vision/Platform/EntryPoint.h"
 #include "Vision/Core/Core.h"
 #include "Vision/Core/Log.h"
 #include "Vision/Platform/Input.h"
@@ -77,40 +76,25 @@ namespace Vision
 
 		for (auto it = m_LayerStack.rbegin(); it != m_LayerStack.rend(); ++it)
 		{
-			if ((*it)->IsEnabled())
-			{
-				(*it)->OnEvent(e);
+			(*it)->OnEvent(e);
 
-				if (e.Handled)
-				{
-					break;
-				}
-			}
+			if (e.Handled)
+			{
+				break;
+			}	
 		}
 	}
 
 	void Application::PushLayer(Layer* layer)
 	{
 		m_LayerStack.PushLayer(layer);
-		
 		layer->OnAttach();
-
-		if (layer->IsEnabled())
-		{
-			layer->Enable();
-		}
 	}
 	
 	void Application::PushOverlay(Layer* overlay)
 	{
 		m_LayerStack.PushOverlay(overlay);
-		
 		overlay->OnAttach();
-
-		if (overlay->IsEnabled())
-		{
-			overlay->Enable();
-		}
 	}
 
 	bool Application::OnWindowResize(WindowResizeEvent& e)
