@@ -24,16 +24,16 @@ namespace Vision
 
 #ifndef VN_DIST
 	
-	#define VN_CORE_TRACE(...) Vision::Log::GetCoreLogger()->trace(__VA_ARGS__)
-	#define VN_CORE_INFO(...)  Vision::Log::GetCoreLogger()->info(__VA_ARGS__)
-	#define VN_CORE_WARN(...)  Vision::Log::GetCoreLogger()->warn(__VA_ARGS__)
-	#define VN_CORE_ERROR(...) Vision::Log::GetCoreLogger()->error(__VA_ARGS__)
+	#define VN_CORE_TRACE(...)    Vision::Log::GetCoreLogger()->trace(__VA_ARGS__)
+	#define VN_CORE_INFO(...)     Vision::Log::GetCoreLogger()->info(__VA_ARGS__)
+	#define VN_CORE_WARN(...)     Vision::Log::GetCoreLogger()->warn(__VA_ARGS__)
+	#define VN_CORE_ERROR(...)    Vision::Log::GetCoreLogger()->error(__VA_ARGS__)
 	#define VN_CORE_CRITICAL(...) Vision::Log::GetCoreLogger()->critical(__VA_ARGS__)
 	
-	#define VN_TRACE(...) Vision::Log::GetClientLogger()->trace(__VA_ARGS__)
-	#define VN_INFO(...)  Vision::Log::GetClientLogger()->info(__VA_ARGS__)
-	#define VN_WARN(...)  Vision::Log::GetClientLogger()->warn(__VA_ARGS__)
-	#define VN_ERROR(...) Vision::Log::GetClientLogger()->error(__VA_ARGS__)
+	#define VN_TRACE(...)    Vision::Log::GetClientLogger()->trace(__VA_ARGS__)
+	#define VN_INFO(...)     Vision::Log::GetClientLogger()->info(__VA_ARGS__)
+	#define VN_WARN(...)     Vision::Log::GetClientLogger()->warn(__VA_ARGS__)
+	#define VN_ERROR(...)    Vision::Log::GetClientLogger()->error(__VA_ARGS__)
 	#define VN_CRITICAL(...) Vision::Log::GetClientLogger()->critical(__VA_ARGS__)
 
 #else

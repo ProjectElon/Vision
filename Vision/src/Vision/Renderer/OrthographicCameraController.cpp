@@ -24,66 +24,29 @@ namespace Vision
 
 	void OrthographicCameraController::OnUpdate(float dt)
 	{
-		m_CameraMovementSpeed = 1.5f * m_ZoomLevel;
-
-		glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), glm::radians(m_CameraRotation), glm::vec3(0.0f, 0.0f, 1.0f));
-		glm::vec3 up = rotation * glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
-		glm::vec3 right = rotation * glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
 
 		if (Input::IsKeyDown(VN_KEY_W))
 		{
-			m_CameraPosition += up * m_CameraMovementSpeed * dt;
+			m_CameraPosition.y += m_CameraMovementSpeed * dt;
 		}
 
 		if (Input::IsKeyDown(VN_KEY_S))
 		{
-			m_CameraPosition -= up * m_CameraMovementSpeed * dt;
+			m_CameraPosition.y -= m_CameraMovementSpeed * dt;
 		}
 
 		if (Input::IsKeyDown(VN_KEY_A))
 		{
-			m_CameraPosition -= right * m_CameraMovementSpeed * dt;
+			m_CameraPosition.x -= m_CameraMovementSpeed * dt;
 		}
 
 		if (Input::IsKeyDown(VN_KEY_D))
 		{
-			m_CameraPosition += right * m_CameraMovementSpeed * dt;
-		}
-
-		if (m_Rotation)
-		{
-			if (Input::IsKeyDown(VN_KEY_Q))
-			{
-				m_CameraRotation -= m_CameraRotationSpeed * dt;
-			}
-
-			if (Input::IsKeyDown(VN_KEY_E))
-			{
-				m_CameraRotation += m_CameraRotationSpeed * dt;
-			}
-
-			while (m_CameraRotation > 360.0f)
-			{
-				m_CameraRotation -= 360.0f;
-			}
-
-			while (m_CameraRotation < -360.0f)
-			{
-				m_CameraRotationSpeed += 360.0f;
-			}
-
-			m_Camera.SetRotation(m_CameraRotation);
+			m_CameraPosition.x += m_CameraMovementSpeed * dt;
 		}
 
 		m_Camera.SetPosition(m_CameraPosition);
-	}
-
-	void OrthographicCameraController::OnImGuiRender()
-	{
-		ImGui::Begin("Camera Controls");
-		ImGui::Checkbox("Rotation", &m_Rotation);
-		ImGui::SliderFloat("Rotation Speed", &m_CameraRotationSpeed, 0.0f, 360.0f);
-		ImGui::End();
+		m_CameraMovementSpeed = m_ZoomLevel;
 	}
 
 	bool OrthographicCameraController::OnWindowResize(WindowResizeEvent& e)

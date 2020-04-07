@@ -13,8 +13,7 @@ namespace Vision
 
 		void OnEvent(Event& e);
 		void OnUpdate(float dt);
-		void OnImGuiRender();
-
+		
 		inline void SetRotation(bool rotation) { m_Rotation = rotation; }
 
 		inline const OrthographicCamera& GetCamera() const { return m_Camera; }
@@ -26,7 +25,7 @@ namespace Vision
 
 		OrthographicCamera m_Camera;
 
-		float m_CameraMovementSpeed = 1.5f;
+		float m_CameraMovementSpeed = 1.0f;
 		float m_CameraRotationSpeed = 10.0f;
 
 		glm::vec3 m_CameraPosition = { 0.0f, 0.0f, 0.0f };

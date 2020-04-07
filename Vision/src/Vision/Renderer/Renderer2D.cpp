@@ -17,7 +17,6 @@ namespace Vision
 		s_Data.MaxTextureSlots = Renderer::GetRendererAPI().GetMaxTextureSlots();
 		
 		s_Data.Samplers = new int32_t[s_Data.MaxTextureSlots];
-		s_Data.CurrentTextureIndex = 1;
 		
 		for (uint32_t i = 0; i < s_Data.MaxTextureSlots; i++)
 		{
@@ -41,12 +40,12 @@ namespace Vision
 
 		s_Data.QuadVertexBase = new QuadVertex[s_Data.MaxQuadVertexCount];
 		s_Data.CurrentQuadVertex = s_Data.QuadVertexBase;
-		s_Data.QuadCount = 0;
-
+		
 		s_Data.QuadVertexBuffer = VertexBuffer::Create(VertexBufferDesc);
 		s_Data.QuadVertexBuffer->SetLayout(layout);
 
 		uint32_t* indices = new uint32_t[s_Data.MaxQuadIndexCount];
+		
 		uint32_t offset = 0;
 
 		for (uint32_t i = 0; i < s_Data.MaxQuadIndexCount; i += 6)
@@ -96,6 +95,7 @@ namespace Vision
 
 		s_Data.QuadShader = shader;
 		s_Data.QuadShader->Bind();
+		s_Data.QuadShader->SetIntArray("u_Textures", s_Data.Samplers, s_Data.MaxTextureSlots);
 
 		s_Data.QuadShader->SetMatrix4("u_ViewProj", s_SceneData.ViewProjection);
 		// s_Data.QuadShader->SetFloat3("u_CameraPosition", camera.GetPosition());
@@ -143,13 +143,12 @@ namespace Vision
 			if (s_Data.CurrentTextureIndex >= s_Data.MaxTextureSlots)
 			{
 				Flush();
+				
 				s_Data.CurrentTextureIndex = 1;
 				s_Data.TextureSlots.clear();
 			}
 
 			textureIndex = (float)s_Data.CurrentTextureIndex;
-			texture->Bind(s_Data.CurrentTextureIndex);
-
 			s_Data.TextureSlots.emplace(texture, s_Data.CurrentTextureIndex);
 			s_Data.CurrentTextureIndex++;
 		}
@@ -159,14 +158,14 @@ namespace Vision
 		}
 
 		glm::mat4 transform =
-			glm::translate(glm::mat4(1.0f), position) * 
+			glm::translate(glm::mat4(1.0f), position) *
 			glm::rotate(glm::mat4(1.0f), glm::radians(rotation), glm::vec3(0.0f, 0.0f, 1.0f)) *
 			glm::scale(glm::mat4(1.0f), glm::vec3(scale.x, scale.y, 1.0f));
 
 		glm::vec3 v0 = transform * glm::vec4(-0.5f, -0.5f, 0.0f, 1.0f);
-		glm::vec3 v1 = transform * glm::vec4( 0.5f, -0.5f, 0.0f, 1.0f);
-		glm::vec3 v2 = transform * glm::vec4( 0.5f,  0.5f, 0.0f, 1.0f);
-		glm::vec3 v3 = transform * glm::vec4(-0.5f,  0.5f, 0.0f, 1.0f);
+		glm::vec3 v1 = transform * glm::vec4(0.5f, -0.5f, 0.0f, 1.0f);
+		glm::vec3 v2 = transform * glm::vec4(0.5f, 0.5f, 0.0f, 1.0f);
+		glm::vec3 v3 = transform * glm::vec4(-0.5f, 0.5f, 0.0f, 1.0f);
 
 		SubmitQuadVertex({ v0, color, glm::vec2(0.0f, 0.0f), textureIndex });
 		SubmitQuadVertex({ v1, color, glm::vec2(1.0f, 0.0f), textureIndex });
@@ -197,8 +196,6 @@ namespace Vision
 			}
 
 			textureIndex = (float)s_Data.CurrentTextureIndex;
-			sprite->Texture->Bind(s_Data.CurrentTextureIndex);
-
 			s_Data.TextureSlots.emplace(sprite->Texture, s_Data.CurrentTextureIndex);
 			s_Data.CurrentTextureIndex++;
 		}
@@ -206,22 +203,22 @@ namespace Vision
 		{
 			textureIndex = (float)it->second;
 		}
-
+		
 		glm::mat4 transform =
 			glm::translate(glm::mat4(1.0f), position) *
 			glm::rotate(glm::mat4(1.0f), glm::radians(rotation), glm::vec3(0.0f, 0.0f, 1.0f)) *
 			glm::scale(glm::mat4(1.0f), glm::vec3(scale.x, scale.y, 1.0f));
 
 		glm::vec3 v0 = transform * glm::vec4(-0.5f, -0.5f, 0.0f, 1.0f);
-		glm::vec3 v1 = transform * glm::vec4( 0.5f, -0.5f, 0.0f, 1.0f);
-		glm::vec3 v2 = transform * glm::vec4( 0.5f,  0.5f, 0.0f, 1.0f);
-		glm::vec3 v3 = transform * glm::vec4(-0.5f,  0.5f, 0.0f, 1.0f);
+		glm::vec3 v1 = transform * glm::vec4(0.5f, -0.5f, 0.0f, 1.0f);
+		glm::vec3 v2 = transform * glm::vec4(0.5f, 0.5f, 0.0f, 1.0f);
+		glm::vec3 v3 = transform * glm::vec4(-0.5f, 0.5f, 0.0f, 1.0f);
 
 		glm::vec2 uv0 = sprite->BottomLeftUV;
 		glm::vec2 uv1 = glm::vec2(sprite->TopRightUV.x, sprite->BottomLeftUV.y);
 		glm::vec2 uv2 = sprite->TopRightUV;
 		glm::vec2 uv3 = glm::vec2(sprite->BottomLeftUV.x, sprite->TopRightUV.y);
-
+		
 		if (sprite->FlipX)
 		{
 			std::swap(uv0, uv1);
@@ -240,7 +237,7 @@ namespace Vision
 		SubmitQuadVertex({ v3, sprite->Color, uv3, textureIndex });
 
 		s_Data.QuadCount++;
-	}
+ 	}
 
 	void Renderer2D::EndScene()
 	{
@@ -251,12 +248,15 @@ namespace Vision
 	{
 		if (s_Data.QuadCount > 0)
 		{
-			s_Data.QuadShader->SetIntArray("u_Textures", s_Data.Samplers, s_Data.CurrentTextureIndex);
+			for (auto& it : s_Data.TextureSlots)
+			{
+				it.first->Bind(it.second);
+			}
 
-			uint32_t size = sizeof(QuadVertex) * 4 * s_Data.QuadCount;
-			s_Data.QuadVertexBuffer->SetData(s_Data.QuadVertexBase, size);
+			uint32_t dataSize = (uint8_t*)s_Data.CurrentQuadVertex - (uint8_t*)s_Data.QuadVertexBase;
+			s_Data.QuadVertexBuffer->SetData(s_Data.QuadVertexBase, dataSize);
 			
-			RenderCommand::DrawIndexed(s_Data.QuadVertexBuffer, s_Data.QuadIndexBuffer, s_Data.QuadCount * 6);
+ 			RenderCommand::DrawIndexed(s_Data.QuadVertexBuffer, s_Data.QuadIndexBuffer, s_Data.QuadCount * 6);
 			
 			s_Data.CurrentQuadVertex = s_Data.QuadVertexBase;
 			s_Data.QuadCount = 0;

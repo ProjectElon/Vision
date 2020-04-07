@@ -54,6 +54,11 @@ namespace Vision
         SetSpriteUV(name, bottomLeftUV, topRightUV);
     }
 
+    void SpriteAtlas::SetSprite(const std::string& name, uint32_t x, uint32_t y, uint32_t width, uint32_t height)
+    {
+        SetSprite(name, glm::vec2(x, y), glm::vec2(x + width, y + height));
+    }
+
     const Ref<Sprite>& SpriteAtlas::GetSprite(const std::string& name)
     {
         auto it = m_Sprites.find(name);

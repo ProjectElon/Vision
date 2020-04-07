@@ -42,7 +42,7 @@ namespace Vision
 			}
 			else if (line.front() == '#' && line.find("#type") == 0)
 			{
-				std::string typeSignature = line.substr(5);
+				std::string typeSignature = line.substr(5); // 5 => #type
 				
 				typeSignature.erase(0, typeSignature.find_first_not_of(" \t\n"));
 				typeSignature.erase(typeSignature.find_last_not_of(" \t\n") + 1);
@@ -59,6 +59,7 @@ namespace Vision
 		{
 			auto& [type, data] = shader;
 			data.RendererID = glCreateShader(type);
+			// VN_CORE_INFO(data.Source);
 			CompileShader(data);
 		}
 

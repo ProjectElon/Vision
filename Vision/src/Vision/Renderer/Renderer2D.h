@@ -31,16 +31,16 @@ namespace Vision
 		Ref<IndexBuffer> QuadIndexBuffer;
 		Ref<Shader> QuadShader;
 
-		QuadVertex* QuadVertexBase;
-		QuadVertex* CurrentQuadVertex;
-		uint32_t QuadCount;
+		QuadVertex* QuadVertexBase = nullptr;
+		QuadVertex* CurrentQuadVertex = nullptr;
+		uint32_t QuadCount = 0;
 		
 		uint32_t MaxTextureSlots;
-		uint32_t CurrentTextureIndex;
 		std::unordered_map<Ref<Texture2D>, uint32_t> TextureSlots;
-		int32_t* Samplers;
+		uint32_t CurrentTextureIndex = 1;
+		int32_t* Samplers = nullptr;
 
-		const uint32_t MaxQuadCount = 100000;
+		const uint32_t MaxQuadCount = 10000;
 		const uint32_t MaxQuadVertexCount = MaxQuadCount * 4;
 		const uint32_t MaxQuadIndexCount = MaxQuadCount * 6;
 	};

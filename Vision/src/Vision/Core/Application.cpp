@@ -46,7 +46,7 @@ namespace Vision
 
 			if (!m_Minimized)
 			{
-				for (Layer* layer : m_LayerStack)
+ 				for (Layer* layer : m_LayerStack)
 				{
 					layer->OnUpdate(deltaTime);
 				}

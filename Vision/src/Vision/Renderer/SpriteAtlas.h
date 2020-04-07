@@ -14,12 +14,15 @@ namespace Vision
         SpriteAtlas(const std::string& name, const Ref<Texture2D>& texture);
         ~SpriteAtlas();
 
-        // uv space
+        // (bottomLeft, topRight) in uv space
         void SetSpriteUV(const std::string& name, const glm::vec2& bottomLeft, const glm::vec2& topRight);
         
-        // texture space
+        // (topLeft, bottomRight) in texture space
         void SetSprite(const std::string& name, glm::vec2 topLeft, glm::vec2 bottomRight);
-        
+
+        // (x, y, width, height) in texture space
+        void SetSprite(const std::string& name, uint32_t x, uint32_t y, uint32_t width, uint32_t height);
+
         const Ref<Sprite>& GetSprite(const std::string& name);
 
     private:

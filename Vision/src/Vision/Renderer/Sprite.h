@@ -15,7 +15,7 @@ namespace Vision
         // this is in uv space
         glm::vec2 BottomLeftUV;
         glm::vec2 TopRightUV;
-        
+
         Sprite(const std::string& name, const Ref<Texture2D>& texture);
         ~Sprite();
 

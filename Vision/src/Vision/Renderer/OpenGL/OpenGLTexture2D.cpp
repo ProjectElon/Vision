@@ -68,18 +68,19 @@ namespace Vision
 
 			glCreateTextures(GL_TEXTURE_2D, 1, &m_RendererID);
 			glTextureStorage2D(m_RendererID, 1, m_InternalFormat, m_Width, m_Height);
+			glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, m_TextureFormat, GL_UNSIGNED_BYTE, data);
 
-			glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, s_FilterModeMap[(int)props.Filter]);
+			glGenerateMipmap(GL_TEXTURE_2D);
+
+			glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 			glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, s_FilterModeMap[(int)props.Filter]);
 
 			glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, s_WrapModeMap[(int)props.WrapX]);
 			glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, s_WrapModeMap[(int)props.WrapY]);
 
-			glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, m_TextureFormat, GL_UNSIGNED_BYTE, data);
-
 			stbi_image_free(data);
 			
-			VN_CORE_TRACE("[TEXTURE]({0}) Loaded Successfully", m_Name);
+ 			VN_CORE_TRACE("[TEXTURE]({0}) Loaded Successfully", m_Name);
 		}
 		else
 		{
