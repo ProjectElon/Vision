@@ -11,6 +11,7 @@ namespace Vision
 {
 	OpenGLShader::OpenGLShader(const std::string& filepath)
 		: m_RendererID(0)
+		, m_Filepath(filepath)
 	{
 		size_t lastSlash = filepath.find_last_of("/\\");
 		size_t lastDot = filepath.rfind('.');
@@ -20,64 +21,13 @@ namespace Vision
 
 		m_Name = filepath.substr(start, count);
 
-		std::ifstream ifs(filepath, std::ios::in | std::ios::binary);
-
-		if (!ifs.is_open())
-		{
-			VN_CORE_ERROR("[SHADER]({0}) Unable to open file : {1}", m_Name, filepath);
-			return;
-		}
-
-		std::string line;
-		GLenum currentShaderType;
-
-		while (std::getline(ifs, line))
-		{
-			line.erase(0, line.find_first_not_of(" \t\n\r"));
-			line.erase(line.find_last_not_of(" \t\n\r") + 1);
-
-			if (line.empty())
-			{
-				continue;
-			}
-			else if (line.front() == '#' && line.find("#type") == 0)
-			{
-				std::string typeSignature = line.substr(5); // 5 => #type
-				
-				typeSignature.erase(0, typeSignature.find_first_not_of(" \t\n"));
-				typeSignature.erase(typeSignature.find_last_not_of(" \t\n") + 1);
-
-				currentShaderType = GetShaderTypeFromString(typeSignature);
-			}
-			else 
-			{
-				m_Shaders[currentShaderType].Source += line + '\n';
-			}
-		}
-
-		for (auto& shader : m_Shaders)
-		{
-			auto& [type, data] = shader;
-			data.RendererID = glCreateShader(type);
-			// VN_CORE_INFO(data.Source);
-			CompileShader(data);
-		}
-
-		LinkShaders();
-
-		VN_CORE_TRACE("[SHADER]({0}) Loaded Sucessfully", m_Name);
+		LoadShadersSource(filepath);
+		CompileAndLinkShaders();
 	}
 
 	OpenGLShader::~OpenGLShader()
 	{
-		for (const auto& shader : m_Shaders)
-		{
-			const auto& [type, data] = shader;
-			glDetachShader(m_RendererID, data.RendererID);
-			glDeleteShader(data.RendererID);
-		}
-
-		glDeleteProgram(m_RendererID);
+		UnloadShaders();
 	}
 
 	void OpenGLShader::Bind() const
@@ -88,6 +38,15 @@ namespace Vision
 	void OpenGLShader::UnBind() const
 	{
 		glUseProgram(0);
+	}
+
+	void OpenGLShader::Reload()
+	{
+		UnloadShaders();
+		
+		LoadShadersSource(m_Filepath);
+
+		CompileAndLinkShaders();
 	}
 
 	void OpenGLShader::SetInt(const std::string& name, int32_t value)
@@ -130,41 +89,95 @@ namespace Vision
 		glUniformMatrix4fv(GetUniformLocation(name), 1, GL_FALSE, glm::value_ptr(mat4));
 	}
 
-	void OpenGLShader::CompileShader(const ShaderData& shaderData)
+	void OpenGLShader::UnloadShaders()
 	{
-		int success;
-		char logInfo[512];
-
-		const char* cStringSource = shaderData.Source.c_str();
-		glShaderSource(shaderData.RendererID, 1, &cStringSource, nullptr);
-		glCompileShader(shaderData.RendererID);
-
-		glGetShaderiv(shaderData.RendererID, GL_COMPILE_STATUS, &success);
-
-		if (!success)
-		{
-			glGetShaderInfoLog(shaderData.RendererID, 512, nullptr, logInfo);
-			VN_CORE_ERROR("[SHADER]({0}) : Vertex Shader Compilation Failed ... \n {1}", m_Name, logInfo);
-		}
-	}
-	
-	void OpenGLShader::LinkShaders()
-	{
-		int success;
-		char logInfo[512];
-
-		m_RendererID = glCreateProgram();
-
 		for (const auto& shader : m_Shaders)
 		{
 			const auto& [type, data] = shader;
-			glAttachShader(m_RendererID, data.RendererID);
+			glDetachShader(m_RendererID, data.RendererID);
+			glDeleteShader(data.RendererID);
+		}
+
+		glDeleteProgram(m_RendererID);
+		m_Shaders.clear();
+	}
+
+	void OpenGLShader::LoadShadersSource(const std::string& filepath)
+	{
+		std::ifstream ifs(filepath, std::ios::in | std::ios::binary);
+
+		if (!ifs.is_open())
+		{
+			VN_CORE_ERROR("[SHADER]({0}) Unable to open file : {1}", m_Name, filepath);
+			return;
+		}
+
+		std::string line;
+		GLenum currentShaderType;
+		
+		while (std::getline(ifs, line))
+		{
+			line.erase(0, line.find_first_not_of(" \t\n\r"));
+			line.erase(line.find_last_not_of(" \t\n\r") + 1);
+
+			if (line.empty())
+			{
+				continue;
+			}
+			else if (line.front() == '#' && line.find("#type") == 0)
+			{
+				std::string typeSignature = line.substr(5); // 5 => #type
+				
+				typeSignature.erase(0, typeSignature.find_first_not_of(" \t\n"));
+				typeSignature.erase(typeSignature.find_last_not_of(" \t\n") + 1);
+
+				currentShaderType = GetShaderTypeFromString(typeSignature);
+			}
+			else 
+			{
+				m_Shaders[currentShaderType].Source += line + '\n';
+			}
+		}
+	}
+	
+	void OpenGLShader::CompileAndLinkShaders()
+	{
+		m_RendererID = glCreateProgram();
+
+		int success;
+		char logInfo[512];
+
+		for (auto& shader : m_Shaders)
+		{
+			auto& [type, data] = shader;
+			data.RendererID = glCreateShader(type);
+
+			const char* cStringSource = data.Source.c_str();
+			glShaderSource(data.RendererID, 1, &cStringSource, nullptr);
+			glCompileShader(data.RendererID);
+
+			glGetShaderiv(data.RendererID, GL_COMPILE_STATUS, &success);
+
+			if (success)
+			{
+				glAttachShader(m_RendererID, data.RendererID);
+			}
+			else
+			{
+				glGetShaderInfoLog(data.RendererID, 512, nullptr, logInfo);
+				VN_CORE_ERROR("[SHADER]({0}) : Vertex Shader Compilation Failed ... \n {1}", m_Name, logInfo);
+				return;
+			}
 		}
 
 		glLinkProgram(m_RendererID);
 		glGetProgramiv(m_RendererID, GL_LINK_STATUS, &success);
 
-		if (!success)
+		if (success)
+		{
+			VN_CORE_INFO("[SHADER]({0}) ... Compiled", m_Name);
+		}
+		else
 		{
 			glGetProgramInfoLog(m_RendererID, 512, nullptr, logInfo);
 			VN_CORE_ERROR("[SHADER]({0}) : Program Linking Failed .. \n {1}", m_Name, logInfo);

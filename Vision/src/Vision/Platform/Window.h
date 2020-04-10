@@ -33,9 +33,7 @@ namespace Vision
 		uint32_t AlphaBits;
 		uint32_t DepthBits;
 		uint32_t StencilBits;
-		uint32_t Samples;
-		uint32_t BufferCount;
-
+		
 		WindowProps()
 			: Title("Vision Engine")
 			, Width(1280)
@@ -48,8 +46,6 @@ namespace Vision
 			, AlphaBits(8)
 			, DepthBits(24)
 			, StencilBits(8)
-			, Samples(4)
-			, BufferCount(2)
 		{
 		}
 	};

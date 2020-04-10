@@ -10,11 +10,7 @@ namespace Vision
 	DesktopOpenGLContext::DesktopOpenGLContext(Window* window)
 		: GraphicsContext(window)
 	{
-		// making sure we atleast have OpenGL version 4.5 and core profile
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
-		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
+		
 	#if VN_PLATFORM_MACOS
 		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 	#endif

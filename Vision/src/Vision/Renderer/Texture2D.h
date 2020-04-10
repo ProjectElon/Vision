@@ -48,6 +48,7 @@ namespace Vision
 		virtual uint32_t GetHeight() const = 0;
 
 		virtual const std::string& GetName() const = 0;
+		virtual uint32_t GetRendererID() const = 0;
 
 		static Ref<Texture2D> Create(uint32_t width, uint32_t height, const TextureProps& props = TextureProps());
 		static Ref<Texture2D> CreateFromFile(const std::string& path, const TextureProps& props = TextureProps());

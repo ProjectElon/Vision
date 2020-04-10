@@ -29,15 +29,15 @@ namespace Vision
 
 		Ref<VertexBuffer> QuadVertexBuffer;
 		Ref<IndexBuffer> QuadIndexBuffer;
-		Ref<Shader> QuadShader;
-
+		
 		QuadVertex* QuadVertexBase = nullptr;
 		QuadVertex* CurrentQuadVertex = nullptr;
 		uint32_t QuadCount = 0;
 		
 		uint32_t MaxTextureSlots;
-		std::unordered_map<Ref<Texture2D>, uint32_t> TextureSlots;
-		uint32_t CurrentTextureIndex = 1;
+		uint32_t* TextureSlots;
+		
+		uint32_t CurrentTextureIndex = 0;
 		int32_t* Samplers = nullptr;
 
 		const uint32_t MaxQuadCount = 10000;
@@ -60,6 +60,7 @@ namespace Vision
 
 	private:
 		static void SubmitQuadVertex(const QuadVertex& quadVertex);
+		static uint32_t AssginTextureSlot(const Ref<Texture2D>& texture);
 		static void Flush();
 		
 	private:

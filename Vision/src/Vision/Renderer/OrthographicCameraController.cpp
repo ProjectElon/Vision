@@ -3,14 +3,11 @@
 #include "Vision/Core/Core.h"
 #include "Vision/Platform/Input.h"
 
-#include <imgui.h>
-
 namespace Vision
 {
-	OrthographicCameraController::OrthographicCameraController(float aspectRatio, float zoomLevel, bool rotation)
+	OrthographicCameraController::OrthographicCameraController(float aspectRatio, float zoomLevel)
 		: m_AspectRatio(aspectRatio)
 		, m_ZoomLevel(zoomLevel)
-		, m_Rotation(rotation)
 		, m_Camera(-aspectRatio * zoomLevel, aspectRatio * zoomLevel, -zoomLevel, zoomLevel)
 	{
 	}
@@ -24,6 +21,7 @@ namespace Vision
 
 	void OrthographicCameraController::OnUpdate(float dt)
 	{
+		m_CameraMovementSpeed = m_ZoomLevel;
 
 		if (Input::IsKeyDown(VN_KEY_W))
 		{
@@ -34,26 +32,24 @@ namespace Vision
 		{
 			m_CameraPosition.y -= m_CameraMovementSpeed * dt;
 		}
+		
+		if (Input::IsKeyDown(VN_KEY_D))
+		{
+			m_CameraPosition.x += m_CameraMovementSpeed * dt;
+		}
 
 		if (Input::IsKeyDown(VN_KEY_A))
 		{
 			m_CameraPosition.x -= m_CameraMovementSpeed * dt;
 		}
 
-		if (Input::IsKeyDown(VN_KEY_D))
-		{
-			m_CameraPosition.x += m_CameraMovementSpeed * dt;
-		}
-
 		m_Camera.SetPosition(m_CameraPosition);
-		m_CameraMovementSpeed = m_ZoomLevel;
 	}
 
 	bool OrthographicCameraController::OnWindowResize(WindowResizeEvent& e)
 	{
 		m_AspectRatio = (float)e.GetWidth() / (float)e.GetHeight();
 		m_Camera.SetProjection(-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel);
-		
 		return false;
 	}
 
@@ -62,7 +58,6 @@ namespace Vision
 		m_ZoomLevel -= e.GetYOffset() * 0.25f;
 		m_ZoomLevel = std::max(m_ZoomLevel, 0.25f);
 		m_Camera.SetProjection(-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel);
-
 		return false;
 	}
 }

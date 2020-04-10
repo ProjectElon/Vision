@@ -24,6 +24,7 @@ namespace Vision
 		inline uint32_t GetWidth() const override { return m_Width; }
 		inline uint32_t GetHeight() const override { return m_Height; }
 		inline const std::string& GetName() const override { return m_Name; }
+		inline uint32_t GetRendererID() const { return m_RendererID; }
 
 	private:
 		uint32_t m_RendererID;

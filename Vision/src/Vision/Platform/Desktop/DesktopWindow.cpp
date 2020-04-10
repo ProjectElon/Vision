@@ -37,10 +37,11 @@ namespace Vision
 
 		glfwWindowHint(GLFW_DEPTH_BITS,   (int)props.DepthBits);
 		glfwWindowHint(GLFW_STENCIL_BITS, (int)props.StencilBits);
-		glfwWindowHint(GLFW_SAMPLES,      (int)props.Samples);
-		glfwWindowHint(GLFW_DOUBLEBUFFER, (int)props.BufferCount == 2);
+		glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
 		
-		glfwWindowHint(GLFW_AUTO_ICONIFY, GLFW_FALSE);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 #ifndef VN_DIST
 		glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);

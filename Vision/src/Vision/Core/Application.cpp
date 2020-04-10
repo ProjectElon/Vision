@@ -28,6 +28,8 @@ namespace Vision
 
 		m_FrameTimer = Timer::Create();
 		m_FrameTimer->Start();
+
+		Renderer::OnWindowResize(m_Window->GetWidth(), m_Window->GetHeight());
 	}
 
 	Application::~Application()

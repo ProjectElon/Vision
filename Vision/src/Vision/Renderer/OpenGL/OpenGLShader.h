@@ -24,6 +24,8 @@ namespace Vision
 		void Bind() const override;
 		void UnBind() const override;
 
+		void Reload() override;
+
 		inline const std::string& GetName() const { return m_Name; }
 
 		void SetInt(const std::string& name, int32_t value) override;
@@ -38,17 +40,19 @@ namespace Vision
 		void SetMatrix4(const std::string& name, const glm::mat4& mat4) override;
 
 	private:
-		void CompileShader(const ShaderData& shaderData);
-		void LinkShaders();
+		void UnloadShaders();
+		void LoadShadersSource(const std::string& filepath);
+		void CompileAndLinkShaders();	
 
 		GLenum GetShaderTypeFromString(const std::string& type);
 		int32_t GetUniformLocation(const std::string& name);
-		
-	private:
-		uint32_t m_RendererID;
 
+	private:
+		uint32_t    m_RendererID;
 		std::string m_Name;
-		std::unordered_map<GLenum, ShaderData> m_Shaders;
+		std::string m_Filepath;
+		
+		std::unordered_map<GLenum, ShaderData>   m_Shaders;
 		std::unordered_map<std::string, int32_t> m_UniformLocations;
 	};
 }
