@@ -59,7 +59,7 @@ namespace Vision
         SetSprite(name, glm::vec2(x, y), glm::vec2(x + width, y + height));
     }
 
-    const Ref<Sprite>& SpriteAtlas::GetSprite(const std::string& name)
+    Ref<Sprite> SpriteAtlas::GetSprite(const std::string& name)
     {
         auto it = m_Sprites.find(name);
         

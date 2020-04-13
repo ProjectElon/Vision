@@ -23,7 +23,7 @@ namespace Vision
         // (x, y, width, height) in texture space
         void SetSprite(const std::string& name, uint32_t x, uint32_t y, uint32_t width, uint32_t height);
 
-        const Ref<Sprite>& GetSprite(const std::string& name);
+        Ref<Sprite> GetSprite(const std::string& name);
 
     private:
         std::string m_Name; // For debug purposes

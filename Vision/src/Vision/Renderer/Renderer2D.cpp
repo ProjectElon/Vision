@@ -11,12 +11,9 @@ namespace Vision
 		s_Data.WhitePixel->SetData(&white, sizeof(uint32_t) * 1 * 1);
 		
 		// TODO : to be abstracted (RenderCaps)
-		// s_Data.MaxTextureSlots = Renderer::GetRendererAPI().GetMaxTextureSlots();
-
 		// NOTE : when i set s_Data.s_Data.MaxTextureSlots >= 2 the bug with the textures stops
-
-		s_Data.MaxTextureSlots = 1;
-
+		s_Data.MaxTextureSlots = Renderer::GetRendererAPI().GetMaxTextureSlots();
+		
 		s_Data.Samplers = new int32_t[s_Data.MaxTextureSlots];
 		s_Data.TextureSlots = new uint32_t[s_Data.MaxTextureSlots];
 		

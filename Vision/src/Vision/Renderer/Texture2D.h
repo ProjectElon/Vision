@@ -9,7 +9,7 @@ namespace Vision
 	enum class WrapMode
 	{
 		Repeat = 0,
-		ClampToEdge = 1,
+		ClampToEdge = 1
 	};
 
 	enum class FilterMode

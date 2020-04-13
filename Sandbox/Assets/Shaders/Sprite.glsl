@@ -41,11 +41,36 @@ in VertexOutput
 fragmentInput;
 
 uniform sampler2D u_Textures[gl_MaxTextureImageUnits];
-// uniform sampler2DArray u_Textures[gl_MaxTextureImageUnits];
 
 void main()
 {
     int textureIndex = int(fragmentInput.TextureIndex);
+    
+    for (int i = 0; i < gl_MaxTextureImageUnits; ++i)
+    {
+        if (textureIndex == i)
+        {
+            color = texture(u_Textures[i], fragmentInput.TextureCoord) 
+            * fragmentInput.Color;
+            break;
+        }
+    }
+
+    /*
+    NOTE: that following code will give us texture artifacts because we 
+    can't access an array of samplers with a non dynamic
+    unform variable which (textureIndex) is because an input variable is
+    non dynamic uniform too (fragmentInput.TextureIndex).
+
+    to solve this we need to use this for loop
+
+    for (int i = 0; i < gl_MaxTextureImageUnits; ++i)
+
+    this is fine but we may need to draw sprites sorted by textureIndex
+    assuming that we run this shader serially (where we draw the fragments
+    of triangles with textureIndex 0 first and 1 and so on ....) (UN TESTED)
+
     color = texture(u_Textures[textureIndex], fragmentInput.TextureCoord) 
-    * fragmentInput.Color;
+            * fragmentInput.Color;
+    */
 }

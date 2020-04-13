@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "ImGuiLayer.h"
+#include "Vision/ImGui/ImGuiLayer.h"
 #include "Vision/Core/Application.h"
 
 #include <imgui.h>
@@ -53,7 +53,7 @@ namespace Vision
 			m_VideoModesString.emplace_back(ss.str());
 			m_VideoModesFormat.emplace_back(m_VideoModesString.back().c_str());
 		}
-	}
+	}	
 
 	void ImGuiLayer::OnAttach()
 	{
@@ -65,7 +65,7 @@ namespace Vision
 		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
-		ImGui::StyleColorsClassic();
+		ImGui::StyleColorsDark();
 
 		ImGuiStyle& style = ImGui::GetStyle();
 		

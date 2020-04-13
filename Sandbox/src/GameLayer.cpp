@@ -1,11 +1,9 @@
 #include "GameLayer.h"
 #include "imgui.h"
 
-#include <filesystem>
-
 GameLayer::GameLayer()
 	: Layer("Game2D")
-	, m_ClearColor(1.0f, 0.0f, 1.0f, 1.0f)
+	, m_ClearColor(1.0f, 1.0f, 1.0f, 1.0f)
 	, m_WhiteColor(1.0f, 1.0f, 1.0f, 1.0f)
 {
 	auto& window = Vision::Application::Get().GetWindow();
@@ -18,17 +16,17 @@ void GameLayer::OnAttach()
 	m_SpriteShader = Vision::Shader::CreateFromFile("Assets/Shaders/Sprite.glsl");
 	
 	Vision::TextureProps tiled;
-	tiled.WrapX = Vision::WrapMode::Repeat;
-	tiled.WrapY = Vision::WrapMode::Repeat;
+	tiled.WrapX  = Vision::WrapMode::Repeat;
+	tiled.WrapY  = Vision::WrapMode::Repeat;
 	tiled.Filter = Vision::FilterMode::Point;
 
 	Vision::TextureProps transparent;
-	transparent.WrapX = Vision::WrapMode::ClampToEdge;
-	transparent.WrapY = Vision::WrapMode::ClampToEdge;
-	transparent.Filter = Vision::FilterMode::Point;
+	transparent.WrapX  = Vision::WrapMode::ClampToEdge;
+	transparent.WrapY  = Vision::WrapMode::ClampToEdge;
+	transparent.Filter = Vision::FilterMode::Bilinear;
 
 	m_CheckboardTexture = Vision::Texture2D::CreateFromFile("Assets/Textures/Checkerboard.png", tiled);
-	m_CharacterTexture = Vision::Texture2D::CreateFromFile("Assets/Textures/character_femaleAdventurer_sheetHD.png", transparent);
+	m_CharacterTexture  = Vision::Texture2D::CreateFromFile("Assets/Textures/character_femaleAdventurer_sheetHD.png", transparent);
 
 	m_CheckerboardSprite = Vision::CreateRef<Vision::Sprite>("Checkerboard", m_CheckboardTexture);
 	m_CheckerboardSprite->TopRightUV = glm::vec2(50.0f, 50.0f);
@@ -82,9 +80,17 @@ void GameLayer::OnUpdate(float dt)
 
 	RenderCommand::Clear(API::ClearColorBufferBit | API::ClearDepthBufferBit);
 
+	static bool RWasDown = false;
+
 	if (Input::IsKeyDown(VN_KEY_R))
 	{
+		RWasDown = true;
+	}
+
+	if (Input::IsKeyUp(VN_KEY_R) && RWasDown)
+	{
 		m_SpriteShader->Reload();
+		RWasDown = false;
 	}
 
 	Renderer2D::BeginScene(m_CameraController->GetCamera(), m_SpriteShader);
@@ -94,31 +100,31 @@ void GameLayer::OnUpdate(float dt)
 	m_WalkAnimationIndex   += dt * m_WalkAnimationFrames;
 	m_RunAnimationIndex    += dt * m_RunAnimationFrames;
 	m_AttackAnimationIndex += dt * m_AttackAnimationFrames;
-
-	if (m_WalkAnimationIndex > 7.0f)
+	
+	while (m_WalkAnimationIndex > 7.0f)
 	{
 		m_WalkAnimationIndex -= 7.0f;
 	}
 
-	if (m_RunAnimationIndex > 3.0f)
+	while (m_RunAnimationIndex > 3.0f)
 	{
 		m_RunAnimationIndex -= 3.0f;
 	}
 
-	if (m_AttackAnimationIndex > 3.0f)
+	while (m_AttackAnimationIndex > 3.0f)
 	{
 		m_AttackAnimationIndex -= 3.0f;
 	}
-
+	
 	uint32_t animIndex = (uint32_t)m_WalkAnimationIndex;
-	Renderer2D::DrawSprite(glm::vec3(0.0f, 0.0f, 0.0f), 0.0f, glm::vec2(1.0f, 1.0f), m_WalkAnimation[animIndex]);
+	Renderer2D::DrawSprite(glm::vec3(-1.0f, 0.0f, 0.0f), 0.0f, glm::vec2(1.0f, 1.0f), m_WalkAnimation[animIndex]);
 	
 	animIndex = (uint32_t)m_RunAnimationIndex;
-	Renderer2D::DrawSprite(glm::vec3(-1.0f, 0.0f, 0.0f), 0.0f, glm::vec2(1.0f, 1.0f), m_RunAnimation[animIndex]);
+	Renderer2D::DrawSprite(glm::vec3(0.0f, 0.0f, 0.0f), 0.0f, glm::vec2(1.0f, 1.0f), m_RunAnimation[animIndex]);
 	
 	animIndex = (uint32_t)m_AttackAnimationIndex;
 	Renderer2D::DrawSprite(glm::vec3(1.0f, 0.0f, 0.0f), 0.0f, glm::vec2(1.0f, 1.0f), m_AttackAnimation[animIndex]);
-
+	
 	Renderer2D::EndScene();
 }
 
@@ -130,7 +136,7 @@ void GameLayer::OnImGuiRender()
 		can be solved by having an inspector window (editor)
 	*/
 	using namespace Vision;
-
+	
 	ImGui::Begin("Metrics");
 	
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
@@ -141,7 +147,7 @@ void GameLayer::OnImGuiRender()
 	
 	ImGui::ColorEdit4("Clear Color", &m_ClearColor.r);
 	RenderCommand::SetClearColor(m_ClearColor);
-
+	
 	ImGui::End();
 }
 
