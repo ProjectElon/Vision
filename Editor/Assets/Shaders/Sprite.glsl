@@ -2,7 +2,7 @@
 
 #version 410 core
 
-layout (location = 0) in vec3  a_Position;
+layout (location = 0) in vec2  a_Position;
 layout (location = 1) in vec4  a_Color;
 layout (location = 2) in vec2  a_TextureCoord;
 layout (location = 3) in float a_TextureIndex;
@@ -23,12 +23,13 @@ void main()
     vertexOuput.Color = a_Color;
     vertexOuput.TextureCoord = a_TextureCoord;
     vertexOuput.TextureIndex = a_TextureIndex;
-    gl_Position = u_ViewProj * vec4(a_Position.xy, 0.0f, 1.0f);
+    
+    gl_Position = u_ViewProj * vec4(a_Position, 0.0f, 1.0f);
 }
 
 #type fragment
 
-#version 410 core   
+#version 410 core
 
 layout (location = 0) out vec4 color;
 
@@ -57,7 +58,12 @@ void main()
     }
 
     /*
-    NOTE: that following code will give us texture artifacts because we 
+    NOTE: that following code :
+    
+    color = texture(u_Textures[textureIndex], fragmentInput.TextureCoord) 
+            * fragmentInput.Color;
+
+    will give us texture artifacts because we 
     can't access an array of samplers with a non dynamic
     unform variable which (textureIndex) is because an input variable is
     non dynamic uniform too (fragmentInput.TextureIndex).
@@ -68,9 +74,6 @@ void main()
 
     this is fine but we may need to draw sprites sorted by textureIndex
     assuming that we run this shader serially (where we draw the fragments
-    of triangles with textureIndex 0 first and 1 and so on ....) (UN TESTED)
-
-    color = texture(u_Textures[textureIndex], fragmentInput.TextureCoord) 
-            * fragmentInput.Color;
+    of triangles with textureIndex 0 first and 1 and so on ....) (UNTESTED)
     */
 }

@@ -8,11 +8,10 @@
 
 namespace Vision
 {
-	Application* Application::s_Instance = nullptr;
-
 	Application::Application()
 	{
 		VN_CORE_ASSERT(!s_Instance, "Application already exists");
+		
 		s_Instance = this;
 
 		Renderer::SetAPI(Renderer::API::OpenGL);
@@ -48,11 +47,6 @@ namespace Vision
 
 			if (!m_Minimized)
 			{
- 				for (Layer* layer : m_LayerStack)
-				{
-					layer->OnUpdate(deltaTime);
-				}
-
 				m_ImGuiLayer->Begin();
 
 				for (Layer* layer : m_LayerStack)
@@ -61,6 +55,11 @@ namespace Vision
 				}
 
 				m_ImGuiLayer->End();
+
+ 				for (Layer* layer : m_LayerStack)
+				{
+					layer->OnUpdate(deltaTime);
+				}
 			}
 
 			m_Window->OnUpdate();
@@ -122,4 +121,6 @@ namespace Vision
 		m_Running = false;
 		return true;
 	}
+
+	Application* Application::s_Instance = nullptr;
 }

@@ -9,7 +9,7 @@ namespace Vision
 		: m_DataType(props.DataType)
 		, m_Size(props.Size)
 	{
-		uint32_t typeSize = GetDataTypeSize(props.DataType);
+		uint32_t typeSize = RendererAPI::GetDataTypeSize(props.DataType);
 		m_Count = m_Size / typeSize;
 
 		glCreateBuffers(1, &m_IBO);

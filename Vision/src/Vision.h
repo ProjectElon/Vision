@@ -39,4 +39,5 @@
 #include "Vision/Renderer/OrthographicCameraController.h"
 #include "Vision/Renderer/Sprite.h"
 #include "Vision/Renderer/SpriteAtlas.h"
+#include "Vision/Renderer/FrameBuffer.h"
 /*--------------------------------*/

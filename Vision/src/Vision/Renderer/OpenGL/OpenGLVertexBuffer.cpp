@@ -10,7 +10,7 @@ namespace Vision
 		: m_DataType(props.DataType)
 		, m_Size(props.Size)
 	{
-		uint32_t typeSize = API::GetDataTypeSize(props.DataType);
+		uint32_t typeSize = RendererAPI::GetDataTypeSize(props.DataType);
 		m_Count = m_Size / typeSize;
 
 		glCreateVertexArrays(1, &m_VAO);
@@ -42,7 +42,9 @@ namespace Vision
 
 	void OpenGLVertexBuffer::SetData(void* data, uint32_t size, uint32_t offset) const
 	{
+		glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
 		glBufferSubData(GL_ARRAY_BUFFER, offset, size, data);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
 	void OpenGLVertexBuffer::SetLayout(const VertexLayout& layout) const
@@ -57,14 +59,14 @@ namespace Vision
 		{
 			glEnableVertexAttribArray(i);
 			glVertexAttribPointer(i,
-				API::GetDataTypeComponentCount(attributes[i].Type),
+				RendererAPI::GetDataTypeComponentCount(attributes[i].Type),
 				OpenGLRendererAPI::MapDataTypeToGLType(attributes[i].Type),
 				attributes[i].Normalized,
 				stride,
 				(const void*)offset
 			);
 
-			offset += API::GetDataTypeSize(attributes[i].Type);
+			offset += RendererAPI::GetDataTypeSize(attributes[i].Type);
 		}
 
 		glBindVertexArray(0);

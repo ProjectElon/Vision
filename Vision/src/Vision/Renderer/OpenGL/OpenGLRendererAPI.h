@@ -15,11 +15,11 @@ namespace Vision
 		void SetClearColor(const glm::vec4& color) const override;
 		void Clear(uint32_t flags) const override;
 
-		void DrawIndexed(const Ref<VertexBuffer>& vertexBuffer, const Ref<IndexBuffer>& indexBuffer, uint32_t count) const override;
+		void DrawIndexed(const Ref<VertexBuffer>& vertexBuffer, const Ref<IndexBuffer>& indexBuffer, uint32_t count, RendererAPI::Primitive primitive) const override;
 
 		int32_t GetMaxTextureSlots() const override;
 
-		inline static uint32_t MapDataTypeToGLType(API::DataType dataType)
+		inline static uint32_t MapDataTypeToGLType(RendererAPI::DataType dataType)
 		{
 			return s_TypeMap[(int)dataType];
 		}

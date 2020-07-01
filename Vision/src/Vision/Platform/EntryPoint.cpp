@@ -6,12 +6,15 @@ extern Vision::Application* Vision::CreateApplication();
 
 #ifdef VN_PLATFORM_DESKTOP
 
-	int main(int argc, char** argv)
+	int main(int argc, char* argv[])
 	{
-		Vision::Log::Initialize();
+        using namespace Vision;
 
-		auto app = Vision::CreateApplication();
+		Log::Init();
+
+		Application* app = CreateApplication();
 		app->Run();
+
 		delete app;
 
 		return 0;

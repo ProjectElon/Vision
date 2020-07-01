@@ -1,11 +1,11 @@
 #pragma once
 
 #include "Vision/Core/Core.h"
-#include "Vision/Renderer/APIDefs.h"
+#include "Vision/Renderer/RendererAPI.h"
 
 namespace Vision
 {
-	enum class BufferUsage
+	enum class BufferUsage : uint8_t
 	{
 		Static,
 		Dynamic
@@ -13,10 +13,10 @@ namespace Vision
 
 	struct BufferProps
 	{
-		void* Data;
-		API::DataType DataType;
-		uint32_t Size;
-		BufferUsage Usage;
+		void*                 Data;
+		RendererAPI::DataType DataType;
+		uint32_t              Size;
+		BufferUsage           Usage;
 	};
 
 	class Buffer

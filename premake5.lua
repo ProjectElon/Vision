@@ -4,7 +4,7 @@ workspace ("Vision")
 	
 	architecture ("x64")
 	systemversion ("latest")
-	startproject ("Sandbox")
+	startproject ("Editor")
 	
 	configurations
 	{
@@ -121,9 +121,9 @@ project ("Vision")
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
 
-project ("Sandbox")
+project ("Editor")
 
-	location ("Sandbox")
+	location ("Editor")
 	kind ("ConsoleApp")
 	language ("C++")
 	cppdialect ("C++17")

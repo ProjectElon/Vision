@@ -12,10 +12,16 @@ namespace Vision
 	{
 	}
 
+	void OrthographicCameraController::Resize(uint32 width, uint32 height)
+	{
+		m_AspectRatio = (float)width / (float)height;
+		m_Camera.SetProjection(-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel);
+	}
+
 	void OrthographicCameraController::OnEvent(Event& e)
 	{
 		EventDispatcher dispatcher(e);
-		dispatcher.Dispatch<WindowResizeEvent>(VN_BIND_EVENT_FN(OrthographicCameraController::OnWindowResize));
+		// dispatcher.Dispatch<WindowResizeEvent>(VN_BIND_EVENT_FN(OrthographicCameraController::OnWindowResize));
 		dispatcher.Dispatch<MouseWheelScrolledEvent>(VN_BIND_EVENT_FN(OrthographicCameraController::OnMouseWheelScrolled));
 	}
 
@@ -48,8 +54,7 @@ namespace Vision
 
 	bool OrthographicCameraController::OnWindowResize(WindowResizeEvent& e)
 	{
-		m_AspectRatio = (float)e.GetWidth() / (float)e.GetHeight();
-		m_Camera.SetProjection(-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel);
+		Resize(e.GetWidth(), e.GetHeight());
 		return false;
 	}
 

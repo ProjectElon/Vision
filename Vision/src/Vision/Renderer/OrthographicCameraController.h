@@ -11,6 +11,7 @@ namespace Vision
 	public:
 		OrthographicCameraController(float aspectRatio, float zoomLevel = 1.0f);
 
+		void Resize(uint32 width, uint32 height);	
 		void OnEvent(Event& e);
 		void OnUpdate(float dt);
 		
@@ -21,7 +22,7 @@ namespace Vision
 		float m_ZoomLevel;
 		
 		float m_CameraMovementSpeed = 1.0f;
-		glm::vec3 m_CameraPosition = { 0.0f, 0.0f, 0.1f };
+		glm::vec3 m_CameraPosition = { 0.0f, 0.0f, 0.0f };
 		
 		OrthographicCamera m_Camera;
 		

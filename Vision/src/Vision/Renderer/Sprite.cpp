@@ -14,7 +14,7 @@ namespace Vision
         , TopRightUV(1.0f, 1.0f)
     {
     }
-
+    
     Sprite::~Sprite()
     {
     }

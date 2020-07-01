@@ -14,7 +14,7 @@ namespace Vision
 
 		for (const auto& attribute : m_Attributes)
 		{
-			vertexSize += API::GetDataTypeSize(attribute.Type);
+			vertexSize += RendererAPI::GetDataTypeSize(attribute.Type);
 		}
 
 		return vertexSize;

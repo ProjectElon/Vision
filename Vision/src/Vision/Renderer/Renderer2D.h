@@ -12,59 +12,79 @@ namespace Vision
 	struct SceneData
 	{
 		glm::vec3 CameraPosition;
-		glm::mat4 ViewProjection;
+		glm::mat4 ViewProjection;	
 	};
-
+	
 	struct QuadVertex
 	{
-		glm::vec3 Position;
+		glm::vec2 Position;
 		glm::vec4 Color;
 		glm::vec2 TextureCoord;
-		float TextureIndex;
+		real32    TextureIndex;
 	};
 
-	struct RendererData
+	struct QuadData
 	{
 		Ref<Texture2D> WhitePixel;
 
-		Ref<VertexBuffer> QuadVertexBuffer;
-		Ref<IndexBuffer> QuadIndexBuffer;
-		
-		QuadVertex* QuadVertexBase = nullptr;
-		QuadVertex* CurrentQuadVertex = nullptr;
-		uint32_t QuadCount = 0;
-		
-		uint32_t MaxTextureSlots;
-		uint32_t* TextureSlots;
-		
-		uint32_t CurrentTextureIndex = 0;
-		int32_t* Samplers = nullptr;
+		Ref<VertexBuffer> VertexBuffer;
+		Ref<IndexBuffer>  IndexBuffer;
 
-		const uint32_t MaxQuadCount = 10000;
-		const uint32_t MaxQuadVertexCount = MaxQuadCount * 4;
-		const uint32_t MaxQuadIndexCount = MaxQuadCount * 6;
+		QuadVertex* VertexBase    = nullptr;
+		QuadVertex* CurrentVertex = nullptr;	
+		
+		uint32 MaxTextureSlots;
+		uint32* TextureSlots;
+		uint32 CurrentTextureIndex = 0;
+		int32* Samplers = nullptr;
+		
+		uint32 Count = 0;
+		static const uint32 MaxCount = 10000;
 	};
-
+	
 	class Renderer2D
 	{
 	public:
 		static void Init();
+		
 		static void Shutdown();
 
-		static void BeginScene(const OrthographicCamera& camera, const Ref<Shader>& shader);
+		static void BeginScene(const OrthographicCamera& camera,
+							   const Ref<Shader>& quadShader);
+
 		static void EndScene();
 		
-		static void DrawQuad(const glm::vec3& position, float rotation, const glm::vec2& scale, const glm::vec4& color);
-		static void DrawTexture(const glm::vec3& position, float rotation, const glm::vec2& scale, const Ref<Texture2D>& texture, const glm::vec4& color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-		static void DrawSprite(const glm::vec3& position, float rotation, const glm::vec2& scale, const Ref<Sprite>& sprite);
+		static void DrawQuad(const glm::vec2& position,
+							 real32 rotationAngle, 
+							 const glm::vec2& scale,
+							 const glm::vec4& color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+
+		static void DrawTexture(const glm::vec2& position,
+								real32 rotationAngle,
+								const glm::vec2& scale,
+								const Ref<Texture2D>& texture,
+								const glm::vec4& color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+							
+		static void DrawSprite(const glm::vec2& position,
+							   real32 rotationAngle,
+							   const glm::vec2& scale,
+							   const Ref<Sprite>& sprite);
 
 	private:
-		static void SubmitQuadVertex(const QuadVertex& quadVertex);
-		static uint32_t AssginTextureSlot(const Ref<Texture2D>& texture);
-		static void Flush();
+		static void InitQuadSetup();
+
+		static uint32 AssginTextureSlot(const Ref<Texture2D>& texture);
+
+		inline static glm::mat3 CreateQuadTransform(const glm::vec2& position,
+										  		    real32 rotationAngle,
+										  		    const glm::vec2& scale);
+		
+		static void SubmitQuadVertex(const QuadVertex& vertex);
+		
+		static void FlushQuadBatch();
 		
 	private:
 		static SceneData s_SceneData;
-		static RendererData s_Data;
+		static QuadData  s_QuadData;
 	};
 }

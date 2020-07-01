@@ -20,18 +20,5 @@ namespace Vision
 
 	private:
 		Window* m_Window;
-		
-		std::vector<VideoMode> m_VideoModes;
-		std::vector<std::string> m_VideoModesString;
-		std::vector<const char*> m_VideoModesFormat;
-
-		int m_CurrentWindowModeSelected;
-		int m_PreviousWindowModeSelected;
-
-		int m_CurrentWindowSizeSelected;
-		int m_PreviousWindowSizeSelected;
-
-		bool m_PreviousVSyncSelected = false;
-		bool m_VSyncSelected = false;
 	};
 }

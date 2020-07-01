@@ -40,7 +40,10 @@ namespace Vision
 #endif
 	}
 
-	void OpenGLRendererAPI::SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height) const
+	void OpenGLRendererAPI::SetViewport(uint32_t x, 
+										uint32_t y, 
+										uint32_t width,
+										uint32_t height) const
 	{
 		glViewport(x, y, width, height);
 	}
@@ -54,17 +57,17 @@ namespace Vision
 	{
 		uint32_t glClearFlags = 0;
 
-		if (flags & API::ClearColorBufferBit)
+		if (flags & RendererAPI::ColorBuffer)
 		{
 			glClearFlags |= GL_COLOR_BUFFER_BIT;
 		}
 		
-		if (flags & API::ClearDepthBufferBit)
+		if (flags & RendererAPI::DepthBuffer)
 		{
 			glClearFlags |= GL_DEPTH_BUFFER_BIT;
 		}
 
-		if (flags & API::ClearStencilBufferBit)
+		if (flags & RendererAPI::StencilBuffer)
 		{
 			glClearFlags |= GL_STENCIL_BUFFER_BIT;
 		}
@@ -72,18 +75,38 @@ namespace Vision
 		glClear(glClearFlags);
 	}
 
-	void OpenGLRendererAPI::DrawIndexed(const Ref<VertexBuffer>& vertexBuffer, const Ref<IndexBuffer>& indexBuffer, uint32_t count) const
+	void OpenGLRendererAPI::DrawIndexed(const Ref<VertexBuffer>& vertexBuffer,
+										const Ref<IndexBuffer>& indexBuffer, 
+										uint32_t count, 
+										Primitive primitive) const
 	{
-		glDrawElements(GL_TRIANGLES, count, s_TypeMap[(int)indexBuffer->GetDataType()], (const void*)0);
+		uint32_t glPrimitive = 0;
+		
+		switch (primitive)
+		{
+			case Primitive::Triangles:
+			{
+				glPrimitive = GL_TRIANGLES;
+			}
+			break;
+
+			case Primitive::Lines:
+			{
+				glPrimitive = GL_LINES;
+			}
+			break;
+		};
+
+		glDrawElements(glPrimitive, count, s_TypeMap[(int)indexBuffer->GetDataType()], (const void*)0);
 	}
 
 	int32_t OpenGLRendererAPI::GetMaxTextureSlots() const
 	{
 		int32_t textureSlots;
-		glGetIntegerv(GL_MAX_IMAGE_UNITS, &textureSlots);
+		glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &textureSlots);
 		return textureSlots;
 	}
-
+	
 	uint32_t OpenGLRendererAPI::s_TypeMap[] =
 	{
 		GL_BOOL,

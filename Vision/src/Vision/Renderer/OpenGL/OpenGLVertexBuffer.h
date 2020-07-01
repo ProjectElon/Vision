@@ -19,7 +19,7 @@ namespace Vision
 
 		inline uint32_t GetSize() const override { return m_Size; }
 		inline uint32_t GetVertexCount() const override { return m_Count; }
-		inline API::DataType GetDataType() const override { return m_DataType; }
+		inline RendererAPI::DataType GetDataType() const override { return m_DataType; }
 
 	private:
 		uint32_t m_VAO;
@@ -27,6 +27,6 @@ namespace Vision
 
 		uint32_t m_Count;
 		uint32_t m_Size;
-		API::DataType m_DataType;
+		RendererAPI::DataType m_DataType;
 	};
 }
