@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "Vision/Renderer/OpenGL/OpenGLTexture2D.h"
-#include "Vision/Core/Core.h"
+#include "Vision/Core/Base.h"
 
 #include <glad/glad.h>
 

@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "Input.h"
-#include "Vision/Core/Core.h"
+#include "Vision/Core/Base.h"
 
 #if VN_PLATFORM_DESKTOP
 	#include "Vision/Platform/Desktop/DesktopInput.h"
@@ -8,8 +8,6 @@
 
 namespace Vision
 {
-	Scope<Input> Input::s_Instance;
-
 	void Input::Init()
 	{
 	#if VN_PLATFORM_DESKTOP
@@ -21,4 +19,6 @@ namespace Vision
 	{
 		s_Instance.release();
 	}
+
+	Scope<Input> Input::s_Instance;
 }

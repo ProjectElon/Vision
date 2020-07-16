@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vision/Core/Core.h"
+#include "Vision/Core/Base.h"
 
 #include <cstdint>
 #include <glm/glm.hpp>

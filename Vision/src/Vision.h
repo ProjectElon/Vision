@@ -1,7 +1,7 @@
 #pragma once
 
 /*----------    Core    ----------*/
-#include "Vision/Core/Core.h"
+#include "Vision/Core/Base.h"
 #include "Vision/Core/Log.h"
 #include "Vision/Core/Application.h"
 #include "Vision/Core/Layer.h"

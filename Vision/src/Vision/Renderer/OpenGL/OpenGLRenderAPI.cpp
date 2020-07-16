@@ -136,10 +136,10 @@ namespace Vision
 	{
 		switch (severity)
 		{
-			case GL_DEBUG_SEVERITY_HIGH:		 VN_CORE_CRITICAL(message); break;
-			case GL_DEBUG_SEVERITY_MEDIUM:		 VN_CORE_ERROR(message);    break;
-			case GL_DEBUG_SEVERITY_LOW:			 VN_CORE_WARN(message);     break;
-			case GL_DEBUG_SEVERITY_NOTIFICATION: VN_CORE_TRACE(message);    break;
+			case GL_DEBUG_SEVERITY_HIGH:		 VN_CORE_CRITICAL(message);  break;
+			/* case GL_DEBUG_SEVERITY_MEDIUM:    VN_CORE_ERROR(message);     break;
+			case GL_DEBUG_SEVERITY_LOW:			 VN_CORE_WARN(message);      break;
+			case GL_DEBUG_SEVERITY_NOTIFICATION: VN_CORE_TRACE(message);     break; */
 		}
 	}
 

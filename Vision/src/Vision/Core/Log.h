@@ -50,11 +50,13 @@ namespace Vision
 	#define VN_CORE_WARN(...)
 	#define VN_CORE_ERROR(...)
 	#define VN_CORE_FATAL(...)
+	#define VN_CORE_CRITICAL(...)
 
 	#define VN_TRACE(...) 
 	#define VN_INFO(...)  
 	#define VN_WARN(...)
 	#define VN_ERROR(...)
 	#define VN_FATAL(...)
-
+	#define VN_CRITICAL(...)
+	
 #endif

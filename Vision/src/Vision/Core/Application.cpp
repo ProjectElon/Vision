@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "Application.h"
-#include "Vision/Core/Core.h"
+#include "Vision/Core/Base.h"
 #include "Vision/Core/Log.h"
 #include "Vision/Platform/Input.h"
 #include "Vision/Renderer/Renderer.h"
@@ -47,6 +47,11 @@ namespace Vision
 
 			if (!m_Minimized)
 			{
+ 				for (Layer* layer : m_LayerStack)
+				{
+					layer->OnUpdate(deltaTime);
+				}
+
 				m_ImGuiLayer->Begin();
 
 				for (Layer* layer : m_LayerStack)
@@ -55,11 +60,6 @@ namespace Vision
 				}
 
 				m_ImGuiLayer->End();
-
- 				for (Layer* layer : m_LayerStack)
-				{
-					layer->OnUpdate(deltaTime);
-				}
 			}
 
 			m_Window->OnUpdate();

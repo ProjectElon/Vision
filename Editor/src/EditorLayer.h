@@ -35,4 +35,7 @@ private:
 
 	glm::vec2 m_ViewportSize = { 800.0f, 600.0f };
 	Vision::Ref<Vision::FrameBuffer> m_SceneFrameBuffer;
+
+	bool m_IsViewportFocused = false;
+	bool m_IsViewportHovered = false;
 };

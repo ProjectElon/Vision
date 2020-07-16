@@ -14,12 +14,16 @@ namespace Vision
 
     void OpenGLFrameBuffer::Resize(uint32 width, uint32 height)
     {
+        if (width == 0 || height == 0 || width < 100 || height < 100)
+        {
+            VN_CORE_WARN("invalid framebuffer size ({}, {})", width, height);
+            return;
+        }
+
         m_Props.Width = width;
         m_Props.Height = height;
 
         Invalidate();
-
-        VN_CORE_INFO("Creating framebuffer with size : ({0}, {1})", width, height);
     }
 
     OpenGLFrameBuffer::~OpenGLFrameBuffer()
@@ -52,14 +56,14 @@ namespace Vision
 
         glGenTextures(1, &m_ColorAttachmentRendererId);
         glBindTexture(GL_TEXTURE_2D, m_ColorAttachmentRendererId);
-
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_Props.Width, m_Props.Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_Props.Width, m_Props.Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+        
+        glTextureParameteri(m_ColorAttachmentRendererId, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTextureParameteri(m_ColorAttachmentRendererId, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_ColorAttachmentRendererId, 0);
 
-        VN_CORE_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "InComplete Framebuffer");
+        VN_CORE_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Incomplete Framebuffer");
 
         glBindTexture(GL_TEXTURE_2D, 0);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);   

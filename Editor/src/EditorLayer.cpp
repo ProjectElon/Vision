@@ -10,16 +10,21 @@ EditorLayer::EditorLayer()
 	
 	auto& window = Application::Get().GetWindow();
 	window.SetVSync(true);
-	window.SetTitle("Editor");
+	window.SetTitle("Eagle Eye");
 }
 
 void EditorLayer::OnAttach()
 {
 	using namespace Vision;
 
+	FrameBufferProps props;
+	props.Width = 800;
+	props.Height = 600;
+	m_SceneFrameBuffer = FrameBuffer::Create(props);
+
 	float aspectRatio = (float)props.Width / (float)props.Height;
 	m_CameraController = CreateScope<OrthographicCameraController>(aspectRatio, 1.0f);
-
+	
 	m_SpriteShader = Shader::CreateFromFile("Assets/Shaders/Sprite.glsl");
 		
 	TextureProps tiled;
@@ -60,12 +65,6 @@ void EditorLayer::OnAttach()
 	m_WalkAnimation[5] = m_CharacterAtlas->GetSprite("Walk5");
 	m_WalkAnimation[6] = m_CharacterAtlas->GetSprite("Walk6");
 	m_WalkAnimation[7] = m_CharacterAtlas->GetSprite("Walk7");
-
-
-	FrameBufferProps props = {};
-	props.Width = 800;
-	props.Height = 600;
-	m_SceneFrameBuffer = FrameBuffer::Create(props);
 }
 
 void EditorLayer::OnDetach()
@@ -81,19 +80,22 @@ void EditorLayer::OnUpdate(float deltaTime)
 		deltaTime = 0.5f;
 	}
 
-	m_CameraController->OnUpdate(deltaTime);
-
-	static bool RWasDown = false;
-	
-	if (Input::IsKeyDown(VN_KEY_R))
+	if (m_IsViewportHovered && m_IsViewportFocused)
 	{
-		RWasDown = true;
-	}
+		m_CameraController->OnUpdate(deltaTime);
 
-	if (Input::IsKeyUp(VN_KEY_R) && RWasDown)
-	{
-		m_SpriteShader->Reload();
-		RWasDown = false;
+		static bool RWasDown = false;
+
+		if (Input::IsKeyDown(VN_KEY_R))
+		{
+			RWasDown = true;
+		}
+
+		if (Input::IsKeyUp(VN_KEY_R) && RWasDown)
+		{
+			m_SpriteShader->Reload();
+			RWasDown = false;
+		}
 	}
 
 	m_SceneFrameBuffer->Bind();
@@ -121,7 +123,15 @@ void EditorLayer::OnUpdate(float deltaTime)
 
 void EditorLayer::OnEvent(Vision::Event& e)
 {
-	m_CameraController->OnEvent(e);
+	if (m_IsViewportFocused && m_IsViewportHovered)
+	{
+		e.Handled = false;
+		m_CameraController->OnEvent(e);
+	}
+	else
+	{
+		e.Handled = true;
+	}
 }
 
 void EditorLayer::OnImGuiRender()
@@ -141,17 +151,20 @@ void EditorLayer::OnImGuiRender()
 	ImGui::Begin("Viewport");
 	ImGui::PopStyleVar();
 
+	m_IsViewportFocused = ImGui::IsWindowFocused();
+	m_IsViewportHovered = ImGui::IsWindowHovered();
+
 	ImVec2 currentViewportSize = ImGui::GetContentRegionAvail();
 
 	uint32 texture = m_SceneFrameBuffer->GetColorAttachmentRendererId();
 	ImGui::Image((void*)(intptr_t)texture, { m_ViewportSize.x, m_ViewportSize.y }, ImVec2(0, 1), ImVec2(1, 0));
 	
-	if (m_ViewportSize != glm::vec2(currentViewportSize.x, currentViewportSize.y))
+	if (m_ViewportSize != glm::vec2(currentViewportSize.x, currentViewportSize.y) && 
+		currentViewportSize.x > 0.0f && 
+		currentViewportSize.y > 0.0f)
 	{
-		uint32 width = (uint32)currentViewportSize.x;
-		uint32 height = (uint32)currentViewportSize.y;
-		m_CameraController->Resize(width, height);
-		m_SceneFrameBuffer->Resize(width, height);
+		m_CameraController->Resize((uint32)currentViewportSize.x, (uint32)currentViewportSize.y);
+		m_SceneFrameBuffer->Resize((uint32)currentViewportSize.x, (uint32)currentViewportSize.y);
 		m_ViewportSize = { currentViewportSize.x, currentViewportSize.y };
 	}
 	
