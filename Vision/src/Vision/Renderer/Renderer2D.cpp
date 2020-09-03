@@ -10,6 +10,71 @@ namespace Vision
 		InitQuadSetup();
 	}
 
+	void Renderer2D::InitQuadSetup()
+	{
+		uint32 white = 0xffffffff;
+
+		s_QuadData.WhitePixel = Texture2D::Create(1, 1);
+		s_QuadData.WhitePixel->SetData(&white, sizeof(uint32) * 1 * 1);
+
+		s_QuadData.MaxTextureSlots = Renderer::GetRendererAPI().GetMaxTextureSlots();
+		s_QuadData.Samplers = new int32[s_QuadData.MaxTextureSlots];
+		s_QuadData.TextureSlots = new uint32[s_QuadData.MaxTextureSlots];
+
+		for (uint32 i = 0; i < s_QuadData.MaxTextureSlots; i++)
+		{
+			s_QuadData.Samplers[i] = i;
+			s_QuadData.TextureSlots[i] = -1;
+		}
+
+		VertexLayout layout(
+			{
+				{ RendererAPI::DataType::Float2, "a_Position",     false },
+				{ RendererAPI::DataType::Float4, "a_Color", 	   false },
+				{ RendererAPI::DataType::Float2, "a_TextureCoord", false },
+				{ RendererAPI::DataType::Float,  "a_TextureIndex", false }
+			});
+
+		BufferProps vertexBufferDesc;
+		vertexBufferDesc.Data = nullptr;
+		vertexBufferDesc.DataType = RendererAPI::DataType::Float;
+		vertexBufferDesc.Size = 4 * sizeof(QuadVertex) * s_QuadData.MaxCount;
+		vertexBufferDesc.Usage = BufferUsage::Dynamic;
+
+		s_QuadData.VertexBase = new QuadVertex[4 * s_QuadData.MaxCount];
+		s_QuadData.CurrentVertex = s_QuadData.VertexBase;
+
+		s_QuadData.VertexBuffer = VertexBuffer::Create(vertexBufferDesc);
+		s_QuadData.VertexBuffer->SetLayout(layout);
+
+		uint32 maxQuadIndexCount = s_QuadData.MaxCount * 6;
+		uint32* indices = new uint32[maxQuadIndexCount];
+
+		uint32 offset = 0;
+
+		for (uint32 i = 0; i < maxQuadIndexCount; i += 6)
+		{
+			indices[i + 0] = 0 + offset;
+			indices[i + 1] = 1 + offset;
+			indices[i + 2] = 2 + offset;
+
+			indices[i + 3] = 2 + offset;
+			indices[i + 4] = 3 + offset;
+			indices[i + 5] = 0 + offset;
+
+			offset += 4;
+		}
+
+		BufferProps indexBufferDesc;
+		indexBufferDesc.Data = indices;
+		indexBufferDesc.DataType = RendererAPI::DataType::UInt;
+		indexBufferDesc.Size = maxQuadIndexCount * sizeof(uint32);
+		indexBufferDesc.Usage = BufferUsage::Static;
+
+		s_QuadData.IndexBuffer = IndexBuffer::Create(indexBufferDesc);
+		delete[] indices;
+	}
+
 	void Renderer2D::Shutdown()
 	{
 		delete[] s_QuadData.TextureSlots;
@@ -29,21 +94,24 @@ namespace Vision
 		// quadShader->SetFloat3("u_CameraPosition", camera.GetPosition());
 	}
 
+	void Renderer2D::DrawQuad(const glm::mat3& transform,
+						      const glm::vec4& color)
+	{
+		DrawTexture(transform, s_QuadData.WhitePixel, color);
+	}
+
 	void Renderer2D::DrawQuad(const glm::vec2& position,
 							  real32 rotationAngle,
 							  const glm::vec2& scale,
 							  const glm::vec4& color)					
 	{
-		DrawTexture(position,
-					rotationAngle,
-					scale,
-					s_QuadData.WhitePixel,
-					color);
+		glm::mat3 transform = CreateQuadTransform(position,
+												  rotationAngle,
+												  scale);
+		DrawQuad(transform, color);
 	}
 
-	void Renderer2D::DrawTexture(const glm::vec2& position,
-								 real32 rotationAngle,
-								 const glm::vec2& scale,
+	void Renderer2D::DrawTexture(const glm::mat3& transform,
 								 const Ref<Texture2D>& texture,
 								 const glm::vec4& color)
 	{
@@ -53,10 +121,6 @@ namespace Vision
 		}
 
 		real32 textureIndex = (real32)AssginTextureSlot(texture);
-		
-		glm::mat3 transform = CreateQuadTransform(position,
-											      rotationAngle,
-											      scale); 
 		
 		glm::vec2 v0 = transform * glm::vec3(-0.5f, -0.5f, 1.0f);
 		glm::vec2 v1 = transform * glm::vec3( 0.5f, -0.5f, 1.0f);
@@ -71,9 +135,19 @@ namespace Vision
 		s_QuadData.Count++;
 	}
 
-	void Renderer2D::DrawSprite(const glm::vec2& position,
-								real32 rotationAngle,
-								const glm::vec2& scale,
+	void Renderer2D::DrawTexture(const glm::vec2& position,
+								 real32 rotationAngle,
+								 const glm::vec2& scale,
+								 const Ref<Texture2D>& texture,
+								 const glm::vec4& color)
+	{
+		glm::mat3 transform = CreateQuadTransform(position,
+											      rotationAngle,
+											      scale);
+		DrawTexture(transform, texture, color);
+	}
+
+	void Renderer2D::DrawSprite(const glm::mat3& transform,
 								const Ref<Sprite>& sprite)
 	{
 		if (s_QuadData.Count >= s_QuadData.MaxCount)
@@ -83,20 +157,16 @@ namespace Vision
 
 		real32 textureIndex = (real32)AssginTextureSlot(sprite->Texture);
 
-		glm::mat3 transform = CreateQuadTransform(position,
-											      rotationAngle,
-											      scale); 
-
 		glm::vec2 v0 = transform * glm::vec3(-0.5f, -0.5f, 1.0f);
-		glm::vec2 v1 = transform * glm::vec3( 0.5f, -0.5f, 1.0f);
-		glm::vec2 v2 = transform * glm::vec3( 0.5f,  0.5f, 1.0f);
-		glm::vec2 v3 = transform * glm::vec3(-0.5f,  0.5f, 1.0f);	
+		glm::vec2 v1 = transform * glm::vec3(0.5f, -0.5f, 1.0f);
+		glm::vec2 v2 = transform * glm::vec3(0.5f, 0.5f, 1.0f);
+		glm::vec2 v3 = transform * glm::vec3(-0.5f, 0.5f, 1.0f);
 
 		glm::vec2 uv0 = sprite->BottomLeftUV;
 		glm::vec2 uv1 = glm::vec2(sprite->TopRightUV.x, sprite->BottomLeftUV.y);
 		glm::vec2 uv2 = sprite->TopRightUV;
 		glm::vec2 uv3 = glm::vec2(sprite->BottomLeftUV.x, sprite->TopRightUV.y);
-		
+
 		if (sprite->FlipX)
 		{
 			std::swap(uv0, uv1);
@@ -115,76 +185,22 @@ namespace Vision
 		SubmitQuadVertex({ v3, sprite->Color, uv3, textureIndex });
 
 		s_QuadData.Count++;
+	}
+
+	void Renderer2D::DrawSprite(const glm::vec2& position,
+								real32 rotationAngle,
+								const glm::vec2& scale,
+								const Ref<Sprite>& sprite)
+	{
+		glm::mat3 transform = CreateQuadTransform(position,
+											      rotationAngle,
+											      scale);
+		DrawSprite(transform, sprite);
  	}
 
 	void Renderer2D::EndScene()
 	{
 		FlushQuadBatch();
-	}
-
-	void Renderer2D::InitQuadSetup()
-	{
-		uint32 white = 0xffffffff;
-
-		s_QuadData.WhitePixel = Texture2D::Create(1, 1);
-		s_QuadData.WhitePixel->SetData(&white, sizeof(uint32) * 1 * 1);	
-		
-		s_QuadData.MaxTextureSlots = Renderer::GetRendererAPI().GetMaxTextureSlots();		
-		s_QuadData.Samplers = new int32[s_QuadData.MaxTextureSlots];
-		s_QuadData.TextureSlots = new uint32[s_QuadData.MaxTextureSlots];
-		
-		for (uint32 i = 0; i < s_QuadData.MaxTextureSlots; i++)
-		{
-			s_QuadData.Samplers[i] = i;
-			s_QuadData.TextureSlots[i] = -1;
-		}
-
-		VertexLayout layout(
-		{
-			{ RendererAPI::DataType::Float2, "a_Position",     false },
-			{ RendererAPI::DataType::Float4, "a_Color", 	   false },
-			{ RendererAPI::DataType::Float2, "a_TextureCoord", false },
-			{ RendererAPI::DataType::Float,  "a_TextureIndex", false }
-		});
-
-		BufferProps vertexBufferDesc;
-		vertexBufferDesc.Data = nullptr;
-		vertexBufferDesc.DataType = RendererAPI::DataType::Float;
-		vertexBufferDesc.Size = 4 * sizeof(QuadVertex) * s_QuadData.MaxCount;
-		vertexBufferDesc.Usage = BufferUsage::Dynamic;
-
-		s_QuadData.VertexBase = new QuadVertex[4 * s_QuadData.MaxCount];
-		s_QuadData.CurrentVertex = s_QuadData.VertexBase;
-		
-		s_QuadData.VertexBuffer = VertexBuffer::Create(vertexBufferDesc);
-		s_QuadData.VertexBuffer->SetLayout(layout);
-
-		uint32 maxQuadIndexCount = s_QuadData.MaxCount * 6;
-		uint32* indices = new uint32[maxQuadIndexCount];
-		
-		uint32 offset = 0;
-		
-		for (uint32 i = 0; i < maxQuadIndexCount; i += 6)
-		{
-			indices[i + 0] = 0 + offset;
-			indices[i + 1] = 1 + offset;
-			indices[i + 2] = 2 + offset;
-			
-			indices[i + 3] = 2 + offset;
-			indices[i + 4] = 3 + offset;
-			indices[i + 5] = 0 + offset;
-			
-			offset += 4;
-		}
-
-		BufferProps indexBufferDesc;
-		indexBufferDesc.Data = indices;
-		indexBufferDesc.DataType = RendererAPI::DataType::UInt;
-		indexBufferDesc.Size = maxQuadIndexCount * sizeof(uint32);
-		indexBufferDesc.Usage = BufferUsage::Static;
-		
-		s_QuadData.IndexBuffer = IndexBuffer::Create(indexBufferDesc);
-		delete[] indices;
 	}
 	
 	uint32 Renderer2D::AssginTextureSlot(const Ref<Texture2D>& texture)

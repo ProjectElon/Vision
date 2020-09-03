@@ -2,11 +2,12 @@
 
 #include <cstdint>
 #include <memory>
+
 #include "Vision/Core/Log.h"
 
 /*
 -------------------------
-	Types
+	Basic Types
 -------------------------
 */
 

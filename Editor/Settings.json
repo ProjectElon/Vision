@@ -1,0 +1,15 @@
+{
+    "WindowX": 0,
+    "WindowY": 23,
+    "WindowWidth": 1920,
+    "WindowHeight": 1017,
+    "Maximized": true,
+    "VSync": true,
+    "CameraZoomLevel": 2,
+    "ClearColor": [
+        0.9999074935913086,
+        0.0,
+        1.0,
+        1.0
+    ]
+}

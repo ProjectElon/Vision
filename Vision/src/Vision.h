@@ -41,3 +41,9 @@
 #include "Vision/Renderer/SpriteAtlas.h"
 #include "Vision/Renderer/FrameBuffer.h"
 /*--------------------------------*/
+
+/*----------  ECS  ----------*/
+#include "Vision/Entity/Entity.h"
+#include "Vision/Entity/Component.h"
+#include "Vision/Entity/Scene.h"
+/*--------------------------------*/

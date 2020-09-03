@@ -21,7 +21,7 @@ namespace Vision
 		float GetMouseYImp() const override;
 
 		bool IsCursorHoveringImp() const override;
-		void SetCursorModeImp(bool visible) const override;
+		void SetCursorVisibilityImp(bool visible) const override;
 
 	private:
 		GLFWwindow* m_Window;

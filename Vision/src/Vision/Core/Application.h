@@ -42,7 +42,6 @@ namespace Vision
 
 		bool m_Running = true;
 		bool m_Minimized = false;
-		bool m_VSync = false;
 
 	private:
 		static Application* s_Instance;

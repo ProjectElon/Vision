@@ -23,7 +23,7 @@ namespace Vision
 		inline static float GetMouseY() { return s_Instance->GetMouseYImp(); }
 
 		inline static bool IsCursorHovering()          { s_Instance->IsCursorHoveringImp(); }
-		inline static void SetCursorMode(bool visible) { s_Instance->SetCursorModeImp(visible); }
+		inline static void SetCursorVisibility(bool visible) { s_Instance->SetCursorVisibilityImp(visible); }
 
 	protected:
 		virtual bool IsKeyDownImp(unsigned int keyCode) const = 0;
@@ -36,7 +36,7 @@ namespace Vision
 		virtual float GetMouseYImp() const = 0;
 
 		virtual bool IsCursorHoveringImp() const = 0;
-		virtual void SetCursorModeImp(bool visible) const = 0;
+		virtual void SetCursorVisibilityImp(bool visible) const = 0;
 
 	private:
 		static Scope<Input> s_Instance;

@@ -2,11 +2,14 @@
 
 #include <Vision.h>
 
-class Editor : public Vision::Application
+namespace Vision
 {
-public:
-	Editor();
-	~Editor();
-};
+	class Editor : public Application
+	{
+	public:
+		Editor();
+		~Editor();
+	};
+}
 
 RegisterEntryPointClass(Editor)

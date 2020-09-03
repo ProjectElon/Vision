@@ -1,11 +1,14 @@
 #include "Editor.h"
 #include "EditorLayer.h"
 
-Editor::Editor()
+namespace Vision
 {
-	PushLayer(new EditorLayer);
-}
+	Editor::Editor()
+	{
+		PushLayer(new EditorLayer);
+	}
 
-Editor::~Editor()
-{
+	Editor::~Editor()
+	{
+	}
 }

@@ -6,8 +6,7 @@ namespace Vision
 {
 	DesktopInput::DesktopInput()
 	{
-		Application& app = Application::Get();
-		m_Window = (GLFWwindow*)app.GetWindow().GetNativeWindowHandle();
+		m_Window = (GLFWwindow*)Application::Get().GetWindow().GetNativeHandle();
 	}
 
 	bool DesktopInput::IsKeyDownImp(unsigned int keyCode) const
@@ -56,7 +55,7 @@ namespace Vision
 		return glfwGetWindowAttrib(m_Window, GLFW_HOVERED);
 	}
 
-	void DesktopInput::SetCursorModeImp(bool visible) const
+	void DesktopInput::SetCursorVisibilityImp(bool visible) const
 	{
 		if (visible)
 		{

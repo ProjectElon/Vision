@@ -15,7 +15,7 @@ namespace Vision
 		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 	#endif
 
-		m_WindowHandle = (GLFWwindow*)window->GetNativeWindowHandle();
+		m_WindowHandle = (GLFWwindow*)window->GetNativeHandle();
 		glfwMakeContextCurrent(m_WindowHandle);
 
 		int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);

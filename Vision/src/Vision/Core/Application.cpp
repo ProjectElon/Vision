@@ -18,6 +18,7 @@ namespace Vision
 
 		m_Window = Window::Create();
 		m_Window->SetEventCallback(VN_BIND_EVENT_FN(Application::OnEvent));
+		const WindowData& windowData = m_Window->GetData();
 		
 		Renderer::Init();
 		Input::Init();
@@ -28,7 +29,7 @@ namespace Vision
 		m_FrameTimer = Timer::Create();
 		m_FrameTimer->Start();
 
-		Renderer::OnWindowResize(m_Window->GetWidth(), m_Window->GetHeight());
+		Renderer::OnWindowResize(windowData.Width, windowData.Height);
 	}
 
 	Application::~Application()

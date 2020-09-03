@@ -59,16 +59,25 @@ namespace Vision
 							 const glm::vec2& scale,
 							 const glm::vec4& color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
+		static void DrawQuad(const glm::mat3& transform,
+							 const glm::vec4& color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+
 		static void DrawTexture(const glm::vec2& position,
 								real32 rotationAngle,
 								const glm::vec2& scale,
 								const Ref<Texture2D>& texture,
 								const glm::vec4& color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-							
+
+		static void DrawTexture(const glm::mat3& transform, 
+								const Ref<Texture2D>& texture, 
+								const glm::vec4& color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+
 		static void DrawSprite(const glm::vec2& position,
 							   real32 rotationAngle,
 							   const glm::vec2& scale,
 							   const Ref<Sprite>& sprite);
+
+		static void DrawSprite(const glm::mat3& transform, const Ref<Sprite>& sprite);
 
 	private:
 		static void InitQuadSetup();

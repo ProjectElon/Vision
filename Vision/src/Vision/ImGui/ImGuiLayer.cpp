@@ -22,8 +22,7 @@ namespace Vision
 	ImGuiLayer::ImGuiLayer()
 		: Layer("ImGui")
 	{
-		Application& app = Application::Get();
-		m_Window = &app.GetWindow();
+		m_Window = &Application::Get().GetWindow();
 	}	
 
 	void ImGuiLayer::OnAttach()
@@ -46,10 +45,10 @@ namespace Vision
 			style.Colors[ImGuiCol_WindowBg].w = 1.0f;
 		}
 
-		GLFWwindow* window = (GLFWwindow*)m_Window->GetNativeWindowHandle();
+		GLFWwindow* window = (GLFWwindow*)m_Window->GetNativeHandle();
 
 		ImGui_ImplGlfw_InitForOpenGL(window, true);
-		ImGui_ImplOpenGL3_Init("#version 410");
+		ImGui_ImplOpenGL3_Init("#version 450");
 	}
 
 	void ImGuiLayer::OnDetach()
@@ -72,6 +71,7 @@ namespace Vision
 		// We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
 		// because it would be confusing to have two docking targets within each others.
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+		
 		if (opt_fullscreen)
 		{
 			ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -123,10 +123,9 @@ namespace Vision
 
 		ImGuiIO& io = ImGui::GetIO();
 
-		auto& app = Application::Get();
-		auto& window = app.GetWindow();
+		const WindowData& windowData = m_Window->GetData();
 
-		io.DisplaySize = ImVec2((float)window.GetWidth(), (float)window.GetHeight());
+		io.DisplaySize = ImVec2((float)windowData.Width, (float)windowData.Height);
 
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

@@ -1,41 +1,46 @@
 #pragma once
 
 #include <Vision.h>
+#include <rapidjson/document.h>
 
-class EditorLayer : public Vision::Layer
+namespace Vision
 {
-public:
-	EditorLayer();
+	class EditorLayer : public Layer
+	{
+	public:
+		EditorLayer();
+		~EditorLayer();
 
-	void OnAttach() override;
-	void OnDetach() override;
+		void OnAttach() override;
+		void OnDetach() override;
 
-	void OnUpdate(float deltaTime) override;
-	void OnEvent(Vision::Event& e) override;
-	void OnImGuiRender() override;
+		void OnUpdate(float deltaTime) override;
+		void OnEvent(Vision::Event& e) override;
+		void OnImGuiRender() override;
 
-private:
-	Vision::Scope<Vision::OrthographicCameraController> m_CameraController;
+	private:
+		Window* m_Window;
 
-	Vision::Ref<Vision::Shader> m_SpriteShader;
+		Vision::Scope<OrthographicCameraController> m_CameraController;
 
-	Vision::Ref<Vision::Texture2D> m_CheckboardTexture;
-	Vision::Ref<Vision::Texture2D> m_CharacterTexture;
+		Vision::Ref<Shader> m_SpriteShader;
 
-	Vision::Ref<Vision::Sprite>      m_CheckerboardSprite;
-	Vision::Ref<Vision::SpriteAtlas> m_CharacterAtlas;
+		Vision::Ref<Texture2D> m_CheckboardTexture;
+		Vision::Ref<Sprite>    m_CheckerboardSprite;
+		
+		glm::vec4 m_WhiteColor;
 
-	Vision::Ref<Vision::Sprite> m_WalkAnimation[8];
+		glm::vec4 m_ClearColor = {};
+		glm::vec4 m_LastClearColor = {};
 
-	real32 m_WalkAnimationIndex = 0.0f;
-	real32 m_WalkAnimationFrames = 12.0f;
+		glm::vec2 m_ViewportSize = { 800.0f, 600.0f };
+		Ref<FrameBuffer> m_SceneFrameBuffer;
 
-	glm::vec4 m_WhiteColor;
-	glm::vec4 m_ClearColor;
+		bool m_IsViewportFocused = false;
+		bool m_IsViewportHovered = false;
+		bool m_LastIsVSyncEnabled = false;
+		bool m_IsVSyncEnabled = false;
 
-	glm::vec2 m_ViewportSize = { 800.0f, 600.0f };
-	Vision::Ref<Vision::FrameBuffer> m_SceneFrameBuffer;
-
-	bool m_IsViewportFocused = false;
-	bool m_IsViewportHovered = false;
-};
+		rapidjson::Document m_Settings;
+	};
+}

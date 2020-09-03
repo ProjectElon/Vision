@@ -16,7 +16,8 @@ namespace Vision
 		void OnUpdate(float dt);
 		
 		inline const OrthographicCamera& GetCamera() const { return m_Camera; }
-		
+		inline const float GetZoomLevel() const { return m_ZoomLevel; }
+
 	private:
 		float m_AspectRatio;
 		float m_ZoomLevel;
