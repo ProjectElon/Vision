@@ -35,15 +35,12 @@
 #include "Vision/Renderer/Texture2D.h"
 #include "Vision/Renderer/Shader.h"
 #include "Vision/Renderer/RendererAPI.h"
-#include "Vision/Renderer/OrthographicCamera.h"
 #include "Vision/Renderer/OrthographicCameraController.h"
-#include "Vision/Renderer/Sprite.h"
-#include "Vision/Renderer/SpriteAtlas.h"
 #include "Vision/Renderer/FrameBuffer.h"
 /*--------------------------------*/
 
 /*----------  ECS  ----------*/
 #include "Vision/Entity/Entity.h"
-#include "Vision/Entity/Component.h"
+#include "Vision/Entity/Components.h"
 #include "Vision/Entity/Scene.h"
 /*--------------------------------*/

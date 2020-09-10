@@ -18,6 +18,32 @@ namespace Vision
 		void OnEvent(Vision::Event& e) override;
 		void OnImGuiRender() override;
 
+		template<typename Component>
+		void InspectComponent()
+		{
+			auto& componentTypes = Scene::GetComponenetTypes();
+			
+			auto it = componentTypes.find(std::type_index(typeid(Component)));
+			
+			ComponentID componentID;
+
+			if (it != componentTypes.end())
+			{
+				componentID = it->second;
+			}
+			else
+			{
+				componentID = Scene::GenerateComponentID();
+				componentTypes.emplace(std::type_index(typeid(Component)), componentID);
+			}
+
+			m_ComponentInspectors[componentID] = ShowInInspectorFn<Component>;
+		}
+
+	private:
+		void LoadSettings();
+		void SaveSettings();
+
 	private:
 		Window* m_Window;
 
@@ -26,7 +52,9 @@ namespace Vision
 		Vision::Ref<Shader> m_SpriteShader;
 
 		Vision::Ref<Texture2D> m_CheckboardTexture;
-		Vision::Ref<Sprite>    m_CheckerboardSprite;
+		Vision::Ref<Texture2D> m_PlayerTexture;
+
+		SpriteComponent m_CheckerboardSprite;
 		
 		glm::vec4 m_WhiteColor;
 
@@ -42,5 +70,11 @@ namespace Vision
 		bool m_IsVSyncEnabled = false;
 
 		rapidjson::Document m_Settings;
+
+		std::unique_ptr<Scene> m_MainScene;
+		Entity m_SelectedEntity;
+
+		std::unordered_map<ComponentID, std::function<void(void*)>> m_ComponentInspectors;
+		bool m_UseMainGameCamera = false;
 	};
 }

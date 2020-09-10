@@ -28,12 +28,12 @@ namespace Vision
 		}
 
 		VertexLayout layout(
-			{
-				{ RendererAPI::DataType::Float2, "a_Position",     false },
-				{ RendererAPI::DataType::Float4, "a_Color", 	   false },
-				{ RendererAPI::DataType::Float2, "a_TextureCoord", false },
-				{ RendererAPI::DataType::Float,  "a_TextureIndex", false }
-			});
+		{
+			{ RendererAPI::DataType::Float2, "a_Position",     false },
+			{ RendererAPI::DataType::Float4, "a_Color", 	   false },
+			{ RendererAPI::DataType::Float2, "a_TextureCoord", false },
+			{ RendererAPI::DataType::Float,  "a_TextureIndex", false }
+		});
 
 		BufferProps vertexBufferDesc;
 		vertexBufferDesc.Data = nullptr;
@@ -82,16 +82,18 @@ namespace Vision
 		delete[] s_QuadData.VertexBase;
 	}
 
-	void Renderer2D::BeginScene(const OrthographicCamera& camera, 
+	void Renderer2D::BeginScene(const glm::mat4& cameraTransform,
+								const OrthographicCameraComponent& camera,
 								const Ref<Shader>& quadShader)
 	{
-		s_SceneData.CameraPosition = camera.GetPosition();
-		s_SceneData.ViewProjection = camera.GetViewProjection();
+		
+		s_SceneData.CameraPosition = cameraTransform[3];
+		s_SceneData.ViewProjection = glm::inverse(cameraTransform) * camera.Projection;
 
 		quadShader->Bind();
 		quadShader->SetIntArray("u_Textures", s_QuadData.Samplers, s_QuadData.MaxTextureSlots);
 		quadShader->SetMatrix4("u_ViewProj", s_SceneData.ViewProjection);
-		// quadShader->SetFloat3("u_CameraPosition", camera.GetPosition());
+		// quadShader->SetFloat3("u_CameraPosition", cameraTransformComponent.Transform[3]);
 	}
 
 	void Renderer2D::DrawQuad(const glm::mat3& transform,
@@ -113,7 +115,8 @@ namespace Vision
 
 	void Renderer2D::DrawTexture(const glm::mat3& transform,
 								 const Ref<Texture2D>& texture,
-								 const glm::vec4& color)
+								 const glm::vec4& color,
+								 float tilingFactor)
 	{
 		if (s_QuadData.Count >= s_QuadData.MaxCount)
 		{
@@ -128,9 +131,9 @@ namespace Vision
 		glm::vec2 v3 = transform * glm::vec3(-0.5f,  0.5f, 1.0f);
 
 		SubmitQuadVertex({ v0, color, glm::vec2(0.0f, 0.0f), textureIndex });
-		SubmitQuadVertex({ v1, color, glm::vec2(1.0f, 0.0f), textureIndex });
-		SubmitQuadVertex({ v2, color, glm::vec2(1.0f, 1.0f), textureIndex });
-		SubmitQuadVertex({ v3, color, glm::vec2(0.0f, 1.0f), textureIndex });
+		SubmitQuadVertex({ v1, color, glm::vec2(tilingFactor, 0.0f), textureIndex });
+		SubmitQuadVertex({ v2, color, glm::vec2(tilingFactor, tilingFactor), textureIndex });
+		SubmitQuadVertex({ v3, color, glm::vec2(0.0f, tilingFactor), textureIndex });
 
 		s_QuadData.Count++;
 	}
@@ -139,50 +142,90 @@ namespace Vision
 								 real32 rotationAngle,
 								 const glm::vec2& scale,
 								 const Ref<Texture2D>& texture,
-								 const glm::vec4& color)
+								 const glm::vec4& color,
+								 float tilingFactor)
 	{
 		glm::mat3 transform = CreateQuadTransform(position,
 											      rotationAngle,
 											      scale);
-		DrawTexture(transform, texture, color);
+		DrawTexture(transform, texture, color, tilingFactor);
 	}
 
 	void Renderer2D::DrawSprite(const glm::mat3& transform,
-								const Ref<Sprite>& sprite)
+								const SpriteComponent& sprite)
 	{
 		if (s_QuadData.Count >= s_QuadData.MaxCount)
 		{
 			FlushQuadBatch();
 		}
 
-		real32 textureIndex = (real32)AssginTextureSlot(sprite->Texture);
+		real32 textureIndex = (real32)AssginTextureSlot(sprite.Texture);
 
 		glm::vec2 v0 = transform * glm::vec3(-0.5f, -0.5f, 1.0f);
 		glm::vec2 v1 = transform * glm::vec3(0.5f, -0.5f, 1.0f);
 		glm::vec2 v2 = transform * glm::vec3(0.5f, 0.5f, 1.0f);
 		glm::vec2 v3 = transform * glm::vec3(-0.5f, 0.5f, 1.0f);
 
-		glm::vec2 uv0 = sprite->BottomLeftUV;
-		glm::vec2 uv1 = glm::vec2(sprite->TopRightUV.x, sprite->BottomLeftUV.y);
-		glm::vec2 uv2 = sprite->TopRightUV;
-		glm::vec2 uv3 = glm::vec2(sprite->BottomLeftUV.x, sprite->TopRightUV.y);
+		glm::vec2 uv0 = sprite.BottomLeftPoint;
+		glm::vec2 uv1 = glm::vec2(sprite.TopRightPoint.x, sprite.BottomLeftPoint.y);
+		glm::vec2 uv2 = sprite.TopRightPoint;
+		glm::vec2 uv3 = glm::vec2(sprite.BottomLeftPoint.x, sprite.TopRightPoint.y);
 
-		if (sprite->FlipX)
+		if (sprite.FlipX)
 		{
 			std::swap(uv0, uv1);
 			std::swap(uv2, uv3);
 		}
 
-		if (sprite->FlipY)
+		if (sprite.FlipY)
 		{
 			std::swap(uv0, uv3);
 			std::swap(uv1, uv2);
 		}
 
-		SubmitQuadVertex({ v0, sprite->Color, uv0, textureIndex });
-		SubmitQuadVertex({ v1, sprite->Color, uv1, textureIndex });
-		SubmitQuadVertex({ v2, sprite->Color, uv2, textureIndex });
-		SubmitQuadVertex({ v3, sprite->Color, uv3, textureIndex });
+		SubmitQuadVertex({ v0, sprite.Color, uv0, textureIndex });
+		SubmitQuadVertex({ v1, sprite.Color, uv1, textureIndex });
+		SubmitQuadVertex({ v2, sprite.Color, uv2, textureIndex });
+		SubmitQuadVertex({ v3, sprite.Color, uv3, textureIndex });
+
+		s_QuadData.Count++;
+	}
+
+	void Renderer2D::DrawSprite(const glm::mat4& transform, const SpriteComponent& sprite)
+	{
+		if (s_QuadData.Count >= s_QuadData.MaxCount)
+		{
+			FlushQuadBatch();
+		}
+
+		real32 textureIndex = (real32)AssginTextureSlot(sprite.Texture);
+
+		glm::vec3 v0 = transform * glm::vec4(-0.5f, -0.5f, 1.0f, 1.0f);
+		glm::vec3 v1 = transform * glm::vec4(0.5f, -0.5f, 1.0f, 1.0f);
+		glm::vec3 v2 = transform * glm::vec4(0.5f, 0.5f, 1.0f, 1.0f);
+		glm::vec3 v3 = transform * glm::vec4(-0.5f, 0.5f, 1.0f, 1.0f);
+
+		glm::vec2 uv0 = sprite.BottomLeftPoint;
+		glm::vec2 uv1 = glm::vec2(sprite.TopRightPoint.x, sprite.BottomLeftPoint.y);
+		glm::vec2 uv2 = sprite.TopRightPoint;
+		glm::vec2 uv3 = glm::vec2(sprite.BottomLeftPoint.x, sprite.TopRightPoint.y);
+
+		if (sprite.FlipX)
+		{
+			std::swap(uv0, uv1);
+			std::swap(uv2, uv3);
+		}
+
+		if (sprite.FlipY)
+		{
+			std::swap(uv0, uv3);
+			std::swap(uv1, uv2);
+		}
+
+		SubmitQuadVertex({ v0, sprite.Color, uv0, textureIndex });
+		SubmitQuadVertex({ v1, sprite.Color, uv1, textureIndex });
+		SubmitQuadVertex({ v2, sprite.Color, uv2, textureIndex });
+		SubmitQuadVertex({ v3, sprite.Color, uv3, textureIndex });
 
 		s_QuadData.Count++;
 	}
@@ -190,7 +233,7 @@ namespace Vision
 	void Renderer2D::DrawSprite(const glm::vec2& position,
 								real32 rotationAngle,
 								const glm::vec2& scale,
-								const Ref<Sprite>& sprite)
+								const SpriteComponent& sprite)
 	{
 		glm::mat3 transform = CreateQuadTransform(position,
 											      rotationAngle,

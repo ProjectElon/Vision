@@ -3,13 +3,24 @@
 
 namespace Vision
 {
-	Scene::Scene()
-		: m_EntityIDCounter(0)
-		, m_ComponentIDCounter(0)
+    Scene* Scene::s_ActiveScene = nullptr;
+    ComponentTypes Scene::s_ComponentTypes;
+
+	Scene::Scene(const std::string& name)
+		: m_Name(name)
+        , m_EntityIDCounter(0)
 	{
 	}
 
     Scene::~Scene()
+    {
+    }
+
+    void Scene::Load()
+    {
+    }
+
+    void Scene::Save()
     {
     }
 
@@ -29,7 +40,7 @@ namespace Vision
         m_Entites.erase(entityIter);
     }
 
-    void Scene::for_each(void(*CallbackFn)(Entity))
+    void Scene::Each(std::function<void(Entity)> CallbackFn)
     {
         for (const auto& entity : m_Entites)
         {
@@ -38,9 +49,14 @@ namespace Vision
         }
     }
 
+    void* Scene::GetComponent(EntityHandle entity, ComponentID componentID, ComponentIndex componentIndex)
+    {
+        return &m_Components[componentID][componentIndex];
+    }
+
     void* Scene::RemoveComponent(EntityHandle entity, ComponentID componentID)
     {
-        static uint8 TempStorage[MAX_COMPONENT_SIZE];
+        static uint8 TempStorage[MAX_COMPONENT_SIZE_IN_BYTES];
 
         EntityStorage& entityStorage = m_Entites[entity];
         auto componentIter = entityStorage.find(componentID);
@@ -69,5 +85,37 @@ namespace Vision
         componentStorage.resize(componentStorage.size() - (componentSize + sizeof(EntityHandle)));
 
         return TempStorage;
+    }
+
+    void Scene::SetActiveCamera(Entity entity)
+    {
+        VN_CORE_ASSERT(m_ActiveCamera != entity, "Scene is already active.");
+        m_ActiveCamera = entity;
+    }
+
+    Entity Scene::GetActiveCamera()
+    {
+        return m_ActiveCamera;
+    }
+
+    //--- Static Functions ---//
+
+    void Scene::SetActiveScene(Scene* scene)
+    {
+        VN_CORE_ASSERT(s_ActiveScene != scene, "Scene is already active.");
+        s_ActiveScene->Save();
+        s_ActiveScene = scene;
+        s_ActiveScene->Load();
+    }
+
+    Scene& Scene::GetActiveScene()
+    {
+        return *s_ActiveScene;
+    }
+
+    uint32 Scene::GenerateComponentID()
+    {
+        static uint32 ComponentCount = 0;
+        return ComponentCount++;
     }
 }

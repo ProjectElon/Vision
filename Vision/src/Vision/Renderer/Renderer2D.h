@@ -4,8 +4,7 @@
 #include "Vision/Renderer/VertexBuffer.h"
 #include "Vision/Renderer/IndexBuffer.h"
 #include "Vision/Renderer/Texture2D.h"
-#include "Vision/Renderer/OrthographicCamera.h"
-#include "Vision/Renderer/Sprite.h"
+#include "Vision/Entity/Scene.h"
 
 namespace Vision
 {
@@ -49,7 +48,8 @@ namespace Vision
 		
 		static void Shutdown();
 
-		static void BeginScene(const OrthographicCamera& camera,
+		static void BeginScene(const glm::mat4& cameraTransform,
+							   const OrthographicCameraComponent& camera,
 							   const Ref<Shader>& quadShader);
 
 		static void EndScene();
@@ -66,18 +66,19 @@ namespace Vision
 								real32 rotationAngle,
 								const glm::vec2& scale,
 								const Ref<Texture2D>& texture,
-								const glm::vec4& color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+								const glm::vec4& color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), float tilingFactor = 1.0f);
 
 		static void DrawTexture(const glm::mat3& transform, 
 								const Ref<Texture2D>& texture, 
-								const glm::vec4& color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+								const glm::vec4& color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), float tilingFactor = 1.0f);
 
 		static void DrawSprite(const glm::vec2& position,
 							   real32 rotationAngle,
 							   const glm::vec2& scale,
-							   const Ref<Sprite>& sprite);
+							   const SpriteComponent& sprite);
 
-		static void DrawSprite(const glm::mat3& transform, const Ref<Sprite>& sprite);
+		static void DrawSprite(const glm::mat3& transform, const SpriteComponent& sprite);
+		static void DrawSprite(const glm::mat4& transform, const SpriteComponent& sprite);
 
 	private:
 		static void InitQuadSetup();

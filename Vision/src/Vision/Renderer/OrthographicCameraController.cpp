@@ -3,31 +3,42 @@
 #include "Vision/Core/Base.h"
 #include "Vision/Platform/Input.h"
 
+#include <glm/gtc/matrix_transform.hpp>
+
 namespace Vision
 {
-	OrthographicCameraController::OrthographicCameraController(float aspectRatio, float zoomLevel)
-		: m_AspectRatio(aspectRatio)
-		, m_ZoomLevel(zoomLevel)
-		, m_Camera(-aspectRatio * zoomLevel, aspectRatio * zoomLevel, -zoomLevel, zoomLevel)
+	OrthographicCameraController::OrthographicCameraController(float aspectRatio, float size, float Near, float Far)
 	{
+		m_Camera.AspectRatio = aspectRatio;
+		m_Camera.Size = size;
+
+		m_Camera.Projection = glm::ortho(-aspectRatio * size,
+										  aspectRatio * size,
+										 -size,
+										  size,
+										  Near,
+										  Far);
 	}
 
 	void OrthographicCameraController::Resize(uint32 width, uint32 height)
 	{
-		m_AspectRatio = (float)width / (float)height;
-		m_Camera.SetProjection(-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel);
+		m_Camera.AspectRatio = (float)width / (float)height;
+
+		m_Camera.Projection = glm::ortho(-m_Camera.AspectRatio * m_Camera.Size,
+										  m_Camera.AspectRatio * m_Camera.Size,
+										 -m_Camera.Size,
+										  m_Camera.Size);
 	}
 
 	void OrthographicCameraController::OnEvent(Event& e)
 	{
 		EventDispatcher dispatcher(e);
-		// dispatcher.Dispatch<WindowResizeEvent>(VN_BIND_EVENT_FN(OrthographicCameraController::OnWindowResize));
 		dispatcher.Dispatch<MouseWheelScrolledEvent>(VN_BIND_EVENT_FN(OrthographicCameraController::OnMouseWheelScrolled));
 	}
 
 	void OrthographicCameraController::OnUpdate(float dt)
 	{
-		m_CameraMovementSpeed = m_ZoomLevel;
+		m_CameraMovementSpeed = m_Camera.Size;
 
 		if (Input::IsKeyDown(VN_KEY_W))
 		{
@@ -48,21 +59,16 @@ namespace Vision
 		{
 			m_CameraPosition.x -= m_CameraMovementSpeed * dt;
 		}
-
-		m_Camera.SetPosition(m_CameraPosition);
-	}
-
-	bool OrthographicCameraController::OnWindowResize(WindowResizeEvent& e)
-	{
-		Resize(e.GetWidth(), e.GetHeight());
-		return false;
 	}
 
 	bool OrthographicCameraController::OnMouseWheelScrolled(MouseWheelScrolledEvent& e)
 	{
-		m_ZoomLevel -= e.GetYOffset() * 0.25f;
-		m_ZoomLevel = std::max(m_ZoomLevel, 0.25f);
-		m_Camera.SetProjection(-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel);
+		m_Camera.Size -= e.GetYOffset() * 0.25f;
+		m_Camera.Size = std::max(m_Camera.Size, 0.25f);
+		m_Camera.Projection = glm::ortho(-m_Camera.AspectRatio * m_Camera.Size, 
+										  m_Camera.AspectRatio * m_Camera.Size,
+										 -m_Camera.Size, 
+										  m_Camera.Size);
 		return false;
 	}
 }

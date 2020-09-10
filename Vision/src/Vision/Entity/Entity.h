@@ -1,16 +1,24 @@
 #pragma once
 
 #include "Vision/Core/Base.h"
+#include "Vision/Entity/Components.h"
 
 namespace Vision
 {
 	class Scene;
+	
 	using EntityHandle = uint32;
+	using EntityStorage = std::unordered_map<ComponentID, ComponentIndex>;
 
 	class Entity
 	{
 	public:
+		Entity();
 		Entity(EntityHandle handle, Scene* scene);
+
+		bool Isvalid();
+
+		inline const EntityHandle& GetHandle() const { return m_Handle; }
 
 		template<typename Component>
 		inline void AddComponent(const Component&& component)
@@ -42,11 +50,15 @@ namespace Vision
 			return m_Scene->GetComponent<Component>(m_Handle);
 		}
 
+		void* GetComponent(ComponentID componentID, ComponentIndex componentIndex);
+
 		template<typename Component, typename ... Components>
 		inline auto GetComponents()
 		{
 			return m_Scene->GetComponents<Component, Components...>(m_Handle);
 		}
+
+		const EntityStorage& GetStorage();
 
 		template<typename Component>
 		inline Component RemoveComponent()
@@ -58,6 +70,16 @@ namespace Vision
 		inline auto RemoveComponents()
 		{
 			return m_Scene->RemoveComponents<Component, Components...>(m_Handle);
+		}
+
+		inline bool operator==(const Entity& other)
+		{
+			return m_Handle == other.m_Handle && m_Scene == other.m_Scene;
+		}
+
+		inline bool operator!=(const Entity& other)
+		{
+			return !(*this == other);
 		}
 
 	private:
