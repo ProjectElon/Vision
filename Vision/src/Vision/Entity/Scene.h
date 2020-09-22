@@ -4,6 +4,8 @@
 #include "Vision/Entity/Entity.h"
 #include "Vision/Entity/Components.h"
 
+#include <algorithm>
+
 namespace Vision
 {
     class Scene
@@ -16,25 +18,34 @@ namespace Vision
         void Save();
 
         const std::string& GetName() const { return m_Name; }
+        
+        Entity GetEntityByTag(const std::string& tag);
 
         template<typename ... Components>
         Entity CreateEntity(const std::string& tag, const Components ... components)
         {
-            EntityHandle entity = m_EntityIDCounter++;
-            AddComponents(entity, TagComponent { tag }, components...);
-            return { entity, this };
+            EntityHandle handle = GenerateEntityID();
+            AddComponents(handle, TagComponent { tag }, components...);
+            Entity entity = { handle, this };
+            entity.SetTag(tag);
+            return entity;
         }
+
+        void RunScripts(float deltaTime);
 
         void FreeEntity(const Entity& entity);
 
-        void Each(std::function<void(Entity)> CallbackFn);
+        void EachEntity(std::function<void(Entity)> callbackFn);
 
         template<typename Component>
-        void Each(std::function<void(Component&, Entity)>CallbackFn)
+        void EachComponent(std::function<void(Component&, Entity)> callbackFn)
         {
             auto componentTypeIter = s_ComponentTypes.find(std::type_index(typeid(Component)));
 
-            VN_CORE_ASSERT(componentTypeIter != s_ComponentTypes.end(), "Entity doesn't own Component of Type T");
+            if (componentTypeIter == s_ComponentTypes.end())
+            {
+                return;
+            }
 
             const ComponentID& componentID = componentTypeIter->second;
             const ComponentStorage& components = m_Components[componentID];
@@ -48,13 +59,13 @@ namespace Vision
                 index += stride)
             {
                 Component& component = *((Component*)(&components[index]));
-                Entity entity(*((uint32*)(&components[index + componentSize])), this);
-                CallbackFn(component, entity);
+                const EntityHandle& handle = *((uint32*)(&components[index + componentSize]));
+                callbackFn(component, { handle, this });
             }
         }
 
         template<typename Component, typename ... Components>
-        void Each(std::function<void(const std::tuple<Component&, Components&...>&, Entity)>CallbackFn)
+        void EachGroup(std::function<void(Component&, Components&..., Entity)> callbackFn)
         {
             for (const auto& entity : m_Entites)
             {
@@ -62,8 +73,7 @@ namespace Vision
 
                 if (HasComponents<Component, Components...>(handle))
                 {
-                    const auto components = GetComponents<Component, Components...>(handle);
-                    CallbackFn(components, { handle, this });
+                    callbackFn(GetComponent<Component>(handle), GetComponent<Components>(handle)..., { handle, this } );
                 }
             }
         }
@@ -71,17 +81,21 @@ namespace Vision
         void SetActiveCamera(Entity entity);
         Entity GetActiveCamera();
 
+        static inline ComponentTypes& GetComponenetTypes() { return s_ComponentTypes; }
+        static uint32 GenerateComponentID();
+        static uint32 GenerateEntityID();
+
         static void SetActiveScene(Scene* scene);
         static Scene& GetActiveScene();
 
-        static inline ComponentTypes& GetComponenetTypes() { return s_ComponentTypes; }
-        static uint32 GenerateComponentID();
-
     private:
+        bool SetTag(EntityHandle handle, const std::string& tag);
+
 		template<typename Component>
-        inline void AddComponent(EntityHandle entity, const Component component)
+        inline Component& AddComponent(EntityHandle entity, const Component component)
         {
-            auto it = s_ComponentTypes.find(std::type_index(typeid(Component)));
+            std::type_index typeIndex(typeid(Component));
+            auto it = s_ComponentTypes.find(typeIndex);
             
             ComponentID componentID;
             
@@ -94,7 +108,7 @@ namespace Vision
             {
                 static_assert(sizeof(Component) <= MAX_COMPONENT_SIZE_IN_BYTES, "Oversized Component");
                 componentID = GenerateComponentID();
-                s_ComponentTypes.emplace(std::type_index(typeid(Component)), componentID);
+                s_ComponentTypes.emplace(typeIndex, componentID);
             }
 
             ComponentStorage& storage = m_Components[componentID];
@@ -112,8 +126,13 @@ namespace Vision
             uint8* componentPointer = &storage[componentIndex];
             memcpy(componentPointer, &component, sizeof(Component));
             memcpy(componentPointer + sizeof(Component), &entity, sizeof(EntityHandle));
-
+            
             m_Entites[entity].emplace(componentID, componentIndex);
+
+#ifdef VN_EDIT
+            InspectComponent<Component>();
+#endif
+            return component_cast<Component>(componentPointer);
         }
 
         template<typename Component>
@@ -200,9 +219,9 @@ namespace Vision
         template<typename Component>
         inline Component RemoveComponent(EntityHandle entity)
         {
-            auto componentTypeIter = m_ComponentTypes.find(std::type_index(typeid(Component)));
+            auto componentTypeIter = s_ComponentTypes.find(std::type_index(typeid(Component)));
 
-            VN_CORE_ASSERT(componentTypeIter != m_ComponentTypes.end(), "Entity doesn't own Component of Type T");
+            VN_CORE_ASSERT(componentTypeIter != s_ComponentTypes.end(), "Entity doesn't own Component of Type T");
             
             const ComponentID& componentID = componentTypeIter->second;
             return *(Component*)RemoveComponent(entity, componentID);
@@ -216,18 +235,92 @@ namespace Vision
 
         void* RemoveComponent(EntityHandle entity, ComponentID componentID);
 
+
+        template<typename ScriptType>
+        inline void AddScript(EntityHandle entity)
+        {
+            auto& script = AddComponent<ScriptType>(entity, ScriptType());
+
+            ScriptComponent scriptComponent;
+
+            scriptComponent.OnCreateFn  = std::bind(&ScriptType::OnCreate,  &script);
+            scriptComponent.OnDestroyFn = std::bind(&ScriptType::OnDestroy, &script);
+            scriptComponent.OnUpdateFn  = std::bind(&ScriptType::OnUpdate,  &script, std::placeholders::_1);
+            scriptComponent.Script = &script;
+
+            m_Scripts.push_back(scriptComponent);
+            
+            script.Entity = { entity, this };
+            script.Index = m_Scripts.size() - 1;
+        }
+
+        template<typename ScriptType>
+        inline void RemoveScript(EntityHandle entity)
+        {
+            auto removedScript = RemoveComponent<ScriptType>(entity);
+            uint32 currentIndex = removedScript.Index;
+
+            if (m_Scripts.size() > 1)
+            {
+                uint32 lastIndex = m_Scripts.size() - 1;
+                std::swap(m_Scripts[currentIndex], m_Scripts[lastIndex]);
+
+                Script* swappedScript = m_Scripts[currentIndex].Script;
+                swappedScript->Index = currentIndex;
+            }
+
+            m_Scripts.pop_back();
+        }
+
     private:
         std::string m_Name;
+        std::unordered_map<std::string, Entity> m_Tags;
+
         Entity m_ActiveCamera;
 
-        uint32 m_EntityIDCounter = 0;
         std::unordered_map<EntityHandle, EntityStorage> m_Entites;
-        
         std::unordered_map<ComponentID, ComponentStorage> m_Components;
+        
+        std::vector<ScriptComponent> m_Scripts;
 
         static ComponentTypes s_ComponentTypes;
         static Scene* s_ActiveScene;
-        
         friend class Entity;
+
+#ifdef VN_EDIT
+    private:
+        template<typename Component>
+        void InspectComponent()
+        {
+            auto& componentTypes = Scene::GetComponenetTypes();
+
+            auto componentTypeIter = componentTypes.find(std::type_index(typeid(Component)));
+
+            ComponentID componentID;
+
+            if (componentTypeIter != componentTypes.end())
+            {
+                componentID = componentTypeIter->second;
+            }
+            else
+            {
+                componentID = Scene::GenerateComponentID();
+                componentTypes.emplace(std::type_index(typeid(Component)), componentID);
+            }
+
+            auto componentInspectorIter = s_ComponentInspectors.find(componentID);
+            
+            if (componentInspectorIter == s_ComponentInspectors.end())
+            {
+                s_ComponentInspectors.emplace(componentID, ShowInInspectorFn<Component>);
+            }
+        }
+
+        using ComponentInspectorMap = std::unordered_map<ComponentID, std::function<bool(void*)>>;
+        static ComponentInspectorMap s_ComponentInspectors;
+    public:
+        Entity SelectedEntity;
+        static ComponentInspectorMap& GetComponentInspectors() { return s_ComponentInspectors; }
+#endif
     };
 }

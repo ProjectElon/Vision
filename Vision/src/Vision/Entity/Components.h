@@ -11,10 +11,12 @@
 #include <functional>
 
 #define MAX_COMPONENT_SIZE_IN_BYTES 1024
-#define ShowInInspector(Component) template<> void ShowInInspectorFn<Component>(void* component)
+#define ShowInInspector(Component) template<> bool ShowInInspectorFn<Component>(void* component)
 
 namespace Vision
 {
+    class Script;
+
 	using ComponentID = uint32;
     using ComponentIndex = uint32;
     using ComponentTypes = std::unordered_map<std::type_index, ComponentID>;
@@ -27,7 +29,7 @@ namespace Vision
     }
 
     template<typename T>
-    void ShowInInspectorFn(void* component);
+    bool ShowInInspectorFn(void* component);
     
     struct TagComponent
     {
@@ -69,5 +71,13 @@ namespace Vision
         glm::vec2      TopRightPoint = { 1.0f, 1.0f };
         bool           FlipX = false;
         bool           FlipY = false;
-    };   
+    };
+
+    struct ScriptComponent
+    {
+        std::function<void()> OnCreateFn;
+        std::function<void()> OnDestroyFn;
+        std::function<void(float deltaTime)> OnUpdateFn;
+        Script* Script;
+    };
 }

@@ -18,28 +18,6 @@ namespace Vision
 		void OnEvent(Vision::Event& e) override;
 		void OnImGuiRender() override;
 
-		template<typename Component>
-		void InspectComponent()
-		{
-			auto& componentTypes = Scene::GetComponenetTypes();
-			
-			auto it = componentTypes.find(std::type_index(typeid(Component)));
-			
-			ComponentID componentID;
-
-			if (it != componentTypes.end())
-			{
-				componentID = it->second;
-			}
-			else
-			{
-				componentID = Scene::GenerateComponentID();
-				componentTypes.emplace(std::type_index(typeid(Component)), componentID);
-			}
-
-			m_ComponentInspectors[componentID] = ShowInInspectorFn<Component>;
-		}
-
 	private:
 		void LoadSettings();
 		void SaveSettings();
@@ -61,20 +39,28 @@ namespace Vision
 		glm::vec4 m_ClearColor = {};
 		glm::vec4 m_LastClearColor = {};
 
-		glm::vec2 m_ViewportSize = { 800.0f, 600.0f };
+		glm::vec2 m_SceneViewportSize = { 800.0f, 600.0f };
+		glm::vec2 m_GameViewportSize = { 800.0f, 600.0f };
+
 		Ref<FrameBuffer> m_SceneFrameBuffer;
+		Ref<FrameBuffer> m_GameFrameBuffer;
 
 		bool m_IsViewportFocused = false;
 		bool m_IsViewportHovered = false;
 		bool m_LastIsVSyncEnabled = false;
 		bool m_IsVSyncEnabled = false;
-
+		
 		rapidjson::Document m_Settings;
 
 		std::unique_ptr<Scene> m_MainScene;
-		Entity m_SelectedEntity;
+		
+		struct ComponentState
+		{
+			bool Expanded = true;
+		};
+		
+		std::map<std::pair<EntityHandle, ComponentID>, ComponentState> m_ComponentState;
 
-		std::unordered_map<ComponentID, std::function<void(void*)>> m_ComponentInspectors;
-		bool m_UseMainGameCamera = false;
+		friend class Entity;
 	};
 }

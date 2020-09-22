@@ -16,14 +16,16 @@ namespace Vision
 		Entity();
 		Entity(EntityHandle handle, Scene* scene);
 
+		bool SetTag(const std::string& tag);
+
 		bool Isvalid();
 
 		inline const EntityHandle& GetHandle() const { return m_Handle; }
 
 		template<typename Component>
-		inline void AddComponent(const Component&& component)
+		inline auto& AddComponent(const Component&& component)
 		{
-			m_Scene->AddComponent(m_Handle, component);
+			return m_Scene->AddComponent(m_Handle, component);
 		}
 
 		template<typename Component, typename ... Components>
@@ -80,6 +82,18 @@ namespace Vision
 		inline bool operator!=(const Entity& other)
 		{
 			return !(*this == other);
+		}
+
+		template<typename Script>
+		inline void AddScript()
+		{
+			m_Scene->AddScript<Script>(m_Handle);
+		}
+
+		template<typename Script>
+		inline void RemoveScript()
+		{
+			m_Scene->RemoveScript<Script>(m_Handle);
 		}
 
 	private:

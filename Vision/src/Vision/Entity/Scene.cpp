@@ -8,12 +8,37 @@ namespace Vision
 
 	Scene::Scene(const std::string& name)
 		: m_Name(name)
-        , m_EntityIDCounter(0)
 	{
 	}
 
     Scene::~Scene()
     {
+    }
+
+    bool Scene::SetTag(EntityHandle handle, const std::string& tag)
+    {
+        auto tagIter = m_Tags.find(tag);
+        
+        if (tagIter == m_Tags.end())
+        {
+            auto& tagComponent = GetComponent<TagComponent>(handle);
+            m_Tags.erase(tagComponent.Tag);
+
+            tagComponent.Tag = tag;
+            Entity entity = { handle, this };
+            m_Tags.emplace(tag, entity);
+
+            return true;
+        }
+        
+        VN_CORE_WARN("Tag: {0} Already Taken", tag);
+        return false;
+    }
+
+    Entity Scene::GetEntityByTag(const std::string& tag)
+    {
+        VN_CORE_ASSERT(m_Tags.find(tag) != m_Tags.end(), "Can't find Entity With Tag: " + tag);
+        return m_Tags[tag];
     }
 
     void Scene::Load()
@@ -22,6 +47,16 @@ namespace Vision
 
     void Scene::Save()
     {
+    }
+
+    void Scene::RunScripts(float deltaTime)
+    {
+        for (auto& script : m_Scripts)
+        {
+            script.OnCreateFn();
+            script.OnUpdateFn(deltaTime);
+            script.OnDestroyFn();
+        }
     }
 
     void Scene::FreeEntity(const Entity& entity)
@@ -40,12 +75,12 @@ namespace Vision
         m_Entites.erase(entityIter);
     }
 
-    void Scene::Each(std::function<void(Entity)> CallbackFn)
+    void Scene::EachEntity(std::function<void(Entity)> callbackFn)
     {
         for (const auto& entity : m_Entites)
         {
             const EntityHandle& handle = entity.first;
-            CallbackFn({ handle, this });
+            callbackFn({ handle, this });
         }
     }
 
@@ -118,4 +153,14 @@ namespace Vision
         static uint32 ComponentCount = 0;
         return ComponentCount++;
     }
+
+    uint32 Scene::GenerateEntityID()
+    {
+        static uint32 EntityCount = 0;
+        return EntityCount++;
+    }
+
+#ifdef VN_EDIT
+    Scene::ComponentInspectorMap Scene::s_ComponentInspectors;
+#endif
 }

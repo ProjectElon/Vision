@@ -16,6 +16,11 @@ namespace Vision
 	{
 	}
 
+	bool Entity::SetTag(const std::string& tag)
+	{
+		return m_Scene->SetTag(m_Handle, tag);
+	}
+
 	bool Entity::Isvalid()
 	{
 		if (m_Scene != nullptr)

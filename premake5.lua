@@ -45,11 +45,21 @@ workspace ("Vision")
 		runtime ("Debug")
 		symbols ("on")
 
+		defines
+		{
+			"VN_EDIT"
+		}
+		
 	filter ("configurations:Release")
 
 		defines ("VN_RELEASE")
 		runtime ("Release")
 		optimize ("on")
+
+		defines
+		{
+			"VN_EDIT"
+		}
 
 	filter ("configurations:Dist")
 

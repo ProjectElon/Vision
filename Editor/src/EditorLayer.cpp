@@ -5,6 +5,9 @@
 #include <fstream>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "GameManagerScript.h"
+#include "GameEngineScript.h"
+
 namespace Vision
 {
 	EditorLayer::EditorLayer()
@@ -29,6 +32,7 @@ namespace Vision
 		props.Width = 800;
 		props.Height = 600;
 		m_SceneFrameBuffer = FrameBuffer::Create(props);
+		m_GameFrameBuffer = FrameBuffer::Create(props);
 
 		float aspectRatio = (float)props.Width / (float)props.Height;
 		m_CameraController = CreateScope<OrthographicCameraController>(aspectRatio, m_Settings["CameraZoomLevel"].GetFloat());
@@ -54,14 +58,14 @@ namespace Vision
 		Entity camera0 = m_MainScene->CreateEntity("Camera0", TransformComponent{}, OrthographicCameraComponent{});
 		m_MainScene->SetActiveCamera(camera0);
 
+		Entity camera1 = m_MainScene->CreateEntity("Camera1", TransformComponent{}, OrthographicCameraComponent{});
+
 		Entity entity0 = m_MainScene->CreateEntity("Entity0", TransformComponent{}, SpriteComponent{});
 		auto& sc = entity0.GetComponent<SpriteComponent>();
 		sc.Texture = m_PlayerTexture;
 
-		InspectComponent<TagComponent>();
-		InspectComponent<TransformComponent>();
-		InspectComponent<OrthographicCameraComponent>();
-		InspectComponent<SpriteComponent>();
+		entity0.AddScript<GameManagerScript>();
+		entity0.AddScript<GameEngineScript>();
 	}
 
 	void EditorLayer::OnDetach()
@@ -93,39 +97,17 @@ namespace Vision
 				m_SpriteShader->Reload();
 				RWasDown = false;
 			}
-
-			static bool CWasDown = false;
-
-			if (Input::IsKeyDown(VN_KEY_C))
-			{
-				CWasDown = true;
-			}
-
-			if (Input::IsKeyUp(VN_KEY_C) && CWasDown)
-			{
-				m_UseMainGameCamera = !m_UseMainGameCamera;
-				CWasDown = false;
-			}
 		}
 
 		Scene& scene = Scene::GetActiveScene();
-		Entity activeCamera = scene.GetActiveCamera();
-
-		const auto& cameraTransform = activeCamera.GetComponent<TransformComponent>().Transform;
-		const auto& cameraComponent = activeCamera.GetComponent<OrthographicCameraComponent>();
+		
+		scene.RunScripts(deltaTime);
 
 		m_SceneFrameBuffer->Bind();
 
 		RenderCommand::Clear(RendererAPI::ColorBuffer);
 		
-		if (m_UseMainGameCamera)
-		{
-			Renderer2D::BeginScene(cameraTransform, cameraComponent, m_SpriteShader);
-		}
-		else
-		{
-			Renderer2D::BeginScene(m_CameraController->GetCameraTransform(), m_CameraController->GetCamera(), m_SpriteShader);
-		}
+		Renderer2D::BeginScene(m_CameraController->GetCameraTransform(), m_CameraController->GetCamera(), m_SpriteShader);
 
 		Renderer2D::DrawTexture(glm::vec3(0.0f, 0.0f, 0.0f), 0.0f, 
 								glm::vec2(100.0f, 100.0f), 
@@ -133,15 +115,33 @@ namespace Vision
 								glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
 								100.0f);
 
-		m_MainScene->Each<TransformComponent, SpriteComponent>([](auto& components, Entity entity)
+		scene.EachGroup<TransformComponent, SpriteComponent>([](auto& transform, auto& sprite, Entity entity)
 		{
-			auto& [transform, sprite] = components;
 			Renderer2D::DrawSprite(transform.Transform, sprite);
 		});
 
 		Renderer2D::EndScene();
 
 		m_SceneFrameBuffer->UnBind();
+
+		Entity activeCamera = scene.GetActiveCamera();
+
+		const auto& cameraTransform = activeCamera.GetComponent<TransformComponent>().Transform;
+		const auto& cameraComponent = activeCamera.GetComponent<OrthographicCameraComponent>();
+		
+		m_GameFrameBuffer->Bind();
+		RenderCommand::Clear(RendererAPI::ColorBuffer);
+		
+		Renderer2D::BeginScene(cameraTransform, cameraComponent, m_SpriteShader);
+		
+		scene.EachGroup<TransformComponent, SpriteComponent>([](auto& transform, auto& sprite, Entity entity)
+		{
+			Renderer2D::DrawSprite(transform.Transform, sprite);
+		});
+
+		Renderer2D::EndScene();
+
+		m_GameFrameBuffer->UnBind();
 	}
 
 	void EditorLayer::OnEvent(Vision::Event& e)
@@ -216,19 +216,39 @@ namespace Vision
 			ImVec2 currentViewportSize = ImGui::GetContentRegionAvail();
 
 			uint32 texture = m_SceneFrameBuffer->GetColorAttachmentRendererId();
-			ImGui::Image((void*)(intptr_t)texture, { m_ViewportSize.x, m_ViewportSize.y }, ImVec2(0, 1), ImVec2(1, 0));
+			ImGui::Image((void*)(intptr_t)texture, { m_SceneViewportSize.x, m_SceneViewportSize.y }, ImVec2(0, 1), ImVec2(1, 0));
 
-			if (m_ViewportSize != glm::vec2(currentViewportSize.x, currentViewportSize.y) &&
+			if (m_SceneViewportSize != glm::vec2(currentViewportSize.x, currentViewportSize.y) &&
 				currentViewportSize.x > 0.0f &&
 				currentViewportSize.y > 0.0f)
 			{
 				m_CameraController->Resize((uint32)currentViewportSize.x, (uint32)currentViewportSize.y);
 				m_SceneFrameBuffer->Resize((uint32)currentViewportSize.x, (uint32)currentViewportSize.y);
-				m_ViewportSize = { currentViewportSize.x, currentViewportSize.y };
-				
+				m_SceneViewportSize = { currentViewportSize.x, currentViewportSize.y };
+			}
+
+			ImGui::End();
+		}
+		
+		// Game View
+		{
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+			ImGui::Begin("Game Viewport");
+			ImGui::PopStyleVar();
+
+			ImVec2 currentViewportSize = ImGui::GetContentRegionAvail();
+			uint32 texture = m_GameFrameBuffer->GetColorAttachmentRendererId();
+			ImGui::Image((void*)(intptr_t)texture, { m_GameViewportSize.x, m_GameViewportSize.y }, ImVec2(0, 1), ImVec2(1, 0));
+
+			if (m_GameViewportSize != glm::vec2(currentViewportSize.x, currentViewportSize.y) &&
+				currentViewportSize.x > 0.0f &&
+				currentViewportSize.y > 0.0f)
+			{
+				m_GameViewportSize = { currentViewportSize.x, currentViewportSize.y };
+
 				float aspectRatio = currentViewportSize.x / currentViewportSize.y;
 
-				scene.Each<OrthographicCameraComponent>([&](OrthographicCameraComponent& camera, Entity entity)
+				scene.EachComponent<OrthographicCameraComponent>([&](auto& camera, Entity entity)
 				{
 					if (!camera.Static)
 					{
@@ -240,70 +260,77 @@ namespace Vision
 					}
 				});
 
-				/*
-				scene.for_each<PerspectiveCameraComponent>([&](PerspectiveCameraComponent& camera, Entity entity)
+				scene.EachComponent<PerspectiveCameraComponent>([&](auto& camera, Entity entity)
 				{
 					if (!camera.Static)
 					{
-					camera.AspectRatio = aspectRatio;
-					camera.Projection = glm::perspective(camera.FieldOfView, 
-														 camera.AspectRatio, 
-														 camera.Near, 
-														 camera.Far);
+						camera.AspectRatio = aspectRatio;
+						camera.Projection = glm::perspective(camera.FieldOfView,
+															 camera.AspectRatio,
+															 camera.Near,
+															 camera.Far);
 					}
 				});
-				*/
 			}
 
-			// Scene Panel
-			{
-				ImGui::Begin("Scene Hierarchy");
-
-				if (ImGui::TreeNodeEx(scene.GetName().c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_FramePadding))
-				{
-					scene.Each([&](Entity entity)
-					{
-						auto& tag = entity.GetComponent<TagComponent>();
-						const char* entityName = tag.Tag.c_str();
-
-						ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_FramePadding;
-
-						if (entity == m_SelectedEntity)
-						{
-							flags |= ImGuiTreeNodeFlags_Selected;
-						}
-
-						bool expanded = ImGui::TreeNodeEx((void*)(intptr_t)entity.GetHandle(), flags, entityName);
-						
-						if (ImGui::IsItemClicked() || ImGui::IsItemToggledOpen())
-						{
-							m_SelectedEntity = entity;
-						}
-						
-						if (expanded) ImGui::TreePop();
-						
-					});
-
-					ImGui::TreePop();
-				}
-
-				ImGui::End();
-			}
+			ImGui::End();
 		}
+			
+		// Scene Panel
+		{
+			ImGui::Begin("Scene Hierarchy");
 
+			if (ImGui::TreeNodeEx(scene.GetName().c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_FramePadding))
+			{
+				scene.EachEntity([&](Entity entity)
+				{
+					auto& tag = entity.GetComponent<TagComponent>();
+					const char* entityName = tag.Tag.c_str();
+
+					ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_FramePadding;
+
+					if (entity == scene.SelectedEntity)
+					{
+						flags |= ImGuiTreeNodeFlags_Selected;
+					}
+
+					bool expanded = ImGui::TreeNodeEx((void*)(intptr_t)entity.GetHandle(), flags, entityName);
+						
+					if (ImGui::IsItemClicked() || ImGui::IsItemToggledOpen())
+					{
+						scene.SelectedEntity = entity;
+					}
+						
+					if (expanded) ImGui::TreePop();
+				});
+
+				ImGui::TreePop();
+			}
+
+			ImGui::End();
+		} 
 
 		// Inspector
 		{
 			ImGui::Begin("Inspector");
 			
-			if (m_SelectedEntity.Isvalid())
+			if (scene.SelectedEntity.Isvalid())
 			{
-				const auto& storage = m_SelectedEntity.GetStorage();
+				const auto& storage = scene.SelectedEntity.GetStorage();
 				
 				for (auto& [componentID, componentIndex] : storage)
 				{
-					void* component = m_SelectedEntity.GetComponent(componentID, componentIndex);
-					m_ComponentInspectors[componentID](component);
+					void* component = scene.SelectedEntity.GetComponent(componentID, componentIndex);
+					auto& componentInspectors = Scene::GetComponentInspectors();
+					auto& callbackFn = componentInspectors[componentID];
+					const auto& handle = scene.SelectedEntity.GetHandle();
+
+					if (callbackFn)
+					{
+						ComponentState& componentState = m_ComponentState[{ handle, componentID }];
+						ImGui::SetNextTreeNodeOpen(componentState.Expanded);
+						componentState.Expanded = callbackFn(component);
+					}
 				}
 			}
 
@@ -316,8 +343,6 @@ namespace Vision
 			ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 			ImGui::End();
 		}
-
-		ImGui::End();
 	}
 
 	void EditorLayer::LoadSettings()
