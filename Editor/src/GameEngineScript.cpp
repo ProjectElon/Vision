@@ -9,8 +9,19 @@ namespace Vision
 
 		bool expanded = ImGui::TreeNodeEx("Game Engine Script", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_FramePadding);
 
+		uint32 flags = 0;
+
+		if (ImGui::Button("-"))
+		{
+			flags |= ComponentStateMask::Removed;
+			const std::type_info& typeInfo = typeid(SpriteComponent);
+			VN_CORE_INFO("Removing Component: {0}", typeInfo.name());
+		}
+
 		if (expanded)
 		{
+			flags |= ComponentStateMask::Expaned;
+
 			static char Buffer[256];
 			memset(Buffer, 0, sizeof(Buffer));
 			memcpy(Buffer, script.Message.c_str(), script.Message.size());
@@ -23,7 +34,7 @@ namespace Vision
 			ImGui::TreePop();
 		}
 
-		return expanded;
+		return flags;
 	}
 
 	void GameEngineScript::OnCreate()

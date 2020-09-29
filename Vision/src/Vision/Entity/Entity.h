@@ -25,13 +25,19 @@ namespace Vision
 		template<typename Component>
 		inline auto& AddComponent(const Component&& component)
 		{
-			return m_Scene->AddComponent(m_Handle, component);
+			return m_Scene->AddComponent(m_Handle, std::forward<Component>(component));
+		}
+
+		template<typename Component>
+		inline auto& AddComponent()
+		{
+			return m_Scene->AddComponent(m_Handle, Component());
 		}
 
 		template<typename Component, typename ... Components>
 		inline void AddComponents(const Component&& component, const Components&&... components)
 		{
-			m_Scene->AddComponents(m_Handle, component, components...);
+			m_Scene->AddComponents(m_Handle, std::forward<Component>(component), std::forward<Components>(component)...);
 		}
 
 		template<typename Component>
@@ -82,18 +88,6 @@ namespace Vision
 		inline bool operator!=(const Entity& other)
 		{
 			return !(*this == other);
-		}
-
-		template<typename Script>
-		inline void AddScript()
-		{
-			m_Scene->AddScript<Script>(m_Handle);
-		}
-
-		template<typename Script>
-		inline void RemoveScript()
-		{
-			m_Scene->RemoveScript<Script>(m_Handle);
 		}
 
 	private:

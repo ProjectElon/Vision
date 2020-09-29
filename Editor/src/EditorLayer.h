@@ -54,12 +54,9 @@ namespace Vision
 
 		std::unique_ptr<Scene> m_MainScene;
 		
-		struct ComponentState
-		{
-			bool Expanded = true;
-		};
-		
-		std::map<std::pair<EntityHandle, ComponentID>, ComponentState> m_ComponentState;
+		std::map<std::pair<EntityHandle, ComponentID>, uint32> m_ComponentState;
+
+		bool m_Runtime = false;
 
 		friend class Entity;
 	};

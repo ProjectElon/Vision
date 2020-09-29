@@ -9,12 +9,17 @@ namespace Vision
     {
 	public:
 		Entity Entity;
-		uint32 Index;
-
+		
 		template<typename Component>
 		inline auto& AddComponent(const Component&& component)
 		{
-			return Entity.AddComponent(component);
+			return Entity.AddComponent(std::forward<Component>(component));
+		}
+
+		template<typename Component>
+		inline auto& AddComponent()
+		{
+			return Entity.AddComponent(Component());
 		}
 
 		template<typename Component, typename ... Components>
@@ -57,18 +62,6 @@ namespace Vision
 		inline auto RemoveComponents()
 		{
 			return Entity.RemoveComponents<Component, Components...>();
-		}
-
-		template<typename Script>
-		inline void AddScript()
-		{
-			Entity.AddScript<Script>();
-		}
-
-		template<typename Script>
-		inline void RemoveScript()
-		{
-			Entity.RemoveScript<Script>();
 		}
     };
 }

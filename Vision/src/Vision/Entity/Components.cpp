@@ -1,7 +1,7 @@
 #include "pch.h"
-#include "Components.h"
-#include "Scene.h"
-#include "Vision/Entity/Script.h"
+#include "Vision/Entity/Components.h"
+#include "Vision/Entity/Entity.h"
+#include "Vision/Entity/Scene.h"
 
 namespace Vision
 {
@@ -12,9 +12,13 @@ namespace Vision
         auto& tag = component_cast<TagComponent>(component);
 
         bool expanded = ImGui::TreeNodeEx("Tag", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_FramePadding);
-        
+
+        uint32 flags = 0;
+
         if (expanded)
         {
+            flags |= ComponentStateMask::Expaned;
+
             memcpy(Tag, tag.Tag.data(), 1024);
 
             if (ImGui::InputText("Tag", Tag, 1024, ImGuiInputTextFlags_EnterReturnsTrue) ||
@@ -27,7 +31,7 @@ namespace Vision
             ImGui::TreePop();
         }
 
-        return expanded;
+        return flags;
     }
 
     ShowInInspector(TransformComponent)
@@ -45,9 +49,20 @@ namespace Vision
         RotationAngles = glm::degrees(glm::eulerAngles(Rotation));
 
         bool expanded = ImGui::TreeNodeEx("Transform", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_FramePadding);
-        
+
+        uint32 flags = 0;
+
+        if (ImGui::SmallButton("-"))
+        {
+            flags |= ComponentStateMask::Removed;
+            const std::type_info& typeInfo = typeid(TransformComponent);
+            VN_CORE_INFO("Removing Component: {0}", typeInfo.name());
+        }
+
         if (expanded)
         {
+            flags |= ComponentStateMask::Expaned;
+            
             bool changed = false;
 
             changed |= ImGui::InputFloat3("Position ", &Position.x);
@@ -67,7 +82,7 @@ namespace Vision
             ImGui::TreePop();
         }
 
-        return expanded;
+        return flags;
     }
 
     ShowInInspector(OrthographicCameraComponent)
@@ -75,9 +90,20 @@ namespace Vision
         auto& camera = component_cast<OrthographicCameraComponent>(component);
 
         bool expanded = ImGui::TreeNodeEx("Orthographic Camera", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_FramePadding);
-        
+        uint32 flags = 0;
+
+        if (ImGui::Button("-"))
+        {
+            flags |= ComponentStateMask::Removed;
+            
+            const std::type_info& typeInfo = typeid(OrthographicCameraComponent);
+            VN_CORE_INFO("Removing Component: {0}", typeInfo.name());
+        }
+
         if (expanded)
         {
+            flags |= ComponentStateMask::Expaned;
+
             auto& scene = Scene::GetActiveScene();
             auto activeCamera = scene.GetActiveCamera();
             
@@ -121,17 +147,28 @@ namespace Vision
             ImGui::TreePop();
         }
 
-        return expanded;
+        return flags;
     }
 
     ShowInInspector(SpriteComponent)
     {
         auto& sprite = component_cast<SpriteComponent>(component);
 
-        bool expanded = ImGui::TreeNodeEx("Sprite", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_FramePadding);
-        
+        bool expanded = ImGui::TreeNodeEx("Sprite", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_FramePadding);        
+
+        uint32 flags = 0;
+
+        if (ImGui::Button("-"))
+        {
+            flags |= ComponentStateMask::Removed;
+            const std::type_info& typeInfo = typeid(SpriteComponent);
+            VN_CORE_INFO("Removing Component: {0}", typeInfo.name());
+        }
+
         if (expanded)
         {
+            flags |= ComponentStateMask::Expaned;
+
             if (ImGui::ImageButton((void*)(intptr_t)sprite.Texture->GetRendererID(), ImVec2(64, 64)))
             {
                 // Todo: Edit The Texture Props Here
@@ -146,6 +183,6 @@ namespace Vision
             ImGui::TreePop();
         }
 
-        return expanded;
+        return flags;
     }
 }

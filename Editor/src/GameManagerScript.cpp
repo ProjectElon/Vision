@@ -9,13 +9,23 @@ namespace Vision
 
 		bool expanded = ImGui::TreeNodeEx("Game Manager Script", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_FramePadding);
 
+		uint32 flags = 0;
+
+		if (ImGui::Button("-"))
+		{
+			flags |= ComponentStateMask::Removed;
+			const std::type_info& typeInfo = typeid(SpriteComponent);
+			VN_CORE_INFO("Removing Component: {0}", typeInfo.name());
+		}
+
 		if (expanded)
 		{
+			flags |= ComponentStateMask::Expaned;
 			ImGui::InputFloat("Speed", &script.Speed);
 			ImGui::TreePop();
 		}
 
-		return expanded;
+		return flags;
 	}
 
 	void GameManagerScript::OnCreate()

@@ -5,7 +5,8 @@ namespace Vision
 {
     Scene* Scene::s_ActiveScene = nullptr;
     ComponentTypes Scene::s_ComponentTypes;
-
+    ScriptRuntimeStorage Scene::s_Scripts;
+    
 	Scene::Scene(const std::string& name)
 		: m_Name(name)
 	{
@@ -34,28 +35,32 @@ namespace Vision
         VN_CORE_WARN("Tag: {0} Already Taken", tag);
         return false;
     }
-
+    
     Entity Scene::GetEntityByTag(const std::string& tag)
     {
         VN_CORE_ASSERT(m_Tags.find(tag) != m_Tags.end(), "Can't find Entity With Tag: " + tag);
         return m_Tags[tag];
     }
 
-    void Scene::Load()
-    {
-    }
-
-    void Scene::Save()
-    {
-    }
-
     void Scene::RunScripts(float deltaTime)
     {
-        for (auto& script : m_Scripts)
+        for (auto& [componentID, getScriptRuntimeFn] : s_Scripts)
         {
-            script.OnCreateFn();
-            script.OnUpdateFn(deltaTime);
-            script.OnDestroyFn();
+            const auto& components = m_Components[componentID];
+            const uint32& componentSize = *((uint32*)&components[0]);
+            uint32 stride = componentSize + sizeof(EntityHandle);
+
+            for (uint32 index = sizeof(uint32);
+                 index < components.size();
+                 index += stride)
+            {
+                const void* component = &components[index];
+                ScriptRuntime scriptRuntime = getScriptRuntimeFn(component);
+                
+                scriptRuntime.OnCreate();
+                scriptRuntime.OnUpdate(deltaTime);
+                scriptRuntime.OnDestroy();
+            }
         }
     }
 
@@ -82,6 +87,12 @@ namespace Vision
             const EntityHandle& handle = entity.first;
             callbackFn({ handle, this });
         }
+    }
+
+    void Scene::SetActiveCamera(Entity entity)
+    {
+        VN_CORE_ASSERT(m_ActiveCamera != entity, "Scene is already active.");
+        m_ActiveCamera = entity;
     }
 
     void* Scene::GetComponent(EntityHandle entity, ComponentID componentID, ComponentIndex componentIndex)
@@ -122,12 +133,6 @@ namespace Vision
         return TempStorage;
     }
 
-    void Scene::SetActiveCamera(Entity entity)
-    {
-        VN_CORE_ASSERT(m_ActiveCamera != entity, "Scene is already active.");
-        m_ActiveCamera = entity;
-    }
-
     Entity Scene::GetActiveCamera()
     {
         return m_ActiveCamera;
@@ -138,9 +143,7 @@ namespace Vision
     void Scene::SetActiveScene(Scene* scene)
     {
         VN_CORE_ASSERT(s_ActiveScene != scene, "Scene is already active.");
-        s_ActiveScene->Save();
         s_ActiveScene = scene;
-        s_ActiveScene->Load();
     }
 
     Scene& Scene::GetActiveScene()
@@ -162,5 +165,7 @@ namespace Vision
 
 #ifdef VN_EDIT
     Scene::ComponentInspectorMap Scene::s_ComponentInspectors;
+    Scene::ComponentAdderMap Scene::s_ComponentAdders;
+    Scene::ComponentRemoverMap Scene::s_ComponentRemovers;
 #endif
 }

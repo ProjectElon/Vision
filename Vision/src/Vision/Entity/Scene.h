@@ -3,8 +3,11 @@
 #include "Vision/Core/Base.h"
 #include "Vision/Entity/Entity.h"
 #include "Vision/Entity/Components.h"
+#include "Vision/Entity/Script.h"
+#include "Vision/Entity/ScriptRuntime.h"
 
-#include <algorithm>
+#include <map>
+#include <unordered_map>
 
 namespace Vision
 {
@@ -14,12 +17,7 @@ namespace Vision
         Scene(const std::string& name);
         ~Scene();
 
-        void Load();
-        void Save();
-
         const std::string& GetName() const { return m_Name; }
-        
-        Entity GetEntityByTag(const std::string& tag);
 
         template<typename ... Components>
         Entity CreateEntity(const std::string& tag, const Components ... components)
@@ -30,6 +28,8 @@ namespace Vision
             entity.SetTag(tag);
             return entity;
         }
+
+        Entity GetEntityByTag(const std::string& tag);
 
         void RunScripts(float deltaTime);
 
@@ -108,7 +108,15 @@ namespace Vision
             {
                 static_assert(sizeof(Component) <= MAX_COMPONENT_SIZE_IN_BYTES, "Oversized Component");
                 componentID = GenerateComponentID();
+                
                 s_ComponentTypes.emplace(typeIndex, componentID);
+
+                const std::type_info& typeInfo = typeid(Component);
+
+                if constexpr (std::is_base_of<Script, Component>::value)
+                {
+                    s_Scripts.push_back(std::make_pair(componentID, GetScriptRuntime<Component>));
+                }
             }
 
             ComponentStorage& storage = m_Components[componentID];
@@ -129,10 +137,18 @@ namespace Vision
             
             m_Entites[entity].emplace(componentID, componentIndex);
 
+            Component& componentRef = component_cast<Component>(componentPointer);
+
+            if constexpr (std::is_base_of<Script, Component>::value)
+            {
+                componentRef.Entity = { entity, this };
+            }
+
 #ifdef VN_EDIT
             InspectComponent<Component>();
 #endif
-            return component_cast<Component>(componentPointer);
+
+            return componentRef;
         }
 
         template<typename Component>
@@ -208,8 +224,6 @@ namespace Vision
             return std::forward_as_tuple<Component&, Components&...>(GetComponent<Component>(entity), GetComponent<Components>(entity)...);
         }
 
-        void* GetComponent(EntityHandle entity, ComponentID componentID, ComponentIndex componentIndex);
-
         inline const EntityStorage& GetEntityStorage(EntityHandle entity)
         {
             VN_CORE_ASSERT(Entity(entity, this).Isvalid(), "Entity is not valid");
@@ -233,59 +247,25 @@ namespace Vision
             return std::make_tuple<Component, Components...>(RemoveComponent<Component>(entity), RemoveComponent<Components>(entity)...);
         }
 
-        void* RemoveComponent(EntityHandle entity, ComponentID componentID);
-
-
-        template<typename ScriptType>
-        inline void AddScript(EntityHandle entity)
-        {
-            auto& script = AddComponent<ScriptType>(entity, ScriptType());
-
-            ScriptComponent scriptComponent;
-
-            scriptComponent.OnCreateFn  = std::bind(&ScriptType::OnCreate,  &script);
-            scriptComponent.OnDestroyFn = std::bind(&ScriptType::OnDestroy, &script);
-            scriptComponent.OnUpdateFn  = std::bind(&ScriptType::OnUpdate,  &script, std::placeholders::_1);
-            scriptComponent.Script = &script;
-
-            m_Scripts.push_back(scriptComponent);
-            
-            script.Entity = { entity, this };
-            script.Index = m_Scripts.size() - 1;
-        }
-
-        template<typename ScriptType>
-        inline void RemoveScript(EntityHandle entity)
-        {
-            auto removedScript = RemoveComponent<ScriptType>(entity);
-            uint32 currentIndex = removedScript.Index;
-
-            if (m_Scripts.size() > 1)
-            {
-                uint32 lastIndex = m_Scripts.size() - 1;
-                std::swap(m_Scripts[currentIndex], m_Scripts[lastIndex]);
-
-                Script* swappedScript = m_Scripts[currentIndex].Script;
-                swappedScript->Index = currentIndex;
-            }
-
-            m_Scripts.pop_back();
-        }
-
     private:
         std::string m_Name;
         std::unordered_map<std::string, Entity> m_Tags;
 
-        Entity m_ActiveCamera;
-
         std::unordered_map<EntityHandle, EntityStorage> m_Entites;
         std::unordered_map<ComponentID, ComponentStorage> m_Components;
         
-        std::vector<ScriptComponent> m_Scripts;
+        Entity m_ActiveCamera;
 
         static ComponentTypes s_ComponentTypes;
+        static ScriptRuntimeStorage s_Scripts;
+        
         static Scene* s_ActiveScene;
+
         friend class Entity;
+
+    private:
+        void* GetComponent(EntityHandle entity, ComponentID componentID, ComponentIndex componentIndex);
+        void* RemoveComponent(EntityHandle entity, ComponentID componentID);
 
 #ifdef VN_EDIT
     private:
@@ -306,6 +286,11 @@ namespace Vision
             {
                 componentID = Scene::GenerateComponentID();
                 componentTypes.emplace(std::type_index(typeid(Component)), componentID);
+
+                if constexpr (std::is_base_of<Script, Component>::value)
+                {
+                    s_Scripts.push_back(std::make_pair(componentID, GetScriptRuntime<Component>));
+                }
             }
 
             auto componentInspectorIter = s_ComponentInspectors.find(componentID);
@@ -313,14 +298,25 @@ namespace Vision
             if (componentInspectorIter == s_ComponentInspectors.end())
             {
                 s_ComponentInspectors.emplace(componentID, ShowInInspectorFn<Component>);
+                s_ComponentAdders.emplace(componentID, std::make_pair(typeid(Component).name(), AddComponentInInspectorFn<Component>));
+                s_ComponentRemovers.emplace(componentID, RemoveComponentInInspectorFn<Component>);
             }
         }
 
-        using ComponentInspectorMap = std::unordered_map<ComponentID, std::function<bool(void*)>>;
+        using ComponentInspectorMap = std::unordered_map<ComponentID, std::function<uint32(void*)>>;
+        using ComponentAdderMap = std::unordered_map<ComponentID, std::pair<std::string, std::function<bool(Entity*)>>>;
+        using ComponentRemoverMap = std::unordered_map<ComponentID, std::function<bool(Entity*)>>;
+
         static ComponentInspectorMap s_ComponentInspectors;
+        static ComponentAdderMap     s_ComponentAdders;
+        static ComponentRemoverMap   s_ComponentRemovers;
+        
     public:
         Entity SelectedEntity;
+
         static ComponentInspectorMap& GetComponentInspectors() { return s_ComponentInspectors; }
+        static ComponentAdderMap& GetComponentAdders() { return s_ComponentAdders; }
+        static ComponentRemoverMap& GetComponentRemovers() { return s_ComponentRemovers; }
 #endif
     };
 }

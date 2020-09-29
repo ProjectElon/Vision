@@ -64,8 +64,8 @@ namespace Vision
 		auto& sc = entity0.GetComponent<SpriteComponent>();
 		sc.Texture = m_PlayerTexture;
 
-		entity0.AddScript<GameManagerScript>();
-		entity0.AddScript<GameEngineScript>();
+		entity0.AddComponent<GameManagerScript>();
+		entity0.AddComponent<GameEngineScript>();
 	}
 
 	void EditorLayer::OnDetach()
@@ -86,6 +86,7 @@ namespace Vision
 			m_CameraController->OnUpdate(deltaTime);
 
 			static bool RWasDown = false;
+			static bool SpaceWasDown = false;
 
 			if (Input::IsKeyDown(VN_KEY_R))
 			{
@@ -101,8 +102,6 @@ namespace Vision
 
 		Scene& scene = Scene::GetActiveScene();
 		
-		scene.RunScripts(deltaTime);
-
 		m_SceneFrameBuffer->Bind();
 
 		RenderCommand::Clear(RendererAPI::ColorBuffer);
@@ -124,25 +123,30 @@ namespace Vision
 
 		m_SceneFrameBuffer->UnBind();
 
-		Entity activeCamera = scene.GetActiveCamera();
-
-		const auto& cameraTransform = activeCamera.GetComponent<TransformComponent>().Transform;
-		const auto& cameraComponent = activeCamera.GetComponent<OrthographicCameraComponent>();
-		
-		m_GameFrameBuffer->Bind();
-		RenderCommand::Clear(RendererAPI::ColorBuffer);
-		
-		Renderer2D::BeginScene(cameraTransform, cameraComponent, m_SpriteShader);
-		
-		scene.EachGroup<TransformComponent, SpriteComponent>([](auto& transform, auto& sprite, Entity entity)
+		if (m_Runtime)
 		{
-			Renderer2D::DrawSprite(transform.Transform, sprite);
-		});
+			scene.RunScripts(deltaTime);
 
-		Renderer2D::EndScene();
+			Entity activeCamera = scene.GetActiveCamera();
 
-		m_GameFrameBuffer->UnBind();
-	}
+			const auto& cameraTransform = activeCamera.GetComponent<TransformComponent>().Transform;
+			const auto& cameraComponent = activeCamera.GetComponent<OrthographicCameraComponent>();
+
+			m_GameFrameBuffer->Bind();
+			RenderCommand::Clear(RendererAPI::ColorBuffer);
+
+			Renderer2D::BeginScene(cameraTransform, cameraComponent, m_SpriteShader);
+
+			scene.EachGroup<TransformComponent, SpriteComponent>([](auto& transform, auto& sprite, Entity entity)
+			{
+				Renderer2D::DrawSprite(transform.Transform, sprite);
+			});
+
+			Renderer2D::EndScene();
+
+			m_GameFrameBuffer->UnBind();
+		}
+ 	}
 
 	void EditorLayer::OnEvent(Vision::Event& e)
 	{
@@ -210,6 +214,21 @@ namespace Vision
 			ImGui::Begin("Scene Viewport");
 			ImGui::PopStyleVar();
 
+			if (!m_Runtime)
+			{
+				if (ImGui::Button("Run"))
+				{
+					m_Runtime = true;
+				}
+			}
+			else
+			{
+				if (ImGui::Button("Stop"))
+				{
+					m_Runtime = false;
+				}
+			}
+
 			m_IsViewportFocused = ImGui::IsWindowFocused();
 			m_IsViewportHovered = ImGui::IsWindowHovered();
 
@@ -230,6 +249,7 @@ namespace Vision
 			ImGui::End();
 		}
 		
+		/*
 		// Game View
 		{
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
@@ -275,6 +295,7 @@ namespace Vision
 
 			ImGui::End();
 		}
+		*/
 			
 		// Scene Panel
 		{
@@ -317,20 +338,76 @@ namespace Vision
 			if (scene.SelectedEntity.Isvalid())
 			{
 				const auto& storage = scene.SelectedEntity.GetStorage();
-				
+				auto& componentInspectors = Scene::GetComponentInspectors();
+
+				std::vector<ComponentID> componentsToRemove;
+
 				for (auto& [componentID, componentIndex] : storage)
 				{
-					void* component = scene.SelectedEntity.GetComponent(componentID, componentIndex);
-					auto& componentInspectors = Scene::GetComponentInspectors();
-					auto& callbackFn = componentInspectors[componentID];
 					const auto& handle = scene.SelectedEntity.GetHandle();
+					void* component = scene.SelectedEntity.GetComponent(componentID, componentIndex);
 
-					if (callbackFn)
+					auto componentStateIter = m_ComponentState.find({ handle, componentID });
+					
+					if (componentStateIter == m_ComponentState.end())
 					{
-						ComponentState& componentState = m_ComponentState[{ handle, componentID }];
-						ImGui::SetNextTreeNodeOpen(componentState.Expanded);
-						componentState.Expanded = callbackFn(component);
+						m_ComponentState.emplace(std::make_pair(handle, componentID), ComponentStateMask::Expaned);
 					}
+
+					uint32& flags = m_ComponentState[{ handle, componentID }];
+
+					ImGui::SetNextTreeNodeOpen(flags & ComponentStateMask::Expaned);
+					auto& inspectComponentFn = componentInspectors[componentID];
+					flags = inspectComponentFn(component);
+
+					if (flags & ComponentStateMask::Removed)
+					{
+						componentsToRemove.push_back(componentID);
+					}
+				}
+
+				if (!componentsToRemove.empty())
+				{
+					auto& componentRemovers = Scene::GetComponentRemovers();
+
+					for (auto& componentID : componentsToRemove)
+					{
+						auto& componentRemoverFn = componentRemovers[componentID];
+						componentRemoverFn(&scene.SelectedEntity);
+					}
+				}
+				
+				if (ImGui::Button("Add Components"))
+				{
+					ImGui::OpenPopup("Components");	
+				}
+
+				if (ImGui::BeginPopup("Components"))
+				{
+					auto& componentAdders = Scene::GetComponentAdders();
+
+					for (const auto& [componentID, componentPair] : componentAdders)
+					{
+						const std::string& componentName = componentPair.first;
+						const auto& componentAdderFn = componentPair.second;
+						
+						if (storage.find(componentID) != storage.end())
+						{
+							continue;
+						}
+
+						if (ImGui::Selectable(componentName.c_str()))
+						{
+							bool isComponentAdded = componentAdderFn(&scene.SelectedEntity);
+
+							if (isComponentAdded)
+							{
+								VN_CORE_INFO("Added Component: {0}", componentName);
+							}
+						}
+					}
+
+					ImGui::EndPopup();
 				}
 			}
 
