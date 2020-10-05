@@ -16,7 +16,7 @@ namespace Vision
 	public:
 		Application();
 		virtual ~Application();
-	
+		
 		void Run();
 
 		void OnEvent(Event& e);
@@ -26,7 +26,7 @@ namespace Vision
 		inline Window& GetWindow() const { return (*m_Window); }
 
 		inline static Application& Get() { return *s_Instance; }
-		
+				
 	private:
 		bool OnWindowResize(WindowResizeEvent& e);
 		bool OnWindowClose(WindowCloseEvent& e);
@@ -35,18 +35,18 @@ namespace Vision
 
 	private:
 		Scope<Window> m_Window;
-		ImGuiLayer* m_ImGuiLayer;
+		ImGuiLayer*   m_ImGuiLayer;
 
-		LayerStack m_LayerStack;
+		LayerStack   m_LayerStack;
 		Scope<Timer> m_FrameTimer;
 
-		bool m_Running = true;
+		bool m_Running   = true;
 		bool m_Minimized = false;
 
 	private:
 		static Application* s_Instance;
 	};
 
-	/* To be defined in CLIENT */
+	/* To be defined in Client */
 	Application* CreateApplication();
 }

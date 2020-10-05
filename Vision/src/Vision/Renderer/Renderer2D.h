@@ -6,6 +6,8 @@
 #include "Vision/Renderer/Texture2D.h"
 #include "Vision/Entity/Scene.h"
 
+#define MAX_TEXTURE_SLOTS 64
+
 namespace Vision
 {
 	struct SceneData
@@ -19,13 +21,11 @@ namespace Vision
 		glm::vec2 Position;
 		glm::vec4 Color;
 		glm::vec2 TextureCoord;
-		real32    TextureIndex;
+		float32   TextureIndex;
 	};
 
 	struct QuadData
 	{
-		Ref<Texture2D> WhitePixel;
-
 		Ref<VertexBuffer> VertexBuffer;
 		Ref<IndexBuffer>  IndexBuffer;
 
@@ -33,9 +33,9 @@ namespace Vision
 		QuadVertex* CurrentVertex = nullptr;	
 		
 		uint32 MaxTextureSlots;
-		uint32* TextureSlots;
 		uint32 CurrentTextureIndex = 0;
-		int32* Samplers = nullptr;
+		uint32 TextureSlots[MAX_TEXTURE_SLOTS];
+		int32  Samplers[MAX_TEXTURE_SLOTS];
 		
 		uint32 Count = 0;
 		static const uint32 MaxCount = 10000;
@@ -55,7 +55,7 @@ namespace Vision
 		static void EndScene();
 		
 		static void DrawQuad(const glm::vec2& position,
-							 real32 rotationAngle, 
+							 float32 rotationAngle, 
 							 const glm::vec2& scale,
 							 const glm::vec4& color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
@@ -63,7 +63,7 @@ namespace Vision
 							 const glm::vec4& color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
 		static void DrawTexture(const glm::vec2& position,
-								real32 rotationAngle,
+								float32 rotationAngle,
 								const glm::vec2& scale,
 								const Ref<Texture2D>& texture,
 								const glm::vec4& color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), float tilingFactor = 1.0f);
@@ -73,7 +73,7 @@ namespace Vision
 								const glm::vec4& color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), float tilingFactor = 1.0f);
 
 		static void DrawSprite(const glm::vec2& position,
-							   real32 rotationAngle,
+							   float32 rotationAngle,
 							   const glm::vec2& scale,
 							   const SpriteComponent& sprite);
 
@@ -86,7 +86,7 @@ namespace Vision
 		static uint32 AssginTextureSlot(const Ref<Texture2D>& texture);
 
 		inline static glm::mat3 CreateQuadTransform(const glm::vec2& position,
-										  		    real32 rotationAngle,
+										  		    float32 rotationAngle,
 										  		    const glm::vec2& scale);
 		
 		static void SubmitQuadVertex(const QuadVertex& vertex);
@@ -94,7 +94,8 @@ namespace Vision
 		static void FlushQuadBatch();
 		
 	private:
-		static SceneData s_SceneData;
-		static QuadData  s_QuadData;
+		static SceneData      s_SceneData;
+		static QuadData       s_QuadData;
+		static Ref<Texture2D> s_WhitePixel;
 	};
 }

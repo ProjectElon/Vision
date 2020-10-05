@@ -11,171 +11,150 @@
 
 namespace Vision
 {
+    using TagMap       = std::unordered_map<std::string, EntityHandle>;
+    using EntityMap    = std::unordered_map<EntityHandle, EntityStorage>;
+    using ComponentMap = std::unordered_map<ComponentID, ComponentStorage>;    
+
     class Scene
     {
     public:
+        std::string Name;
+
         Scene(const std::string& name);
         ~Scene();
 
-        const std::string& GetName() const { return m_Name; }
-
         template<typename ... Components>
-        Entity CreateEntity(const std::string& tag, const Components ... components)
+        EntityHandle CreateEntity(const std::string& tag, const Components ... components)
         {
-            EntityHandle handle = GenerateEntityID();
-            AddComponents(handle, TagComponent { tag }, components...);
-            Entity entity = { handle, this };
-            entity.SetTag(tag);
+#if VN_EDIT
+            if (!IsTagAvailable(tag))
+            {
+                VN_CORE_INFO("Can't create an entity with a taken tag : {0}", tag);
+                return 0;
+            }
+#endif
+
+            EntityHandle entity = m_CurrentEntityID++;
+            AddComponents(entity, TagComponent { tag }, components...);
+            
+#if VN_EDIT
+            SetTag(entity, tag);
+#endif
             return entity;
         }
 
-        Entity GetEntityByTag(const std::string& tag);
+        bool IsEntityValid(EntityHandle entity);
 
-        void RunScripts(float deltaTime);
+        void FreeEntity(EntityHandle entity);
 
-        void FreeEntity(const Entity& entity);
+        EntityHandle GetEntityByTag(const std::string& tag);
 
-        void EachEntity(std::function<void(Entity)> callbackFn);
+        void EachEntity(std::function<void(EntityHandle)> callbackFn);
 
         template<typename Component>
-        void EachComponent(std::function<void(Component&, Entity)> callbackFn)
+        void EachComponent(std::function<void(Component&)> callbackFn)
         {
-            auto componentTypeIter = s_ComponentTypes.find(std::type_index(typeid(Component)));
+            const std::type_info& typeInfo = typeid(Component);
+            const ComponentID& componentID = typeInfo.hash_code();
+           
+            auto componentIter = m_Components.find(componentID);
+            VN_CORE_ASSERT(componentIter != m_Components.end(), "Entity doesn't own Component of Type: " + std::string(typeInfo.name()));
+            
+            ComponentStorage& componentStorage = componentIter->second;
+            const uint32 componentSize = componentStorage.SizeInBytes;
+            auto& data = componentStorage.Data;
 
-            if (componentTypeIter == s_ComponentTypes.end())
+            for (uint32 index = 0;
+                 index < data.size();
+                 index += componentSize)
             {
-                return;
-            }
-
-            const ComponentID& componentID = componentTypeIter->second;
-            const ComponentStorage& components = m_Components[componentID];
-
-            const uint32& componentSize = *((uint32*)&components[0]);
-            const uint32 entitySize = sizeof(EntityHandle);
-            const uint32 stride = componentSize + entitySize;
-
-            for (uint32 index = sizeof(uint32);
-                index < components.size();
-                index += stride)
-            {
-                Component& component = *((Component*)(&components[index]));
-                const EntityHandle& handle = *((uint32*)(&components[index + componentSize]));
-                callbackFn(component, { handle, this });
+                auto component = ComponentCast<Component>(&data[index]);
+                callbackFn(component);
             }
         }
 
         template<typename Component, typename ... Components>
-        void EachGroup(std::function<void(Component&, Components&..., Entity)> callbackFn)
+        void EachGroup(std::function<void(Component&, Components&...)> callbackFn)
         {
-            for (const auto& entity : m_Entites)
+            for (const auto& [handle, storage] : m_Entites)
             {
-                const EntityHandle& handle = entity.first;
-
                 if (HasComponents<Component, Components...>(handle))
                 {
-                    callbackFn(GetComponent<Component>(handle), GetComponent<Components>(handle)..., { handle, this } );
+                    callbackFn(GetComponent<Component>(handle), GetComponent<Components>(handle)...);
                 }
             }
         }
 
-        void SetActiveCamera(Entity entity);
-        Entity GetActiveCamera();
-
-        static inline ComponentTypes& GetComponenetTypes() { return s_ComponentTypes; }
-        static uint32 GenerateComponentID();
-        static uint32 GenerateEntityID();
+        void SetActiveCamera(EntityHandle entity);
+        EntityHandle GetActiveCamera();
 
         static void SetActiveScene(Scene* scene);
         static Scene& GetActiveScene();
 
-    private:
-        bool SetTag(EntityHandle handle, const std::string& tag);
-
 		template<typename Component>
-        inline Component& AddComponent(EntityHandle entity, const Component component)
+        inline void AddComponent(EntityHandle entity, const Component& component = Component())
         {
-            std::type_index typeIndex(typeid(Component));
-            auto it = s_ComponentTypes.find(typeIndex);
-            
-            ComponentID componentID;
-            
-            if (it != s_ComponentTypes.end())
-            {
-                VN_CORE_ASSERT(!(HasComponent<Component>(entity)), "Entity already Owns a Component of Type T");
-                componentID = (*it).second;
-            }
-            else
-            {
-                static_assert(sizeof(Component) <= MAX_COMPONENT_SIZE_IN_BYTES, "Oversized Component");
-                componentID = GenerateComponentID();
-                
-                s_ComponentTypes.emplace(typeIndex, componentID);
+            const std::type_info& typeInfo = typeid(Component);
+            const ComponentID& componentID = typeInfo.hash_code();
 
-                const std::type_info& typeInfo = typeid(Component);
+            ComponentStorage& componentStorage = m_Components[componentID];
+            auto& data = componentStorage.Data;
+            auto& entites = componentStorage.Entites;
 
-                if constexpr (std::is_base_of<Script, Component>::value)
-                {
-                    s_Scripts.push_back(std::make_pair(componentID, GetScriptRuntime<Component>));
-                }
+            if (data.empty())
+            {
+                componentStorage.SizeInBytes = sizeof(Component);
             }
 
-            ComponentStorage& storage = m_Components[componentID];
+            uint32 componentIndex = data.size();
+
+            data.resize(componentIndex + sizeof(Component));
+            entites.resize(entites.size() + 1);
             
-            if (storage.empty())
-            {
-                storage.resize(sizeof(uint32));
-                uint32& componentSize = *((uint32*)&storage[0]);
-                componentSize = sizeof(Component);
-            }
-
-            uint32 componentIndex = storage.size();
-            storage.resize(componentIndex + (sizeof(Component) + sizeof(EntityHandle)));
-
-            uint8* componentPointer = &storage[componentIndex];
+            uint8* componentPointer = &data[componentIndex];
             memcpy(componentPointer, &component, sizeof(Component));
-            memcpy(componentPointer + sizeof(Component), &entity, sizeof(EntityHandle));
             
             m_Entites[entity].emplace(componentID, componentIndex);
 
-            Component& componentRef = component_cast<Component>(componentPointer);
-
             if constexpr (std::is_base_of<Script, Component>::value)
             {
-                componentRef.Entity = { entity, this };
+                s_ScriptRuntime.emplace(componentID, GetScriptRuntime<Component>);
+
+                auto component = ComponentCast<Component>(componentPointer);
+                
+                // Todo: Rewrite the script struct to support the new changes
+                // componentRef.Entity = { entity, this };
             }
 
+            entites[NormalizeComponentIndex(componentIndex, sizeof(Component))] = entity;
+
 #ifdef VN_EDIT
-            InspectComponent<Component>();
+            s_ComponentInspectors.emplace(componentID, ShowInInspectorFn<Component>);
+            s_ComponentAdders.emplace(componentID, std::make_pair(typeid(Component).name(), AddComponentInInspectorFn<Component>));
 #endif
-
-            return componentRef;
-        }
-
-        template<typename Component>
-        inline void AddComponents(EntityHandle entity, const Component component)
-        {
-            AddComponent(entity, component);
         }
 
         template<typename Component, typename ... Components>
         inline void AddComponents(EntityHandle entity, const Component component, const Components... components)
         {
-            AddComponents(entity, component);
-            AddComponents(entity, components...);
+            AddComponent(entity, component);
+
+            if constexpr (sizeof...(Components) > 0)
+            {
+                AddComponents(entity, components...);
+            }
         }
 
         template<typename Component>
         inline bool HasComponent(EntityHandle entity)
         {
-            auto componentInfoIter = s_ComponentTypes.find(std::type_index(typeid(Component)));
+            auto entityIter = m_Entites.find(entity);
+            VN_CORE_ASSERT(entityIter != m_Entites.end(), "Entity is not valid");
             
-            if (componentInfoIter == s_ComponentTypes.end())
-            {
-                return false;
-            }
+            const std::type_info& typeInfo = typeid(Component);
+            const ComponentID& componentID = typeInfo.hash_code();
 
-            ComponentID componentID = componentInfoIter->second;
-            const EntityStorage& entityStorage = m_Entites[entity];
+            const EntityStorage& entityStorage = entityIter->second;
             
             return entityStorage.find(componentID) != entityStorage.end();
         }
@@ -183,16 +162,14 @@ namespace Vision
         template<typename Component, typename ... Components>
         inline bool HasComponents(EntityHandle entity)
         {
-            constexpr uint32 Count = 1 + sizeof...(Components);
-
-            bool componentsStatus[Count] = { HasComponent<Component>(entity), HasComponent<Components>(entity)... };
-
-            for (uint32 index = 0; index < Count; index++)
+            if (!HasComponent<Component>(entity))
             {
-                if (!componentsStatus[index])
-                {
-                    return false;
-                }
+                return false;
+            }
+
+            if constexpr (sizeof...(Components) > 0)
+            {
+                return HasComponents<Components...>(entity);
             }
 
             return true;
@@ -201,21 +178,19 @@ namespace Vision
         template<typename Component>
         inline Component& GetComponent(EntityHandle entity)
         {
-            auto componentTypeIter = s_ComponentTypes.find(std::type_index(typeid(Component)));
-
-            VN_CORE_ASSERT(componentTypeIter != s_ComponentTypes.end(), "Entity doesn't own Component of Type T");
-
-            const ComponentID& componentID = componentTypeIter->second;
+            const std::type_info& typeInfo = typeid(Component);
+            const ComponentID& componentID = typeInfo.hash_code();
             
-            const EntityStorage& entityStorage = m_Entites[entity];
+            VN_CORE_ASSERT(m_Entites.find(entity) != m_Entites.end(), "Entity is not valid");
+            
+            EntityStorage& entityStorage = m_Entites[entity];
 
-            auto componentIter = entityStorage.find(componentID);
+            VN_CORE_ASSERT(entityStorage.find(componentID) != entityStorage.end(), "Entity doesn't own Component of Type: " + std::string(typeInfo.name()));
 
-            VN_CORE_ASSERT(componentIter != entityStorage.end(), "Entity doesn't own Component of Type T");
-
-            const ComponentIndex& componentIndex = componentIter->second;
-
-            return *((Component*)(&m_Components[componentID][componentIndex]));
+            const ComponentIndex& componentIndex = entityStorage[componentID];
+            auto& data = m_Components[componentID].Data;
+            uint8* componentPointer = &data[componentIndex];
+            return ComponentCast<Component>(componentPointer);
         }
 
         template<typename Component, typename ... Components>
@@ -224,99 +199,67 @@ namespace Vision
             return std::forward_as_tuple<Component&, Components&...>(GetComponent<Component>(entity), GetComponent<Components>(entity)...);
         }
 
-        inline const EntityStorage& GetEntityStorage(EntityHandle entity)
+        inline EntityStorage& GetEntityStorage(EntityHandle entity)
         {
-            VN_CORE_ASSERT(Entity(entity, this).Isvalid(), "Entity is not valid");
+            VN_CORE_ASSERT(m_Entites.find(entity) != m_Entites.end(), "Entity is not valid");
             return m_Entites[entity];
         }
 
         template<typename Component>
-        inline Component RemoveComponent(EntityHandle entity)
+        inline void RemoveComponent(EntityHandle entity)
         {
-            auto componentTypeIter = s_ComponentTypes.find(std::type_index(typeid(Component)));
-
-            VN_CORE_ASSERT(componentTypeIter != s_ComponentTypes.end(), "Entity doesn't own Component of Type T");
-            
-            const ComponentID& componentID = componentTypeIter->second;
-            return *(Component*)RemoveComponent(entity, componentID);
+            const std::type_info& typeInfo = typeid(Component);
+            const ComponentID& componentID = typeInfo.hash_code();
+            RemoveComponent(entity, componentID, typeInfo.name());
         }
 
         template<typename Component, typename ... Components>
-        inline auto RemoveComponents(EntityHandle entity)
+        inline void RemoveComponents(EntityHandle entity)
         {
-            return std::make_tuple<Component, Components...>(RemoveComponent<Component>(entity), RemoveComponent<Components>(entity)...);
+            RemoveComponent<Component>(entity);
+
+            if constexpr (sizeof...(Components) > 0)
+            {
+                RemoveComponents<Components...>(entity);
+            }
+        }
+        
+        inline void* GetComponentMemory(ComponentID componentID, ComponentIndex componentIndex)
+        {
+            ComponentStorage& componentStorage = m_Components[componentID];
+            auto& data = componentStorage.Data;
+            return &data[componentIndex];
         }
 
+        void RemoveComponent(EntityHandle entity, ComponentID componentID, const std::string& name = "T");
+
     private:
-        std::string m_Name;
-        std::unordered_map<std::string, Entity> m_Tags;
+        TagMap       m_Tags;
+        EntityMap    m_Entites;
+        ComponentMap m_Components;
 
-        std::unordered_map<EntityHandle, EntityStorage> m_Entites;
-        std::unordered_map<ComponentID, ComponentStorage> m_Components;
-        
-        Entity m_ActiveCamera;
+        uint32 m_CurrentEntityID = 1;
+        EntityHandle m_ActiveCamera;
 
-        static ComponentTypes s_ComponentTypes;
-        static ScriptRuntimeStorage s_Scripts;
-        
+        static ScriptRuntimeMap s_ScriptRuntime;
         static Scene* s_ActiveScene;
 
-        friend class Entity;
-
-    private:
-        void* GetComponent(EntityHandle entity, ComponentID componentID, ComponentIndex componentIndex);
-        void* RemoveComponent(EntityHandle entity, ComponentID componentID);
-
 #ifdef VN_EDIT
-    private:
-        template<typename Component>
-        void InspectComponent()
-        {
-            auto& componentTypes = Scene::GetComponenetTypes();
-
-            auto componentTypeIter = componentTypes.find(std::type_index(typeid(Component)));
-
-            ComponentID componentID;
-
-            if (componentTypeIter != componentTypes.end())
-            {
-                componentID = componentTypeIter->second;
-            }
-            else
-            {
-                componentID = Scene::GenerateComponentID();
-                componentTypes.emplace(std::type_index(typeid(Component)), componentID);
-
-                if constexpr (std::is_base_of<Script, Component>::value)
-                {
-                    s_Scripts.push_back(std::make_pair(componentID, GetScriptRuntime<Component>));
-                }
-            }
-
-            auto componentInspectorIter = s_ComponentInspectors.find(componentID);
-            
-            if (componentInspectorIter == s_ComponentInspectors.end())
-            {
-                s_ComponentInspectors.emplace(componentID, ShowInInspectorFn<Component>);
-                s_ComponentAdders.emplace(componentID, std::make_pair(typeid(Component).name(), AddComponentInInspectorFn<Component>));
-                s_ComponentRemovers.emplace(componentID, RemoveComponentInInspectorFn<Component>);
-            }
-        }
+    public:
+        EntityHandle SelectedEntity = Entity::null;
 
         using ComponentInspectorMap = std::unordered_map<ComponentID, std::function<uint32(void*)>>;
-        using ComponentAdderMap = std::unordered_map<ComponentID, std::pair<std::string, std::function<bool(Entity*)>>>;
-        using ComponentRemoverMap = std::unordered_map<ComponentID, std::function<bool(Entity*)>>;
+        using ComponentAdderMap     = std::unordered_map<ComponentID, std::pair<std::string, std::function<void(EntityHandle)>>>;
+        
+        static ComponentInspectorMap& GetComponentInspectors() { return s_ComponentInspectors; }
+        static ComponentAdderMap&     GetComponentAdders()     { return s_ComponentAdders;     }
+        
+        bool IsTagAvailable(const std::string& tag);
+        void SetTag(EntityHandle handle, const std::string& tag);
 
+    private:
         static ComponentInspectorMap s_ComponentInspectors;
         static ComponentAdderMap     s_ComponentAdders;
-        static ComponentRemoverMap   s_ComponentRemovers;
-        
-    public:
-        Entity SelectedEntity;
-
-        static ComponentInspectorMap& GetComponentInspectors() { return s_ComponentInspectors; }
-        static ComponentAdderMap& GetComponentAdders() { return s_ComponentAdders; }
-        static ComponentRemoverMap& GetComponentRemovers() { return s_ComponentRemovers; }
 #endif
     };
 }

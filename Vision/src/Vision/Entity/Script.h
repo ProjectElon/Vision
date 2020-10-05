@@ -8,12 +8,13 @@ namespace Vision
     class Script
     {
 	public:
-		Entity Entity;
+		/*
+		EntityHandle Entity;
 		
 		template<typename Component>
-		inline auto& AddComponent(const Component&& component)
+		inline auto& AddComponent(const Component&& component = Component())
 		{
-			return Entity.AddComponent(std::forward<Component>(component));
+			return Entity.AddComponent(component);
 		}
 
 		template<typename Component>
@@ -53,15 +54,16 @@ namespace Vision
 		}
 
 		template<typename Component>
-		inline Component RemoveComponent()
+		inline void RemoveComponent()
 		{
-			return Entity.RemoveComponent<Component>();
+			Entity.RemoveComponent<Component>();
 		}
 
 		template<typename Component, typename ...Components>
-		inline auto RemoveComponents()
+		inline void RemoveComponents()
 		{
-			return Entity.RemoveComponents<Component, Components...>();
+			Entity.RemoveComponents<Component, Components...>();
 		}
+		*/
     };
 }

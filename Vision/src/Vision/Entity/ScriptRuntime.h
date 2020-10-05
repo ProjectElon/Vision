@@ -16,7 +16,7 @@ struct ScriptRuntime
 };
 
 using GetScriptRuntimeFn   = std::function<ScriptRuntime(const void*)>;
-using ScriptRuntimeStorage = std::vector<std::pair<uint32, GetScriptRuntimeFn>>;
+using ScriptRuntimeMap = std::unordered_map<uint32, GetScriptRuntimeFn>;
 
 template<typename Script>
 ScriptRuntime GetScriptRuntime(const void* scriptMemory)

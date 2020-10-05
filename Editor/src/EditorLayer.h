@@ -3,6 +3,13 @@
 #include <Vision.h>
 #include <rapidjson/document.h>
 
+#include "Menubar.h"
+#include "SceneHierarchyPanel.h"
+#include "InspectorPanel.h"
+#include "ConsolePanel.h"
+#include "SceneViewPanel.h"
+#include "GameViewPanel.h"
+
 namespace Vision
 {
 	class EditorLayer : public Layer
@@ -15,7 +22,7 @@ namespace Vision
 		void OnDetach() override;
 
 		void OnUpdate(float deltaTime) override;
-		void OnEvent(Vision::Event& e) override;
+		void OnEvent(Vision::Event& event) override;
 		void OnImGuiRender() override;
 
 	private:
@@ -24,6 +31,15 @@ namespace Vision
 
 	private:
 		Window* m_Window;
+		
+		Menubar             m_Menubar;
+		SceneHierarchyPanel m_SceneHierarchPanel;
+		InspectorPanel		m_InspectorPanel;
+		ConsolePanel		m_ConsolePanel;
+		SceneViewPanel		m_SceneViewPanel;
+		GameViewPanel		m_GameViewPanel;
+		
+		rapidjson::Document m_Settings;
 
 		Vision::Scope<OrthographicCameraController> m_CameraController;
 
@@ -34,30 +50,9 @@ namespace Vision
 
 		SpriteComponent m_CheckerboardSprite;
 		
-		glm::vec4 m_WhiteColor;
-
-		glm::vec4 m_ClearColor = {};
-		glm::vec4 m_LastClearColor = {};
-
-		glm::vec2 m_SceneViewportSize = { 800.0f, 600.0f };
-		glm::vec2 m_GameViewportSize = { 800.0f, 600.0f };
-
 		Ref<FrameBuffer> m_SceneFrameBuffer;
 		Ref<FrameBuffer> m_GameFrameBuffer;
 
-		bool m_IsViewportFocused = false;
-		bool m_IsViewportHovered = false;
-		bool m_LastIsVSyncEnabled = false;
-		bool m_IsVSyncEnabled = false;
-		
-		rapidjson::Document m_Settings;
-
 		std::unique_ptr<Scene> m_MainScene;
-		
-		std::map<std::pair<EntityHandle, ComponentID>, uint32> m_ComponentState;
-
-		bool m_Runtime = false;
-
-		friend class Entity;
 	};
 }

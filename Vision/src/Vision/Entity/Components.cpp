@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "Vision/Entity/Components.h"
-#include "Vision/Entity/Entity.h"
 #include "Vision/Entity/Scene.h"
 
 namespace Vision
@@ -9,7 +8,7 @@ namespace Vision
     {
         static char Tag[1024] = "";
 
-        auto& tag = component_cast<TagComponent>(component);
+        auto& tag = ComponentCast<TagComponent>(component);
 
         bool expanded = ImGui::TreeNodeEx("Tag", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_FramePadding);
 
@@ -25,7 +24,11 @@ namespace Vision
                 ImGui::IsItemDeactivated())
             {
                 Scene& scene = Scene::GetActiveScene();
-                scene.SelectedEntity.SetTag(Tag);
+                
+                if (scene.IsTagAvailable(Tag))
+                {
+                    scene.SetTag(scene.SelectedEntity, Tag);
+                }
             }
 
             ImGui::TreePop();
@@ -43,7 +46,7 @@ namespace Vision
         static glm::vec3 Skew;
         static glm::vec4 Perspective;
 
-        auto& transform = component_cast<TransformComponent>(component);
+        auto& transform = ComponentCast<TransformComponent>(component);
 
         glm::decompose(transform.Transform, Scale, Rotation, Position, Skew, Perspective);
         RotationAngles = glm::degrees(glm::eulerAngles(Rotation));
@@ -87,7 +90,7 @@ namespace Vision
 
     ShowInInspector(OrthographicCameraComponent)
     {
-        auto& camera = component_cast<OrthographicCameraComponent>(component);
+        auto& camera = ComponentCast<OrthographicCameraComponent>(component);
 
         bool expanded = ImGui::TreeNodeEx("Orthographic Camera", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_FramePadding);
         uint32 flags = 0;
@@ -99,13 +102,13 @@ namespace Vision
             const std::type_info& typeInfo = typeid(OrthographicCameraComponent);
             VN_CORE_INFO("Removing Component: {0}", typeInfo.name());
         }
-
+        
         if (expanded)
         {
             flags |= ComponentStateMask::Expaned;
 
             auto& scene = Scene::GetActiveScene();
-            auto activeCamera = scene.GetActiveCamera();
+            EntityHandle activeCamera = scene.GetActiveCamera();
             
             if (scene.SelectedEntity != activeCamera)
             {
@@ -152,7 +155,7 @@ namespace Vision
 
     ShowInInspector(SpriteComponent)
     {
-        auto& sprite = component_cast<SpriteComponent>(component);
+        auto& sprite = ComponentCast<SpriteComponent>(component);
 
         bool expanded = ImGui::TreeNodeEx("Sprite", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_FramePadding);        
 

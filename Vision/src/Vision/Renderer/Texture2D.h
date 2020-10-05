@@ -31,7 +31,7 @@ namespace Vision
 		{
 		}
 	};
-
+	
 	class Texture2D
 	{
 	public:
@@ -52,5 +52,7 @@ namespace Vision
 
 		static Ref<Texture2D> Create(uint32_t width, uint32_t height, const TextureProps& props = TextureProps());
 		static Ref<Texture2D> CreateFromFile(const std::string& path, const TextureProps& props = TextureProps());
+
+		static const Ref<Texture2D>& GetDefault();	
 	};
 }

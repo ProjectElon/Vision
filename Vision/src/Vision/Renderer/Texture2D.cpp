@@ -31,4 +31,29 @@ namespace Vision
 			break;
 		}
 	}
+
+	const Ref<Texture2D>& Texture2D::GetDefault()
+	{
+		static Ref<Texture2D> texture;
+
+		if (!texture)
+		{
+			// Note: creating a single colored texture depends 
+			// on the endianness of the processor
+
+			bool isLittle = false;
+			
+			{
+				uint32 x = 1;
+				isLittle =  *((uint8*)(&x)) == 1;
+			}
+
+			uint32 pink = isLittle ? 0xFFFF00FF : 0xFF00FFFF;
+
+			texture = Texture2D::Create(1, 1);
+			texture->SetData(&pink, sizeof(uint32) * 1 * 1);
+		}
+
+		return texture;
+	}
 }

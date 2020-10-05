@@ -14,12 +14,10 @@ namespace Vision
 	{
 		uint32 white = 0xffffffff;
 
-		s_QuadData.WhitePixel = Texture2D::Create(1, 1);
-		s_QuadData.WhitePixel->SetData(&white, sizeof(uint32) * 1 * 1);
-
+		s_WhitePixel = Texture2D::Create(1, 1);
+		s_WhitePixel->SetData(&white, sizeof(uint32) * 1 * 1);
+		
 		s_QuadData.MaxTextureSlots = Renderer::GetRendererAPI().GetMaxTextureSlots();
-		s_QuadData.Samplers = new int32[s_QuadData.MaxTextureSlots];
-		s_QuadData.TextureSlots = new uint32[s_QuadData.MaxTextureSlots];
 
 		for (uint32 i = 0; i < s_QuadData.MaxTextureSlots; i++)
 		{
@@ -77,8 +75,6 @@ namespace Vision
 
 	void Renderer2D::Shutdown()
 	{
-		delete[] s_QuadData.TextureSlots;
-		delete[] s_QuadData.Samplers;
 		delete[] s_QuadData.VertexBase;
 	}
 
@@ -99,11 +95,11 @@ namespace Vision
 	void Renderer2D::DrawQuad(const glm::mat3& transform,
 						      const glm::vec4& color)
 	{
-		DrawTexture(transform, s_QuadData.WhitePixel, color);
+		DrawTexture(transform, s_WhitePixel, color);
 	}
 
 	void Renderer2D::DrawQuad(const glm::vec2& position,
-							  real32 rotationAngle,
+							  float32 rotationAngle,
 							  const glm::vec2& scale,
 							  const glm::vec4& color)					
 	{
@@ -123,7 +119,7 @@ namespace Vision
 			FlushQuadBatch();
 		}
 
-		real32 textureIndex = (real32)AssginTextureSlot(texture);
+		float32 textureIndex = (float32)AssginTextureSlot(texture);
 		
 		glm::vec2 v0 = transform * glm::vec3(-0.5f, -0.5f, 1.0f);
 		glm::vec2 v1 = transform * glm::vec3( 0.5f, -0.5f, 1.0f);
@@ -139,7 +135,7 @@ namespace Vision
 	}
 
 	void Renderer2D::DrawTexture(const glm::vec2& position,
-								 real32 rotationAngle,
+								 float32 rotationAngle,
 								 const glm::vec2& scale,
 								 const Ref<Texture2D>& texture,
 								 const glm::vec4& color,
@@ -159,7 +155,7 @@ namespace Vision
 			FlushQuadBatch();
 		}
 
-		real32 textureIndex = (real32)AssginTextureSlot(sprite.Texture);
+		float32 textureIndex = (float32)AssginTextureSlot(sprite.Texture);
 
 		glm::vec2 v0 = transform * glm::vec3(-0.5f, -0.5f, 1.0f);
 		glm::vec2 v1 = transform * glm::vec3(0.5f, -0.5f, 1.0f);
@@ -198,7 +194,7 @@ namespace Vision
 			FlushQuadBatch();
 		}
 
-		real32 textureIndex = (real32)AssginTextureSlot(sprite.Texture);
+		float32 textureIndex = (float32)AssginTextureSlot(sprite.Texture);
 
 		glm::vec3 v0 = transform * glm::vec4(-0.5f, -0.5f, 1.0f, 1.0f);
 		glm::vec3 v1 = transform * glm::vec4(0.5f, -0.5f, 1.0f, 1.0f);
@@ -231,7 +227,7 @@ namespace Vision
 	}
 
 	void Renderer2D::DrawSprite(const glm::vec2& position,
-								real32 rotationAngle,
+								float32 rotationAngle,
 								const glm::vec2& scale,
 								const SpriteComponent& sprite)
 	{
@@ -281,7 +277,7 @@ namespace Vision
 	}
 
 	glm::mat3 Renderer2D::CreateQuadTransform(const glm::vec2& position,
-									          real32 rotationAngle,
+									          float32 rotationAngle,
 									          const glm::vec2& scale)
 	{
 		glm::mat3 transform =
@@ -323,4 +319,5 @@ namespace Vision
 	
 	SceneData Renderer2D::s_SceneData;
 	QuadData  Renderer2D::s_QuadData;
+	Ref<Texture2D> Renderer2D::s_WhitePixel;
 }

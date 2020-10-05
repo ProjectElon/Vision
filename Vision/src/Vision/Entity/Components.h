@@ -7,23 +7,34 @@
 #include <glm/gtx/transform.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 #include <typeindex>
-#include <tuple>
 
-#define MAX_COMPONENT_SIZE_IN_BYTES 1024
 #define ShowInInspector(Component) template<> uint32 ShowInInspectorFn<Component>(void* component)
+#define NormalizeComponentIndex(componentIndex, componentSize) (componentIndex) / (componentSize)
 
 namespace Vision
 {
-	using ComponentID = uint32;
-    using ComponentIndex = uint32;
-    using ComponentTypes = std::unordered_map<std::type_index, ComponentID>;
-    using ComponentStorage = std::vector<uint8>;
-
     template<typename T>
-    inline T& component_cast(void* component)
+    inline T& ComponentCast(void* component)
     {
         return *(T*)(component);
     }
+
+    template<typename T>
+    inline T& ComponentCast(uint8* component)
+    {
+        return *(T*)(component);
+    }
+
+    using ComponentID    = std::size_t;
+    using ComponentIndex = uint32;
+    
+    struct ComponentStorage
+    {
+        uint32 SizeInBytes;
+        // @Temprary: Convert into an array later
+        std::vector<uint8>          Data;
+        std::vector<ComponentIndex> Entites;
+    };
 
     struct TagComponent
     {
@@ -59,7 +70,7 @@ namespace Vision
 
     struct SpriteComponent
     {
-        Ref<Texture2D> Texture;
+        Ref<Texture2D> Texture = Texture2D::GetDefault();
         glm::vec4      Color = { 1.0f, 1.0f, 1.0f, 1.0f };
         glm::vec2      BottomLeftPoint = { 0.0f, 0.0f };
         glm::vec2      TopRightPoint = { 1.0f, 1.0f };
@@ -69,7 +80,7 @@ namespace Vision
 
 #ifdef VN_EDIT
            
-    class Entity;
+    class Scene;
 
     enum ComponentStateMask
     {
@@ -81,27 +92,11 @@ namespace Vision
     uint32 ShowInInspectorFn(void* component);
 
     template<typename Component>
-    bool AddComponentInInspectorFn(Entity* entity)
+    void AddComponentInInspectorFn(uint32 entity)
     {
-        if (!entity->HasComponent<Component>())
-        {
-            entity->AddComponent<Component>();
-            return true;
-        }
-
-        return false;
+        Scene& scene = Scene::GetActiveScene();
+        scene.AddComponent<Component>(entity);
     }
 
-    template<typename Component>
-    bool RemoveComponentInInspectorFn(Entity* entity)
-    {
-        if (entity->HasComponent<Component>())
-        {
-            entity->RemoveComponent<Component>();
-            return true;
-        }
-
-        return false;
-    }
 #endif
 }
