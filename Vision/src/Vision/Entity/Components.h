@@ -3,12 +3,8 @@
 #include "Vision/Core/Base.h"
 #include "Vision/Renderer/Texture2D.h"
 
-#include <imgui.h>
-#include <glm/gtx/transform.hpp>
-#include <glm/gtx/matrix_decompose.hpp>
-#include <typeindex>
+#include <glm/glm.hpp>
 
-#define ShowInInspector(Component) template<> uint32 ShowInInspectorFn<Component>(void* component)
 #define NormalizeComponentIndex(componentIndex, componentSize) (componentIndex) / (componentSize)
 
 namespace Vision
@@ -25,12 +21,13 @@ namespace Vision
         return *(T*)(component);
     }
 
-    using ComponentID    = std::size_t;
+    using ComponentID    = size_t;
     using ComponentIndex = uint32;
     
     struct ComponentStorage
     {
         uint32 SizeInBytes;
+
         // @Temprary: Convert into an array later
         std::vector<uint8>          Data;
         std::vector<ComponentIndex> Entites;
@@ -68,7 +65,7 @@ namespace Vision
         bool Static = false;
     };
 
-    struct SpriteComponent
+    struct SpriteRendererComponent
     {
         Ref<Texture2D> Texture = Texture2D::GetDefault();
         glm::vec4      Color = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -77,26 +74,4 @@ namespace Vision
         bool           FlipX = false;
         bool           FlipY = false;
     };
-
-#ifdef VN_EDIT
-           
-    class Scene;
-
-    enum ComponentStateMask
-    {
-        Expaned = VN_BIT(0),
-        Removed = VN_BIT(1)
-    };
-
-    template<typename T>
-    uint32 ShowInInspectorFn(void* component);
-
-    template<typename Component>
-    void AddComponentInInspectorFn(uint32 entity)
-    {
-        Scene& scene = Scene::GetActiveScene();
-        scene.AddComponent<Component>(entity);
-    }
-
-#endif
 }

@@ -12,6 +12,23 @@ namespace Vision
     {
     }
 
+    bool Scene::IsTagAvailable(const std::string& tag)
+    {
+        auto tagIter = m_Tags.find(tag);
+        return tagIter == m_Tags.end();
+    }
+
+    void Scene::SetTag(EntityHandle handle, const std::string& tag)
+    {
+        auto tagIter = m_Tags.find(tag);
+
+        auto& tagComponent = GetComponent<TagComponent>(handle);
+        m_Tags.erase(tagComponent.Tag);
+
+        tagComponent.Tag = tag;
+        m_Tags.emplace(tag, handle);
+    }
+
     void Scene::RemoveComponent(EntityHandle entity, ComponentID componentID, const std::string& name)
     {
         EntityStorage& entityStorage = m_Entites[entity];
@@ -32,10 +49,11 @@ namespace Vision
 
         if (lastComponentIndex != currentComponentIndex)
         {
-            EntityHandle lastComponentEntity = entites[lastComponentIndex];
-            
             uint32 currentIndex = NormalizeComponentIndex(currentComponentIndex, componentSize);
             uint32 lastIndex = NormalizeComponentIndex(lastComponentIndex, componentSize);
+
+            EntityHandle lastComponentEntity = entites[lastIndex];
+            
             std::swap(entites[currentIndex], entites[lastIndex]);
 
             memcpy(tempStorage, &data[currentComponentIndex], componentSize);
@@ -103,35 +121,12 @@ namespace Vision
         s_ActiveScene = scene;
     }
 
-    Scene& Scene::GetActiveScene()
-    {
-        return *s_ActiveScene;
-    }
-
     Scene* Scene::s_ActiveScene = nullptr;
     ScriptRuntimeMap Scene::s_ScriptRuntime;
 
 #ifdef VN_EDIT
 
-    bool Scene::IsTagAvailable(const std::string& tag)
-    {
-        auto tagIter = m_Tags.find(tag);
-        return tagIter == m_Tags.end();
-    }
+    EditorState Scene::EditorState;
 
-    void Scene::SetTag(EntityHandle handle, const std::string& tag)
-    {
-        auto tagIter = m_Tags.find(tag);
-        
-        auto& tagComponent = GetComponent<TagComponent>(handle);
-        m_Tags.erase(tagComponent.Tag);
-        
-        tagComponent.Tag = tag;
-        m_Tags.emplace(tag, handle);
-    }
-
-    Scene::ComponentInspectorMap Scene::s_ComponentInspectors;
-    Scene::ComponentAdderMap     Scene::s_ComponentAdders;
-    
 #endif
 }

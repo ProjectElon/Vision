@@ -1,5 +1,6 @@
 #include "GameViewPanel.h"
 #include <Vision.h>
+#include <imgui.h>
 
 namespace Vision
 {

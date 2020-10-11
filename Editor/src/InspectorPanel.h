@@ -4,7 +4,7 @@
 
 namespace Vision
 {
-	using ComponentStateMap = std::map<std::pair<EntityHandle, ComponentID>, uint32>;	
+	using ComponentStateMap = std::map<std::pair<EntityHandle, ComponentID>, ComponentState>;	
 
 	class InspectorPanel
 	{
@@ -18,5 +18,6 @@ namespace Vision
 	private:
 		ComponentStateMap m_ComponentState;
 		std::vector<ComponentID> m_ComponentsToRemove;
+		char m_TagBuffer[1024];
 	};
 }

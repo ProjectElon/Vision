@@ -10,10 +10,12 @@ namespace Vision
 	EditorLayer::EditorLayer()
 		: Layer("Editor")
 	{
-		LoadSettings();
+		m_Window = &Application::Get().GetWindow();
 		
 		m_MainScene = Vision::CreateScope<Scene>("MainScene");
 		Scene::SetActiveScene(m_MainScene.get());
+		
+		LoadSettings();
 	}
 
 	EditorLayer::~EditorLayer()
@@ -26,7 +28,7 @@ namespace Vision
 		using namespace Vision;
 
 		FrameBufferProps frameBufferProps;
-		frameBufferProps.Width = 800;
+		frameBufferProps.Width  = 800;
 		frameBufferProps.Height = 600;
 
 		m_SceneFrameBuffer = FrameBuffer::Create(frameBufferProps);
@@ -52,7 +54,7 @@ namespace Vision
 		transparent.Filter = FilterMode::Bilinear;
 
 		std::string texturePath = "Assets/Textures/";
-
+		
 		m_CheckboardTexture = Texture2D::CreateFromFile(texturePath + "Checkerboard.png", tiled);
 		m_PlayerTexture = Texture2D::CreateFromFile(texturePath + "brick_red.png", transparent);
 		
@@ -60,9 +62,9 @@ namespace Vision
 		m_MainScene->SetActiveCamera(camera0);
 
 		EntityHandle camera1 = m_MainScene->CreateEntity("Camera1", TransformComponent{}, OrthographicCameraComponent{});
-
-		EntityHandle entity0 = m_MainScene->CreateEntity("Entity0", TransformComponent{}, SpriteComponent{});
-		auto& sc = m_MainScene->GetComponent<SpriteComponent>(entity0);
+		
+		EntityHandle entity0 = m_MainScene->CreateEntity("Entity0", TransformComponent{}, SpriteRendererComponent{});
+		auto& sc = m_MainScene->GetComponent<SpriteRendererComponent>(entity0);
 		sc.Texture = m_PlayerTexture;
 	}
 
@@ -104,7 +106,7 @@ namespace Vision
 
 		RenderCommand::Clear(RendererAPI::ColorBuffer);
 
-		Renderer2D::BeginScene(m_CameraController->GetCameraTransform(), m_CameraController->GetCamera(), m_SpriteShader);
+		Renderer2D::BeginScene(m_CameraController->GetCameraTransform(), m_CameraController->Camera, m_SpriteShader);
 
 		Renderer2D::DrawTexture(glm::vec3(0.0f, 0.0f, 0.0f), 0.0f,
 								glm::vec2(100.0f, 100.0f),
@@ -112,7 +114,7 @@ namespace Vision
 								glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
 								100.0f);
 
-		scene.EachGroup<TransformComponent, SpriteComponent>([](auto& transform, auto& sprite)
+		scene.EachGroup<TransformComponent, SpriteRendererComponent>([](auto& transform, auto& sprite)
 		{
 			Renderer2D::DrawSprite(transform.Transform, sprite);
 		});
@@ -147,7 +149,7 @@ namespace Vision
 		*/
  	}
 
-	void EditorLayer::OnEvent(Vision::Event& e)
+	void EditorLayer::OnEvent(Event& e)
 	{
 		if (m_SceneViewPanel.IsIntractable())
 		{
@@ -174,7 +176,7 @@ namespace Vision
 		}
 		
 		m_Menubar.OnImGuiRender();
-		m_SceneHierarchPanel.OnImGuiRender();
+		m_SceneHierarchyPanel.OnImGuiRender();
 		// m_GameViewPanel.OnImGuiRender();
 		m_SceneViewPanel.OnImGuiRender();
 		m_InspectorPanel.OnImGuiRender();
@@ -185,7 +187,6 @@ namespace Vision
 	{
 		using namespace Vision;
 
-		m_Window = &Application::Get().GetWindow();
 		m_Window->SetTitle("Eagle Eye");
 
 		std::ifstream ifs("Settings.json");
@@ -200,11 +201,11 @@ namespace Vision
 
 		m_Settings.Parse(contents.c_str());
 
-		int32 windowX       = m_Settings["WindowX"].GetInt();
-		int32 windowY       = m_Settings["WindowY"].GetInt();
+		int32  windowX      = m_Settings["WindowX"].GetInt();
+		int32  windowY      = m_Settings["WindowY"].GetInt();
 		uint32 windowWidth  = m_Settings["WindowWidth"].GetUint();
 		uint32 windowHeight = m_Settings["WindowHeight"].GetUint();
-		bool maximized      = m_Settings["Maximized"].GetBool();
+		bool   maximized    = m_Settings["Maximized"].GetBool();
 		
 		m_Window->SetPosition(windowX, windowY);
 		m_Window->SetSize(windowWidth, windowHeight);
@@ -241,7 +242,7 @@ namespace Vision
 		writer.Bool(windowData.Maximized);
 
 		writer.Key("CameraZoomLevel");
-		writer.Uint(m_CameraController->GetCamera().Size);
+		writer.Uint(m_CameraController->Camera.Size);
 
 		writer.EndObject();
 

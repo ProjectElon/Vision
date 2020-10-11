@@ -148,7 +148,7 @@ namespace Vision
 	}
 
 	void Renderer2D::DrawSprite(const glm::mat3& transform,
-								const SpriteComponent& sprite)
+								const SpriteRendererComponent& sprite)
 	{
 		if (s_QuadData.Count >= s_QuadData.MaxCount)
 		{
@@ -187,7 +187,7 @@ namespace Vision
 		s_QuadData.Count++;
 	}
 
-	void Renderer2D::DrawSprite(const glm::mat4& transform, const SpriteComponent& sprite)
+	void Renderer2D::DrawSprite(const glm::mat4& transform, const SpriteRendererComponent& sprite)
 	{
 		if (s_QuadData.Count >= s_QuadData.MaxCount)
 		{
@@ -229,7 +229,7 @@ namespace Vision
 	void Renderer2D::DrawSprite(const glm::vec2& position,
 								float32 rotationAngle,
 								const glm::vec2& scale,
-								const SpriteComponent& sprite)
+								const SpriteRendererComponent& sprite)
 	{
 		glm::mat3 transform = CreateQuadTransform(position,
 											      rotationAngle,

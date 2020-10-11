@@ -75,10 +75,10 @@ namespace Vision
 		static void DrawSprite(const glm::vec2& position,
 							   float32 rotationAngle,
 							   const glm::vec2& scale,
-							   const SpriteComponent& sprite);
+							   const SpriteRendererComponent& sprite);
 
-		static void DrawSprite(const glm::mat3& transform, const SpriteComponent& sprite);
-		static void DrawSprite(const glm::mat4& transform, const SpriteComponent& sprite);
+		static void DrawSprite(const glm::mat3& transform, const SpriteRendererComponent& sprite);
+		static void DrawSprite(const glm::mat4& transform, const SpriteRendererComponent& sprite);
 
 	private:
 		static void InitQuadSetup();

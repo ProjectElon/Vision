@@ -5,6 +5,7 @@
 #include "Vision/Entity/Components.h"
 #include "Vision/Entity/Script.h"
 #include "Vision/Entity/ScriptRuntime.h"
+#include "Vision/Entity/EditorState.h"
 
 #include <map>
 #include <unordered_map>
@@ -26,24 +27,22 @@ namespace Vision
         template<typename ... Components>
         EntityHandle CreateEntity(const std::string& tag, const Components ... components)
         {
-#if VN_EDIT
             if (!IsTagAvailable(tag))
             {
                 VN_CORE_INFO("Can't create an entity with a taken tag : {0}", tag);
                 return 0;
             }
-#endif
 
             EntityHandle entity = m_CurrentEntityID++;
             AddComponents(entity, TagComponent { tag }, components...);
-            
-#if VN_EDIT
             SetTag(entity, tag);
-#endif
             return entity;
         }
 
         bool IsEntityValid(EntityHandle entity);
+
+        bool IsTagAvailable(const std::string& tag);
+        void SetTag(EntityHandle handle, const std::string& tag);
 
         void FreeEntity(EntityHandle entity);
 
@@ -88,9 +87,6 @@ namespace Vision
         void SetActiveCamera(EntityHandle entity);
         EntityHandle GetActiveCamera();
 
-        static void SetActiveScene(Scene* scene);
-        static Scene& GetActiveScene();
-
 		template<typename Component>
         inline void AddComponent(EntityHandle entity, const Component& component = Component())
         {
@@ -106,7 +102,7 @@ namespace Vision
                 componentStorage.SizeInBytes = sizeof(Component);
             }
 
-            uint32 componentIndex = data.size();
+            size_t componentIndex = data.size();
 
             data.resize(componentIndex + sizeof(Component));
             entites.resize(entites.size() + 1);
@@ -127,11 +123,6 @@ namespace Vision
             }
 
             entites[NormalizeComponentIndex(componentIndex, sizeof(Component))] = entity;
-
-#ifdef VN_EDIT
-            s_ComponentInspectors.emplace(componentID, ShowInInspectorFn<Component>);
-            s_ComponentAdders.emplace(componentID, std::make_pair(typeid(Component).name(), AddComponentInInspectorFn<Component>));
-#endif
         }
 
         template<typename Component, typename ... Components>
@@ -233,6 +224,9 @@ namespace Vision
 
         void RemoveComponent(EntityHandle entity, ComponentID componentID, const std::string& name = "T");
 
+        static void SetActiveScene(Scene* scene);
+        inline static Scene& GetActiveScene() { return *s_ActiveScene; }
+
     private:
         TagMap       m_Tags;
         EntityMap    m_Entites;
@@ -246,20 +240,7 @@ namespace Vision
 
 #ifdef VN_EDIT
     public:
-        EntityHandle SelectedEntity = Entity::null;
-
-        using ComponentInspectorMap = std::unordered_map<ComponentID, std::function<uint32(void*)>>;
-        using ComponentAdderMap     = std::unordered_map<ComponentID, std::pair<std::string, std::function<void(EntityHandle)>>>;
-        
-        static ComponentInspectorMap& GetComponentInspectors() { return s_ComponentInspectors; }
-        static ComponentAdderMap&     GetComponentAdders()     { return s_ComponentAdders;     }
-        
-        bool IsTagAvailable(const std::string& tag);
-        void SetTag(EntityHandle handle, const std::string& tag);
-
-    private:
-        static ComponentInspectorMap s_ComponentInspectors;
-        static ComponentAdderMap     s_ComponentAdders;
+        static EditorState EditorState;
 #endif
     };
 }

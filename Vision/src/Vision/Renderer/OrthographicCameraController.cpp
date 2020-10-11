@@ -9,10 +9,10 @@ namespace Vision
 {
 	OrthographicCameraController::OrthographicCameraController(float aspectRatio, float size, float Near, float Far)
 	{
-		m_Camera.AspectRatio = aspectRatio;
-		m_Camera.Size = size;
+		Camera.AspectRatio = aspectRatio;
+		Camera.Size = size;
 
-		m_Camera.Projection = glm::ortho(-aspectRatio * size,
+		Camera.Projection = glm::ortho(-aspectRatio * size,
 										  aspectRatio * size,
 										 -size,
 										  size,
@@ -22,12 +22,12 @@ namespace Vision
 
 	void OrthographicCameraController::Resize(uint32 width, uint32 height)
 	{
-		m_Camera.AspectRatio = (float)width / (float)height;
+		Camera.AspectRatio = (float)width / (float)height;
 
-		m_Camera.Projection = glm::ortho(-m_Camera.AspectRatio * m_Camera.Size,
-										  m_Camera.AspectRatio * m_Camera.Size,
-										 -m_Camera.Size,
-										  m_Camera.Size);
+		Camera.Projection = glm::ortho(-Camera.AspectRatio * Camera.Size,
+										  Camera.AspectRatio * Camera.Size,
+										 -Camera.Size,
+										  Camera.Size);
 	}
 
 	void OrthographicCameraController::OnEvent(Event& e)
@@ -38,7 +38,7 @@ namespace Vision
 
 	void OrthographicCameraController::OnUpdate(float dt)
 	{
-		m_CameraMovementSpeed = m_Camera.Size;
+		m_CameraMovementSpeed = Camera.Size;
 
 		if (Input::IsKeyDown(VN_KEY_W))
 		{
@@ -63,12 +63,12 @@ namespace Vision
 
 	bool OrthographicCameraController::OnMouseWheelScrolled(MouseWheelScrolledEvent& e)
 	{
-		m_Camera.Size -= e.GetYOffset() * 0.25f;
-		m_Camera.Size = std::max(m_Camera.Size, 0.25f);
-		m_Camera.Projection = glm::ortho(-m_Camera.AspectRatio * m_Camera.Size, 
-										  m_Camera.AspectRatio * m_Camera.Size,
-										 -m_Camera.Size, 
-										  m_Camera.Size);
+		Camera.Size -= e.GetYOffset() * 0.25f;
+		Camera.Size = std::max(Camera.Size, 0.25f);
+		Camera.Projection = glm::ortho(-Camera.AspectRatio * Camera.Size,
+										Camera.AspectRatio * Camera.Size,
+									   -Camera.Size,
+										Camera.Size);
 		return false;
 	}
 }
