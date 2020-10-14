@@ -242,7 +242,7 @@ namespace Vision
 		writer.Bool(windowData.Maximized);
 
 		writer.Key("CameraZoomLevel");
-		writer.Uint(m_CameraController->Camera.Size);
+		writer.Double(m_CameraController->Camera.Size);
 
 		writer.EndObject();
 
