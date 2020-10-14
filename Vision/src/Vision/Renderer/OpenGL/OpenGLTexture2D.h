@@ -20,18 +20,8 @@ namespace Vision
 		void SetData(void* data, uint32_t sizeInBytes) override;
 
 		void Bind(uint32_t slot) override;
-		
-		inline uint32_t GetWidth() const override { return m_Width; }
-		inline uint32_t GetHeight() const override { return m_Height; }
-		inline const std::string& GetName() const override { return m_Name; }
-		inline uint32_t GetRendererID() const { return m_RendererID; }
 
 	private:
-		uint32_t m_RendererID;
-		std::string m_Name;
-		uint32_t m_Width;
-		uint32_t m_Height;
-
 		GLenum m_InternalFormat;
 		GLenum m_TextureFormat;
 

@@ -14,22 +14,23 @@ namespace Vision
 {
 	class EditorLayer : public Layer
 	{
-	public:
+        public:
+        // engine code is here
 		EditorLayer();
 		~EditorLayer();
-
+        
 		void OnAttach() override;
 		void OnDetach() override;
-
+        
 		void OnUpdate(float deltaTime) override;
 		void OnEvent(Event& event) override;
 		void OnImGuiRender() override;
-
-	private:
+        
+        private:
 		void LoadSettings();
 		void SaveSettings();
 		
-	private:
+        private:
 		Window* m_Window;
 		
 		Menubar             m_Menubar;
@@ -48,7 +49,7 @@ namespace Vision
 		
 		Vision::Ref<Texture2D> m_CheckboardTexture;
 		Vision::Ref<Texture2D> m_PlayerTexture;
-
+        
 		SpriteRendererComponent m_CheckerboardSprite;
 		
 		Ref<FrameBuffer> m_SceneFrameBuffer;

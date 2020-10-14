@@ -18,18 +18,21 @@ namespace Vision
 		Bilinear = 1
 	};
 
+	struct TextureData
+	{
+		std::string Name;
+		
+		uint32 RendererID = 0;
+		uint32 Width      = 0;
+		uint32 Height     = 0;	
+	};
+
 	struct TextureProps
 	{
-		WrapMode WrapX;
-		WrapMode WrapY;
-		FilterMode Filter;
-		
-		TextureProps()
-			: WrapX(WrapMode::Repeat)
-			, WrapY(WrapMode::Repeat)
-			, Filter(FilterMode::Point)
-		{
-		}
+		WrapMode WrapX = WrapMode::Repeat;
+		WrapMode WrapY = WrapMode::Repeat;
+
+		FilterMode FilterMode = FilterMode::Point;
 	};
 	
 	class Texture2D
@@ -44,15 +47,16 @@ namespace Vision
 		virtual void SetWrapMode(WrapMode wrapModeX, WrapMode wrapModeY) = 0;
 		virtual void SetFilterMode(FilterMode filterMode) = 0;
 
-		virtual uint32_t GetWidth() const = 0;
-		virtual uint32_t GetHeight() const = 0;
-
-		virtual const std::string& GetName() const = 0;
-		virtual uint32_t GetRendererID() const = 0;
-
 		static Ref<Texture2D> Create(uint32_t width, uint32_t height, const TextureProps& props = TextureProps());
 		static Ref<Texture2D> CreateFromFile(const std::string& path, const TextureProps& props = TextureProps());
 
-		static const Ref<Texture2D>& GetDefault();	
+		inline const TextureData& GetData() const { return m_Data; }
+		inline const TextureProps& GetProperties() const { return m_Properties; }
+
+		static const Ref<Texture2D>& GetDefault(); // Temprary
+
+	protected:
+		TextureData  m_Data;
+		TextureProps m_Properties;
 	};
 }

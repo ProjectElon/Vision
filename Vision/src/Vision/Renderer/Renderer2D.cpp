@@ -245,10 +245,11 @@ namespace Vision
 	uint32 Renderer2D::AssginTextureSlot(const Ref<Texture2D>& texture)
 	{
 		int32 textureIndex = -1;
+		const TextureData& textureData = texture->GetData();
 
 		for (uint32 i = 0; i < s_QuadData.CurrentTextureIndex; i++)
 		{
-			if (texture->GetRendererID() == s_QuadData.TextureSlots[i])
+			if (textureData.RendererID == s_QuadData.TextureSlots[i])
 			{
 				textureIndex = i;
 				break;
@@ -267,7 +268,7 @@ namespace Vision
 
 			textureIndex = s_QuadData.CurrentTextureIndex;
 			
-			s_QuadData.TextureSlots[textureIndex] = texture->GetRendererID();
+			s_QuadData.TextureSlots[textureIndex] = textureData.RendererID;
 			s_QuadData.CurrentTextureIndex++;
 		}
 

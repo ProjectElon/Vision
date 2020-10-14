@@ -46,12 +46,12 @@ namespace Vision
 
 		tiled.WrapX  = WrapMode::Repeat;
 		tiled.WrapY  = WrapMode::Repeat;
-		tiled.Filter = FilterMode::Point;
+		tiled.FilterMode = FilterMode::Point;
 
 		TextureProps transparent;
 		transparent.WrapX  = WrapMode::ClampToEdge;
 		transparent.WrapY  = WrapMode::ClampToEdge;
-		transparent.Filter = FilterMode::Bilinear;
+		transparent.FilterMode = FilterMode::Bilinear;
 
 		std::string texturePath = "Assets/Textures/";
 		

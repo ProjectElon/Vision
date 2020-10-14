@@ -117,11 +117,60 @@ namespace Vision
         {
             auto& sprite = ComponentCast<SpriteRendererComponent>(component);
 
-            if (ImGui::ImageButton((void*)(intptr_t)sprite.Texture->GetRendererID(), ImVec2(64, 64)))
-            {
-                // Todo: Edit The Texture Props Here
-            }
+            const TextureData& textureData = sprite.Texture->GetData();
+
+            std::string textureName = "Texture: " + textureData.Name + "\n";
+            ImGui::Text(textureName.c_str());
+
+            ImGui::Image((void*)(intptr_t)textureData.RendererID, ImVec2(64, 64));
+
+            ImGui::Text("Texture Properties: \n");
             
+            // Texture Properties
+            {
+                const TextureProps& properties = sprite.Texture->GetProperties();
+                
+                static const char* WrapModeStrings[] = 
+                {
+                    "Repeat",
+                    "Clamp To Edge"
+                };
+
+                static const char* FilterModeStrings[] = 
+                {
+                    "Point",
+                    "Bilinear"
+                };
+
+                int32 seletedWrapXMode  = (int32)properties.WrapX;
+                int32 seletedWrapYMode  = (int32)properties.WrapY;
+                int32 seletedFilterMode = (int32)properties.FilterMode;
+
+                if (ImGui::Combo("Wrap X", &seletedWrapXMode, WrapModeStrings, 2))
+                {
+                    if (seletedWrapXMode != (int32)properties.WrapX)
+                    {
+                        sprite.Texture->SetWrapMode((WrapMode)seletedWrapXMode, (WrapMode)seletedWrapYMode);
+                    }
+                }
+
+                if (ImGui::Combo("Wrap Y", &seletedWrapYMode, WrapModeStrings, 2))
+                {
+                    if (seletedWrapYMode != (int32)properties.WrapY)
+                    {
+                        sprite.Texture->SetWrapMode((WrapMode)seletedWrapXMode, (WrapMode)seletedWrapYMode);
+                    }
+                }
+
+                if (ImGui::Combo("Filter Mode", &seletedFilterMode, FilterModeStrings, 2))
+                {
+                    if (seletedFilterMode != (int32)properties.FilterMode)
+                    {
+                        sprite.Texture->SetFilterMode((FilterMode)seletedFilterMode);
+                    }
+                }
+            }
+
             ImGui::ColorEdit4("Color", &sprite.Color.r);
             ImGui::InputFloat2("Bottom Left Point", &sprite.BottomLeftPoint.x);
             ImGui::InputFloat2("Top Right Point", &sprite.TopRightPoint.x);
