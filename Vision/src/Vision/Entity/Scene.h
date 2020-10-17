@@ -12,43 +12,45 @@
 
 namespace Vision
 {
-    using TagMap       = std::unordered_map<std::string, EntityHandle>;
-    using EntityMap    = std::unordered_map<EntityHandle, EntityStorage>;
+    using TagMap       = std::unordered_map<std::string, Entity>;
     using ComponentMap = std::unordered_map<ComponentID, ComponentStorage>;    
-
+    
     class Scene
     {
     public:
         std::string Name;
-
-        Scene(const std::string& name);
+        
+        std::string ActiveCameraTag;
+        
+        Scene(const std::string& name, uint32 maxEntityCount);
         ~Scene();
 
         template<typename ... Components>
-        EntityHandle CreateEntity(const std::string& tag, const Components ... components)
+        Entity CreateEntity(const std::string& tag, const Components ... components)
         {
-            if (!IsTagAvailable(tag))
+            VN_CORE_ASSERT(m_EntityCount <= m_MaxEntityCount, "Can't create more than the max number of entites");
+            
+            if (QueryEntity(tag) != entity::null)
             {
                 VN_CORE_INFO("Can't create an entity with a taken tag : {0}", tag);
-                return 0;
+                return entity::null;
             }
 
-            EntityHandle entity = m_CurrentEntityID++;
+            Entity entity = m_EntityCount + 1;
+            m_EntityCount++;
+
+            m_Tags.insert_or_assign(tag, entity);
+
             AddComponents(entity, TagComponent { tag }, components...);
-            SetTag(entity, tag);
+            
             return entity;
         }
+        
+        Entity QueryEntity(const std::string& tag);
 
-        bool IsEntityValid(EntityHandle entity);
-
-        bool IsTagAvailable(const std::string& tag);
-        void SetTag(EntityHandle handle, const std::string& tag);
-
-        void FreeEntity(EntityHandle entity);
-
-        EntityHandle GetEntityByTag(const std::string& tag);
-
-        void EachEntity(std::function<void(EntityHandle)> callbackFn);
+        void FreeEntity(const std::string& tag);
+        
+        void EachEntity(std::function<void(Entity)> callbackFn);
 
         template<typename Component>
         void EachComponent(std::function<void(Component&)> callbackFn)
@@ -61,13 +63,13 @@ namespace Vision
             
             ComponentStorage& componentStorage = componentIter->second;
             const uint32 componentSize = componentStorage.SizeInBytes;
-            auto& data = componentStorage.Data;
+            uint8* data = componentStorage.Data;
 
             for (uint32 index = 0;
-                 index < data.size();
+                 index < componentStorage.Count;
                  index += componentSize)
             {
-                auto component = ComponentCast<Component>(&data[index]);
+                Component& component = ComponentCast<Component>(&data[index * componentSize]);
                 callbackFn(component);
             }
         }
@@ -75,61 +77,68 @@ namespace Vision
         template<typename Component, typename ... Components>
         void EachGroup(std::function<void(Component&, Components&...)> callbackFn)
         {
-            for (const auto& [handle, storage] : m_Entites)
+            for (Entity entity = 1;
+                 entity <= m_EntityCount;
+                 ++entity)
             {
-                if (HasComponents<Component, Components...>(handle))
+                if (HasComponents<Component, Components...>(entity))
                 {
-                    callbackFn(GetComponent<Component>(handle), GetComponent<Components>(handle)...);
+                    callbackFn(GetComponent<Component>(entity), GetComponent<Components>(entity)...);
                 }
             }
         }
 
-        void SetActiveCamera(EntityHandle entity);
-        EntityHandle GetActiveCamera();
-
 		template<typename Component>
-        inline void AddComponent(EntityHandle entity, const Component& component = Component())
+        inline void AddComponent(Entity entity, const Component& component = Component())
         {
+            VN_CORE_ASSERT(entity != entity::null && entity <= m_EntityCount, "Component count can't exceed the max number of entites");
+            
             const std::type_info& typeInfo = typeid(Component);
             const ComponentID& componentID = typeInfo.hash_code();
 
             ComponentStorage& componentStorage = m_Components[componentID];
-            auto& data = componentStorage.Data;
-            auto& entites = componentStorage.Entites;
 
-            if (data.empty())
+            if (!componentStorage.Data)
             {
                 componentStorage.SizeInBytes = sizeof(Component);
+                
+                componentStorage.Data    = new uint8[m_MaxEntityCount * sizeof(Component)];
+                componentStorage.Entites = new ComponentIndex[m_MaxEntityCount];
             }
 
-            size_t componentIndex = data.size();
-
-            data.resize(componentIndex + sizeof(Component));
-            entites.resize(entites.size() + 1);
+            uint8* data = componentStorage.Data;
+            Entity* entites = componentStorage.Entites;
             
-            uint8* componentPointer = &data[componentIndex];
+            size_t componentIndex = componentStorage.Count;
+            componentStorage.Count++;
+
+            entites[componentIndex] = entity;
+            m_Entites[entity].insert_or_assign(componentID, componentIndex);
+
+            uint8* componentPointer = &data[componentIndex * sizeof(Component)];
             memcpy(componentPointer, &component, sizeof(Component));
-            
-            m_Entites[entity].emplace(componentID, componentIndex);
 
+
+            /*
+            Todo: Reimplement Scripting idiot ....
             if constexpr (std::is_base_of<Script, Component>::value)
             {
                 s_ScriptRuntime.emplace(componentID, GetScriptRuntime<Component>);
 
                 auto component = ComponentCast<Component>(componentPointer);
                 
-                // Todo: Rewrite the script struct to support the new changes
-                // componentRef.Entity = { entity, this };
+                // @Bug: entity handle can change if we delete an entity
+                component.Entity = entity;
+                component.Scene  = this;
             }
-
-            entites[NormalizeComponentIndex(componentIndex, sizeof(Component))] = entity;
+            */
         }
 
         template<typename Component, typename ... Components>
-        inline void AddComponents(EntityHandle entity, const Component component, const Components... components)
+        inline void AddComponents(Entity entity, const Component component, const Components... components)
         {
             AddComponent(entity, component);
-
+            
             if constexpr (sizeof...(Components) > 0)
             {
                 AddComponents(entity, components...);
@@ -137,21 +146,20 @@ namespace Vision
         }
 
         template<typename Component>
-        inline bool HasComponent(EntityHandle entity)
+        inline bool HasComponent(Entity entity)
         {
-            auto entityIter = m_Entites.find(entity);
-            VN_CORE_ASSERT(entityIter != m_Entites.end(), "Entity is not valid");
+            VN_CORE_ASSERT(entity != entity::null && entity <= m_EntityCount, "Entity is not valid");
             
             const std::type_info& typeInfo = typeid(Component);
             const ComponentID& componentID = typeInfo.hash_code();
 
-            const EntityStorage& entityStorage = entityIter->second;
+            const EntityStorage& entityStorage = m_Entites[entity];
             
             return entityStorage.find(componentID) != entityStorage.end();
         }
 
         template<typename Component, typename ... Components>
-        inline bool HasComponents(EntityHandle entity)
+        inline bool HasComponents(Entity entity)
         {
             if (!HasComponent<Component>(entity))
             {
@@ -167,37 +175,31 @@ namespace Vision
         }
 
         template<typename Component>
-        inline Component& GetComponent(EntityHandle entity)
+        inline Component& GetComponent(Entity entity)
         {
             const std::type_info& typeInfo = typeid(Component);
             const ComponentID& componentID = typeInfo.hash_code();
             
-            VN_CORE_ASSERT(m_Entites.find(entity) != m_Entites.end(), "Entity is not valid");
+            VN_CORE_ASSERT(entity != entity::null && entity <= m_EntityCount, "Entity is not valid");
             
             EntityStorage& entityStorage = m_Entites[entity];
 
             VN_CORE_ASSERT(entityStorage.find(componentID) != entityStorage.end(), "Entity doesn't own Component of Type: " + std::string(typeInfo.name()));
 
             const ComponentIndex& componentIndex = entityStorage[componentID];
-            auto& data = m_Components[componentID].Data;
-            uint8* componentPointer = &data[componentIndex];
+            uint8* data = m_Components[componentID].Data;
+            uint8* componentPointer = &data[componentIndex * sizeof(Component)];
             return ComponentCast<Component>(componentPointer);
         }
 
         template<typename Component, typename ... Components>
-        inline auto GetComponents(EntityHandle entity)
+        inline auto GetComponents(Entity entity)
         {
             return std::forward_as_tuple<Component&, Components&...>(GetComponent<Component>(entity), GetComponent<Components>(entity)...);
         }
 
-        inline EntityStorage& GetEntityStorage(EntityHandle entity)
-        {
-            VN_CORE_ASSERT(m_Entites.find(entity) != m_Entites.end(), "Entity is not valid");
-            return m_Entites[entity];
-        }
-
         template<typename Component>
-        inline void RemoveComponent(EntityHandle entity)
+        inline void RemoveComponent(Entity entity)
         {
             const std::type_info& typeInfo = typeid(Component);
             const ComponentID& componentID = typeInfo.hash_code();
@@ -205,7 +207,7 @@ namespace Vision
         }
 
         template<typename Component, typename ... Components>
-        inline void RemoveComponents(EntityHandle entity)
+        inline void RemoveComponents(Entity entity)
         {
             RemoveComponent<Component>(entity);
 
@@ -218,29 +220,33 @@ namespace Vision
         inline void* GetComponentMemory(ComponentID componentID, ComponentIndex componentIndex)
         {
             ComponentStorage& componentStorage = m_Components[componentID];
-            auto& data = componentStorage.Data;
-            return &data[componentIndex];
+            uint8* data = componentStorage.Data;
+            return &data[componentIndex * componentStorage.SizeInBytes];
         }
 
-        void RemoveComponent(EntityHandle entity, ComponentID componentID, const std::string& name = "T");
+        void RemoveComponent(Entity entity, ComponentID componentID, const std::string& name = "T");
 
         static void SetActiveScene(Scene* scene);
         inline static Scene& GetActiveScene() { return *s_ActiveScene; }
 
+        uint32 GetEntityCount() const { return m_EntityCount; }
+        uint32 GetMaxEntityCount() const { return m_MaxEntityCount; }
+
     private:
-        TagMap       m_Tags;
-        EntityMap    m_Entites;
-        ComponentMap m_Components;
+        TagMap m_Tags;
 
-        uint32 m_CurrentEntityID = 1;
-        EntityHandle m_ActiveCamera;
+        EntityStorage* m_Entites;
+        ComponentMap   m_Components;
+        
+        uint32 m_EntityCount = 0;
+        uint32 m_MaxEntityCount;
 
-        static ScriptRuntimeMap s_ScriptRuntime;
         static Scene* s_ActiveScene;
-
+        
 #ifdef VN_EDIT
     public:
         static EditorState EditorState;
+        friend class InspectorPanel;
 #endif
     };
 }

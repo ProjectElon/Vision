@@ -5,8 +5,6 @@
 
 #include <glm/glm.hpp>
 
-#define NormalizeComponentIndex(componentIndex, componentSize) (componentIndex) / (componentSize)
-
 namespace Vision
 {
     template<typename T>
@@ -26,11 +24,11 @@ namespace Vision
     
     struct ComponentStorage
     {
-        uint32 SizeInBytes;
+        uint32 SizeInBytes = 0;
+        uint32 Count       = 0;
 
-        // @Temprary: Convert into an array later
-        std::vector<uint8>          Data;
-        std::vector<ComponentIndex> Entites;
+        uint8*  Data    = nullptr;
+        uint32* Entites = nullptr;
     };
 
     struct TagComponent
@@ -40,17 +38,19 @@ namespace Vision
     
     struct TransformComponent
     {
-        glm::mat4 Transform = glm::mat4(1);
+        glm::mat4 Transform = glm::mat4(1.0f);
     };
 
     struct OrthographicCameraComponent
     {
-        float AspectRatio = 1.0f;
-        float Size = 1.0f;
+        float AspectRatio =  1.0f;
+        float Size        =  1.0f;
+        
         float Near = -1.0f;
-        float Far = 1.0f;
+        float Far  =  1.0f;
 
         glm::mat4 Projection = glm::mat4(1);
+       
         bool Static = false;
     };
 
@@ -58,20 +58,25 @@ namespace Vision
     {
         float AspectRatio = 1.0f;
         float FieldOfView = 45.0f;
+
         float Near = 0.1f;
-        float Far = 1000.0f;
+        float Far  = 1000.0f;
 
         glm::mat4 Projection = glm::mat4(1);
+        
         bool Static = false;
     };
 
     struct SpriteRendererComponent
     {
         Ref<Texture2D> Texture = Texture2D::GetDefault();
-        glm::vec4      Color = { 1.0f, 1.0f, 1.0f, 1.0f };
-        glm::vec2      BottomLeftPoint = { 0.0f, 0.0f };
-        glm::vec2      TopRightPoint = { 1.0f, 1.0f };
-        bool           FlipX = false;
-        bool           FlipY = false;
+        
+        glm::vec4 Color = { 1.0f, 1.0f, 1.0f, 1.0f };
+        
+        glm::vec2 BottomLeftPoint = { 0.0f, 0.0f };
+        glm::vec2 TopRightPoint   = { 1.0f, 1.0f };
+
+        bool FlipX = false;
+        bool FlipY = false;
     };
 }

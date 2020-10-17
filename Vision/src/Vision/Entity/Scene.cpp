@@ -3,116 +3,110 @@
 
 namespace Vision
 {
-	Scene::Scene(const std::string& name)
+	Scene::Scene(const std::string& name, uint32 maxEntityCount)
 		: Name(name)
-	{
+        , m_MaxEntityCount(maxEntityCount)
+    {
+        m_Entites = new EntityStorage[maxEntityCount + 1];
 	}
 
     Scene::~Scene()
     {
     }
 
-    bool Scene::IsTagAvailable(const std::string& tag)
+    void Scene::RemoveComponent(Entity entity, ComponentID componentID, const std::string& name)
     {
-        auto tagIter = m_Tags.find(tag);
-        return tagIter == m_Tags.end();
-    }
+        VN_CORE_ASSERT(entity != entity::null && entity <= m_EntityCount, "Can't Remove a component of an invalid Entity");
 
-    void Scene::SetTag(EntityHandle handle, const std::string& tag)
-    {
-        auto tagIter = m_Tags.find(tag);
-
-        auto& tagComponent = GetComponent<TagComponent>(handle);
-        m_Tags.erase(tagComponent.Tag);
-
-        tagComponent.Tag = tag;
-        m_Tags.emplace(tag, handle);
-    }
-
-    void Scene::RemoveComponent(EntityHandle entity, ComponentID componentID, const std::string& name)
-    {
         EntityStorage& entityStorage = m_Entites[entity];
         auto componentIter = entityStorage.find(componentID);
 
         VN_CORE_ASSERT(componentIter != entityStorage.end(), "Entity doesn't own Component of Type: " + name);
 
         const ComponentIndex& currentComponentIndex = componentIter->second;
+        
         ComponentStorage& componentStorage = m_Components[componentID];
-        const uint32& componentSize = componentStorage.SizeInBytes;
-        auto& data = componentStorage.Data;
-        auto& entites = componentStorage.Entites;
 
-        const ComponentIndex lastComponentIndex = data.size() - componentSize;
+        const uint32& componentSize = componentStorage.SizeInBytes;
+        uint8* data = componentStorage.Data;
+        Entity* entites = componentStorage.Entites;
+
+        const ComponentIndex lastComponentIndex = componentStorage.Count - 1;
+        VN_CORE_ASSERT(lastComponentIndex >= 0, "lastComponentIndex is less than zero");
 
         static uint8 tempStorage[1024];
         VN_CORE_ASSERT(componentSize <= 1024, "Component Size is more than 1024 bytes");
 
         if (lastComponentIndex != currentComponentIndex)
         {
-            uint32 currentIndex = NormalizeComponentIndex(currentComponentIndex, componentSize);
-            uint32 lastIndex = NormalizeComponentIndex(lastComponentIndex, componentSize);
-
-            EntityHandle lastComponentEntity = entites[lastIndex];
+            Entity lastComponentEntity = entites[lastComponentIndex];
             
-            std::swap(entites[currentIndex], entites[lastIndex]);
-
-            memcpy(tempStorage, &data[currentComponentIndex], componentSize);
-            memcpy(&data[currentComponentIndex], &data[lastComponentIndex], componentSize);
-            memcpy(&data[lastComponentIndex], tempStorage, componentSize);
+            std::swap(entites[currentComponentIndex], entites[lastComponentIndex]);
+            
+            memcpy(tempStorage, &data[currentComponentIndex * componentSize], componentSize);
+            memcpy(&data[currentComponentIndex * componentSize], &data[lastComponentIndex * componentSize], componentSize);
+            memcpy(&data[lastComponentIndex * componentSize], tempStorage, componentSize);
             
             m_Entites[lastComponentEntity][componentID] = currentComponentIndex;
         }
-
-        entityStorage.erase(componentIter);
-
-        data.resize(data.size() - componentSize);
-        entites.resize(entites.size() - 1);
+        
+        componentStorage.Count--;
     }
 
-    void Scene::FreeEntity(EntityHandle entity)
+    void Scene::FreeEntity(const std::string& tag)
     {
-        auto entityIter = m_Entites.find(entity);
+        Entity entity = QueryEntity(tag);
+        Entity lastEntity = m_EntityCount;
+
+        VN_CORE_ASSERT(entity != entity::null && entity <= m_EntityCount, "Can't Free an invalid Entity");
+
+        if (entity != lastEntity)
+        {
+            const auto& swappedEntityTag = GetComponent<TagComponent>(lastEntity).Tag;
+            m_Tags.insert_or_assign(swappedEntityTag, entity);
+        }
+
+        const auto& removedEntityTag = GetComponent<TagComponent>(entity).Tag;
         
-        VN_CORE_ASSERT(entityIter != m_Entites.end(), "Can't Free an invalid Entity");
+        m_Tags.insert_or_assign(removedEntityTag, entity::null);
 
-        const EntityStorage& storage = entityIter->second;
+        EntityStorage& storage = m_Entites[entity];
 
-        for (const auto& [componentID, componentIndex] : storage)
+        for (auto& [componentID, componentIndex] : storage)
         {
             RemoveComponent(entity, componentID);
         }
 
-        m_Entites.erase(entityIter);
-    }
+        storage.clear();
 
-    EntityHandle Scene::GetEntityByTag(const std::string& tag)
-    {
-        VN_CORE_ASSERT(m_Tags.find(tag) != m_Tags.end(), "Can't find an Entity With Tag: " + tag);
-        return m_Tags[tag];
-    }
-
-    void Scene::EachEntity(std::function<void(EntityHandle)> callbackFn)
-    {
-        for (const auto& [handle, storage] : m_Entites)
+        if (m_EntityCount > 1 && entity != lastEntity)
         {
-            callbackFn(handle);
+            std::swap(m_Entites[lastEntity], m_Entites[entity]);
         }
+
+        m_EntityCount--;
     }
 
-    bool Scene::IsEntityValid(EntityHandle entity)
+    Entity Scene::QueryEntity(const std::string& tag)
     {
-        return m_Entites.find(entity) != m_Entites.end();
-    }
+        auto it = m_Tags.find(tag);
+        
+        if (it == m_Tags.end())
+        {
+            return entity::null;
+        }
 
-    void Scene::SetActiveCamera(const EntityHandle entity)
-    {
-        VN_CORE_ASSERT(m_ActiveCamera != entity, "Scene is already active.");
-        m_ActiveCamera = entity;
+        return it->second;
     }
-
-    EntityHandle Scene::GetActiveCamera()
+    
+    void Scene::EachEntity(std::function<void(Entity)> callbackFn)
     {
-        return m_ActiveCamera;
+        for (Entity entityHandle = 1;
+             entityHandle <= m_EntityCount;
+             ++entityHandle)
+        {
+            callbackFn(entityHandle);
+        }
     }
 
     void Scene::SetActiveScene(Scene* scene)
@@ -122,8 +116,7 @@ namespace Vision
     }
 
     Scene* Scene::s_ActiveScene = nullptr;
-    ScriptRuntimeMap Scene::s_ScriptRuntime;
-
+    
 #ifdef VN_EDIT
 
     EditorState Scene::EditorState;

@@ -5,7 +5,9 @@
 
 namespace Vision
 {
-	namespace Entity
+	using Entity = uint32;
+	
+	namespace entity
 	{
 		static union
 		{
@@ -13,6 +15,5 @@ namespace Vision
 		};
 	}
 
-	using EntityHandle  = uint32;
 	using EntityStorage = std::unordered_map<ComponentID, ComponentIndex>;
 }

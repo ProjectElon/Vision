@@ -11,25 +11,49 @@ namespace Vision
 {
 	InspectorPanel::InspectorPanel()
 	{
-        memset(m_TagBuffer, 0, 1024);
 		m_ComponentsToRemove.reserve(10);
 
         auto& editorState = Scene::EditorState;
         
 		InspectComponent<TagComponent, false>("Tag", [&](void* component)
 		{
-            auto& scene = Scene::GetActiveScene();
-			auto& tag = ComponentCast<TagComponent>(component);
+            char buffer[1024];
 
-			memcpy(m_TagBuffer, tag.Tag.data(), 1024);
+            Scene& scene = Scene::GetActiveScene();
+			auto& tagComponent = ComponentCast<TagComponent>(component);
+            std::string& oldTag = tagComponent.Tag;
 
-			if (ImGui::InputText("Tag", m_TagBuffer, 1024, ImGuiInputTextFlags_EnterReturnsTrue) ||
+            memset(buffer, 0, 1024);
+			memcpy(buffer, tagComponent.Tag.data(), tagComponent.Tag.size());
+
+			if (ImGui::InputText("Tag", buffer, 1024, ImGuiInputTextFlags_EnterReturnsTrue) ||
 				ImGui::IsItemDeactivated())
 			{
-				if (scene.IsTagAvailable(m_TagBuffer))
+                std::string newTag = buffer;
+
+                if (scene.QueryEntity(newTag) == entity::null)
 				{
-					scene.SetTag(editorState.SelectedEntity, m_TagBuffer);
+                    Entity entity = scene.QueryEntity(editorState.SeleteEntityTag);
+                   
+                    scene.m_Tags.emplace(newTag, entity);
+                    scene.m_Tags.erase(oldTag);
+
+                    if (oldTag == editorState.SeleteEntityTag)
+                    {
+                        editorState.SeleteEntityTag = newTag;
+                    }
+
+                    if (oldTag == scene.ActiveCameraTag)
+                    {
+                        scene.ActiveCameraTag = newTag;
+                    }
+
+                    oldTag = newTag;
 				}
+                else
+                {
+                    VN_CORE_INFO("Tag is Already Taken");
+                }
 			}
 		});
 
@@ -66,21 +90,20 @@ namespace Vision
 
         InspectComponent<OrthographicCameraComponent>("Orthographic Camera", [&](void* component)
         {
-            auto& scene = Scene::GetActiveScene();
+            Scene& scene = Scene::GetActiveScene();
+            
             auto& camera = ComponentCast<OrthographicCameraComponent>(component);
 
-            EntityHandle activeCamera = scene.GetActiveCamera();
-
-            if (editorState.SelectedEntity != activeCamera)
+            if (editorState.SeleteEntityTag != scene.ActiveCameraTag)
             {
                 if (ImGui::Button("Set as Primary"))
                 {
-                    scene.SetActiveCamera(editorState.SelectedEntity);
+                    scene.ActiveCameraTag = editorState.SeleteEntityTag;
                 }
             }
             else
             {
-                ImGui::TextColored({ 1.0f, 0.0f, 0.0f, 1.0f }, "Primary Camera");
+                ImGui::TextColored({ 0.931f, 0.618f, 0.265f, 1.0f }, "Primary Camera");
             }
 
             ImGui::Checkbox("Static", &camera.Static);
@@ -104,11 +127,11 @@ namespace Vision
                 if (changed)
                 {
                     camera.Projection = glm::ortho(-camera.AspectRatio * camera.Size,
-                        camera.AspectRatio * camera.Size,
-                        -camera.Size,
-                        camera.Size,
-                        camera.Near,
-                        camera.Far);
+                                                    camera.AspectRatio * camera.Size,
+                                                   -camera.Size,
+                                                    camera.Size,
+                                                    camera.Near,
+                                                    camera.Far);
                 }
             }
         });
@@ -124,10 +147,12 @@ namespace Vision
 
             ImGui::Image((void*)(intptr_t)textureData.RendererID, ImVec2(64, 64));
 
-            ImGui::Text("Texture Properties: \n");
+            ImGui::Text("\n");
             
             // Texture Properties
             {
+                ImGui::Text("Texture Properties");
+                
                 const TextureProps& properties = sprite.Texture->GetProperties();
                 
                 static const char* WrapModeStrings[] = 
@@ -171,9 +196,16 @@ namespace Vision
                 }
             }
 
+            ImGui::Text("\n");
+
             ImGui::ColorEdit4("Color", &sprite.Color.r);
+
+            ImGui::Text("\n");
+
             ImGui::InputFloat2("Bottom Left Point", &sprite.BottomLeftPoint.x);
             ImGui::InputFloat2("Top Right Point", &sprite.TopRightPoint.x);
+
+            ImGui::Text("\n");
             ImGui::Checkbox("Flip X", &sprite.FlipX);
             ImGui::Checkbox("Flip Y", &sprite.FlipY);
         });
@@ -187,17 +219,27 @@ namespace Vision
 
 		ImGui::Begin("Inspector");
 		
-		// Note SeletedEntity can be invalid if we deleted an entity
-		if (editorState.SelectedEntity)
+        Entity seletedEntity = scene.QueryEntity(editorState.SeleteEntityTag);
+
+		// @Note: SeletedEntity can be invalid if we deleted the entity...
+		if (seletedEntity)
 		{
-			const auto& storage = scene.GetEntityStorage(editorState.SelectedEntity);
-			
+			const auto& storage = scene.m_Entites[seletedEntity];
+            
             for (const auto& [componentID, componentIndex] : storage)
             {
+                ComponentInfo& componentInfo = componentInspector[componentID];
+                
+                const ComponentInspectFn& inspectFn = componentInfo.InspectFn;
+                
+                if (!inspectFn || componentIndex == -1)
+                {
+                    continue;
+                }
+
                 void* component = scene.GetComponentMemory(componentID, componentIndex);
                 
-                ComponentState& componentState = m_ComponentState[{ editorState.SelectedEntity, componentID }];
-                ComponentInfo& componentInfo = componentInspector[componentID];
+                ComponentState& componentState = m_ComponentState[{ seletedEntity, componentID }];
                 const char* componentName = componentInfo.Name.c_str();
 
                 uint32 flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_FramePadding;
@@ -211,6 +253,7 @@ namespace Vision
                     ImGui::Text("  ");
 
                     ImGui::SameLine(0, 0);
+                    
 
                     if (ImGui::Button("-", { 18, 18 }))
                     {
@@ -222,17 +265,19 @@ namespace Vision
 
                 if (componentState.Expanded)
                 {
-                    componentInfo.InspectFn(component);
+                    inspectFn(component);
                     ImGui::TreePop();
                 }
+
+                ImGui::Text("\n");
             }
 
 			if (!m_ComponentsToRemove.empty())
 			{
 				for (auto& componentID : m_ComponentsToRemove)
 				{
-					scene.RemoveComponent(editorState.SelectedEntity, componentID);
-                    m_ComponentState[{ editorState.SelectedEntity, componentID }] = ComponentState();
+					scene.RemoveComponent(seletedEntity, componentID);
+                    m_ComponentState[{ seletedEntity, componentID }] = ComponentState();
 				}
 
 				m_ComponentsToRemove.resize(0);
@@ -259,7 +304,7 @@ namespace Vision
 
 					if (ImGui::Selectable(componentName))
 					{
-                        componentInfo.AddFn(editorState.SelectedEntity);
+                        componentInfo.AddFn(seletedEntity);
 						VN_CORE_INFO("\tAdded Component: {0}", componentName);
 					}
 				}

@@ -11,8 +11,9 @@ namespace Vision
 		: Layer("Editor")
 	{
 		m_Window = &Application::Get().GetWindow();
-		
-		m_MainScene = Vision::CreateScope<Scene>("MainScene");
+		m_Window->SetVSync(true);
+
+		m_MainScene = Vision::CreateScope<Scene>("MainScene", 1000);
 		Scene::SetActiveScene(m_MainScene.get());
 		
 		LoadSettings();
@@ -58,12 +59,12 @@ namespace Vision
 		m_CheckboardTexture = Texture2D::CreateFromFile(texturePath + "Checkerboard.png", tiled);
 		m_PlayerTexture = Texture2D::CreateFromFile(texturePath + "brick_red.png", transparent);
 		
-		EntityHandle camera0 = m_MainScene->CreateEntity("Camera0", TransformComponent{}, OrthographicCameraComponent{});
-		m_MainScene->SetActiveCamera(camera0);
+		Entity camera0 = m_MainScene->CreateEntity("Camera0", TransformComponent{}, OrthographicCameraComponent{});
+		m_MainScene->ActiveCameraTag = "Camera0";
 
-		EntityHandle camera1 = m_MainScene->CreateEntity("Camera1", TransformComponent{}, OrthographicCameraComponent{});
+		Entity camera1 = m_MainScene->CreateEntity("Camera1", TransformComponent{}, OrthographicCameraComponent{});
 		
-		EntityHandle entity0 = m_MainScene->CreateEntity("Entity0", TransformComponent{}, SpriteRendererComponent{});
+		Entity entity0 = m_MainScene->CreateEntity("Entity0", TransformComponent{}, SpriteRendererComponent{});
 		auto& sc = m_MainScene->GetComponent<SpriteRendererComponent>(entity0);
 		sc.Texture = m_PlayerTexture;
 	}
@@ -167,7 +168,7 @@ namespace Vision
 		using namespace Vision;
 
 		auto& window = Application::Get().GetWindow();
-		auto& scene = Scene::GetActiveScene();
+		Scene& scene = Scene::GetActiveScene();
 
 		if (m_SceneViewPanel.IsViewportResized())
 		{
@@ -181,6 +182,23 @@ namespace Vision
 		m_SceneViewPanel.OnImGuiRender();
 		m_InspectorPanel.OnImGuiRender();
 		m_ConsolePanel.OnImGuiRender();
+
+		static bool deleteWasDown = false;
+
+		if (m_SceneHierarchyPanel.IsInteractable())
+		{
+			if (Input::IsKeyDown(VN_KEY_DELETE))
+			{
+				deleteWasDown = true;
+			}
+
+			if (Input::IsKeyUp(VN_KEY_DELETE) && deleteWasDown)
+			{
+				deleteWasDown = false;
+				scene.FreeEntity(scene.EditorState.SeleteEntityTag);
+				scene.EditorState.SeleteEntityTag = "";
+			}
+		}
 	}
 
 	void EditorLayer::LoadSettings()
