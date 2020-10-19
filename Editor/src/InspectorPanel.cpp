@@ -225,24 +225,22 @@ namespace Vision
 		if (seletedEntity)
 		{
 			const auto& storage = scene.m_Entites[seletedEntity];
-            
-            for (const auto& [componentID, componentIndex] : storage)
-            {
-                ComponentInfo& componentInfo = componentInspector[componentID];
-                
-                const ComponentInspectFn& inspectFn = componentInfo.InspectFn;
-                
-                if (!inspectFn || componentIndex == -1)
-                {
-                    continue;
-                }
 
-                void* component = scene.GetComponentMemory(componentID, componentIndex);
-                
+            auto entityStorageIter = storage.begin();
+
+            while (entityStorageIter != storage.end())
+            {
+                ComponentID componentID = entityStorageIter->first;
+                ComponentIndex componentIndex = entityStorageIter->second;
+
+                entityStorageIter++;
+
+                const ComponentInfo& componentInfo = componentInspector[componentID];
                 ComponentState& componentState = m_ComponentState[{ seletedEntity, componentID }];
                 const char* componentName = componentInfo.Name.c_str();
 
                 uint32 flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_FramePadding;
+
                 ImGui::SetNextTreeNodeOpen(componentState.Expanded);
                 componentState.Expanded = ImGui::TreeNodeEx((void*)(intptr_t)componentID, flags, componentName);
 
@@ -253,35 +251,35 @@ namespace Vision
                     ImGui::Text("  ");
 
                     ImGui::SameLine(0, 0);
-                    
 
                     if (ImGui::Button("-", { 18, 18 }))
                     {
                         VN_CORE_INFO("\tRemoving Component: {0}", componentInfo.Name);
-                        componentState.PendingRemove = true;
-                        m_ComponentsToRemove.emplace_back(componentID);
+                        m_ComponentState[{ seletedEntity, componentID }] = ComponentState();
+                        scene.RemoveComponent(seletedEntity, componentID);
                     }
                 }
 
+                const auto& inspectFn = componentInfo.InspectFn;
+
                 if (componentState.Expanded)
                 {
-                    inspectFn(component);
+                    if (inspectFn)
+                    {
+                        void* componentMemory = scene.GetComponentMemory(componentID, componentIndex);
+                        inspectFn(componentMemory);
+                    }
+                    else
+                    {
+                        ImGui::Text("ComponentID: %lld", componentID);
+                        ImGui::Text("ComponentIndex: %d", componentIndex);
+                    }
+
                     ImGui::TreePop();
                 }
 
                 ImGui::Text("\n");
             }
-
-			if (!m_ComponentsToRemove.empty())
-			{
-				for (auto& componentID : m_ComponentsToRemove)
-				{
-					scene.RemoveComponent(seletedEntity, componentID);
-                    m_ComponentState[{ seletedEntity, componentID }] = ComponentState();
-				}
-
-				m_ComponentsToRemove.resize(0);
-			}
 
 			if (ImGui::Button("Add Components"))
 			{

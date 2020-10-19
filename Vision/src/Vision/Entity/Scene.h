@@ -3,8 +3,6 @@
 #include "Vision/Core/Base.h"
 #include "Vision/Entity/Entity.h"
 #include "Vision/Entity/Components.h"
-#include "Vision/Entity/Script.h"
-#include "Vision/Entity/ScriptRuntime.h"
 #include "Vision/Entity/EditorState.h"
 
 #include <map>
@@ -13,23 +11,27 @@
 namespace Vision
 {
     using TagMap       = std::unordered_map<std::string, Entity>;
-    using ComponentMap = std::unordered_map<ComponentID, ComponentStorage>;    
-    
+    using ComponentMap = std::unordered_map<ComponentID, ComponentStorage>;
+
     class Scene
     {
     public:
         std::string Name;
-        
+
         std::string ActiveCameraTag;
-        
+
         Scene(const std::string& name, uint32 maxEntityCount);
         ~Scene();
 
         template<typename ... Components>
         Entity CreateEntity(const std::string& tag, const Components ... components)
         {
-            VN_CORE_ASSERT(m_EntityCount <= m_MaxEntityCount, "Can't create more than the max number of entites");
-            
+            if (m_EntityCount == m_MaxEntityCount)
+            {
+                VN_CORE_INFO("Can't create more than the max number of entites");
+                return entity::null;
+            }
+
             if (QueryEntity(tag) != entity::null)
             {
                 VN_CORE_INFO("Can't create an entity with a taken tag : {0}", tag);
@@ -42,14 +44,14 @@ namespace Vision
             m_Tags.insert_or_assign(tag, entity);
 
             AddComponents(entity, TagComponent { tag }, components...);
-            
+
             return entity;
         }
-        
+
         Entity QueryEntity(const std::string& tag);
 
         void FreeEntity(const std::string& tag);
-        
+
         void EachEntity(std::function<void(Entity)> callbackFn);
 
         template<typename Component>
@@ -57,10 +59,10 @@ namespace Vision
         {
             const std::type_info& typeInfo = typeid(Component);
             const ComponentID& componentID = typeInfo.hash_code();
-           
+
             auto componentIter = m_Components.find(componentID);
             VN_CORE_ASSERT(componentIter != m_Components.end(), "Entity doesn't own Component of Type: " + std::string(typeInfo.name()));
-            
+
             ComponentStorage& componentStorage = componentIter->second;
             const uint32 componentSize = componentStorage.SizeInBytes;
             uint8* data = componentStorage.Data;
@@ -75,7 +77,7 @@ namespace Vision
         }
 
         template<typename Component, typename ... Components>
-        void EachGroup(std::function<void(Component&, Components&...)> callbackFn)
+        void EachGroup(const std::function<void(Component&, Components&...)>& callbackFn)
         {
             for (Entity entity = 1;
                  entity <= m_EntityCount;
@@ -91,8 +93,6 @@ namespace Vision
 		template<typename Component>
         inline void AddComponent(Entity entity, const Component& component = Component())
         {
-            VN_CORE_ASSERT(entity != entity::null && entity <= m_EntityCount, "Component count can't exceed the max number of entites");
-            
             const std::type_info& typeInfo = typeid(Component);
             const ComponentID& componentID = typeInfo.hash_code();
 
@@ -101,15 +101,15 @@ namespace Vision
             if (!componentStorage.Data)
             {
                 componentStorage.SizeInBytes = sizeof(Component);
-                
+
                 componentStorage.Data    = new uint8[m_MaxEntityCount * sizeof(Component)];
                 componentStorage.Entites = new ComponentIndex[m_MaxEntityCount];
             }
 
             uint8* data = componentStorage.Data;
             Entity* entites = componentStorage.Entites;
-            
-            size_t componentIndex = componentStorage.Count;
+
+            uint32 componentIndex = componentStorage.Count;
             componentStorage.Count++;
 
             entites[componentIndex] = entity;
@@ -118,27 +118,26 @@ namespace Vision
             uint8* componentPointer = &data[componentIndex * sizeof(Component)];
             memcpy(componentPointer, &component, sizeof(Component));
 
+#if VN_EDITOR
+            auto& componentInspector = EditorState.ComponentInspector;
 
-            /*
-            Todo: Reimplement Scripting idiot ....
-            if constexpr (std::is_base_of<Script, Component>::value)
+            if (componentInspector.find(componentID) == componentInspector.end())
             {
-                s_ScriptRuntime.emplace(componentID, GetScriptRuntime<Component>);
+                ComponentInfo componentInfo;
+                componentInfo.AddFn     = AddComponentInInspectorFn<Component>;
+                componentInfo.Name      = typeInfo.name();
+                componentInfo.Removable = true;
 
-                auto component = ComponentCast<Component>(componentPointer);
-                
-                // @Bug: entity handle can change if we delete an entity
-                component.Entity = entity;
-                component.Scene  = this;
+                componentInspector.insert_or_assign(componentID, componentInfo);
             }
-            */
+#endif
         }
 
         template<typename Component, typename ... Components>
         inline void AddComponents(Entity entity, const Component component, const Components... components)
         {
             AddComponent(entity, component);
-            
+
             if constexpr (sizeof...(Components) > 0)
             {
                 AddComponents(entity, components...);
@@ -149,12 +148,12 @@ namespace Vision
         inline bool HasComponent(Entity entity)
         {
             VN_CORE_ASSERT(entity != entity::null && entity <= m_EntityCount, "Entity is not valid");
-            
+
             const std::type_info& typeInfo = typeid(Component);
             const ComponentID& componentID = typeInfo.hash_code();
 
             const EntityStorage& entityStorage = m_Entites[entity];
-            
+
             return entityStorage.find(componentID) != entityStorage.end();
         }
 
@@ -179,9 +178,9 @@ namespace Vision
         {
             const std::type_info& typeInfo = typeid(Component);
             const ComponentID& componentID = typeInfo.hash_code();
-            
+
             VN_CORE_ASSERT(entity != entity::null && entity <= m_EntityCount, "Entity is not valid");
-            
+
             EntityStorage& entityStorage = m_Entites[entity];
 
             VN_CORE_ASSERT(entityStorage.find(componentID) != entityStorage.end(), "Entity doesn't own Component of Type: " + std::string(typeInfo.name()));
@@ -216,7 +215,7 @@ namespace Vision
                 RemoveComponents<Components...>(entity);
             }
         }
-        
+
         inline void* GetComponentMemory(ComponentID componentID, ComponentIndex componentIndex)
         {
             ComponentStorage& componentStorage = m_Components[componentID];
@@ -237,13 +236,13 @@ namespace Vision
 
         EntityStorage* m_Entites;
         ComponentMap   m_Components;
-        
+
         uint32 m_EntityCount = 0;
         uint32 m_MaxEntityCount;
 
         static Scene* s_ActiveScene;
-        
-#ifdef VN_EDIT
+
+#ifdef VN_EDITOR
     public:
         static EditorState EditorState;
         friend class InspectorPanel;

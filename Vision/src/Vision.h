@@ -43,6 +43,4 @@
 #include "Vision/Entity/Entity.h"
 #include "Vision/Entity/Components.h"
 #include "Vision/Entity/Scene.h"
-#include "Vision/Entity/Script.h"
-#include "Vision/Entity/ScriptRuntime.h"
 /*--------------------------------*/

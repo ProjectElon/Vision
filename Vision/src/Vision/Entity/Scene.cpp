@@ -12,6 +12,8 @@ namespace Vision
 
     Scene::~Scene()
     {
+        delete[] m_Entites;
+        VN_CORE_INFO("Freeing Entites...");
     }
 
     void Scene::RemoveComponent(Entity entity, ComponentID componentID, const std::string& name)
@@ -19,12 +21,12 @@ namespace Vision
         VN_CORE_ASSERT(entity != entity::null && entity <= m_EntityCount, "Can't Remove a component of an invalid Entity");
 
         EntityStorage& entityStorage = m_Entites[entity];
-        auto componentIter = entityStorage.find(componentID);
+        auto entityStorageIter = entityStorage.find(componentID);
 
-        VN_CORE_ASSERT(componentIter != entityStorage.end(), "Entity doesn't own Component of Type: " + name);
+        VN_CORE_ASSERT(entityStorageIter != entityStorage.end(), "Entity doesn't own Component of Type: " + name);
 
-        const ComponentIndex& currentComponentIndex = componentIter->second;
-        
+        const ComponentIndex& currentComponentIndex = entityStorageIter->second;
+
         ComponentStorage& componentStorage = m_Components[componentID];
 
         const uint32& componentSize = componentStorage.SizeInBytes;
@@ -40,16 +42,18 @@ namespace Vision
         if (lastComponentIndex != currentComponentIndex)
         {
             Entity lastComponentEntity = entites[lastComponentIndex];
-            
+
             std::swap(entites[currentComponentIndex], entites[lastComponentIndex]);
-            
+
             memcpy(tempStorage, &data[currentComponentIndex * componentSize], componentSize);
             memcpy(&data[currentComponentIndex * componentSize], &data[lastComponentIndex * componentSize], componentSize);
             memcpy(&data[lastComponentIndex * componentSize], tempStorage, componentSize);
-            
+
             m_Entites[lastComponentEntity][componentID] = currentComponentIndex;
         }
-        
+
+        entityStorage.extract(entityStorageIter);
+
         componentStorage.Count--;
     }
 
@@ -67,13 +71,19 @@ namespace Vision
         }
 
         const auto& removedEntityTag = GetComponent<TagComponent>(entity).Tag;
-        
+
         m_Tags.insert_or_assign(removedEntityTag, entity::null);
 
         EntityStorage& storage = m_Entites[entity];
 
-        for (auto& [componentID, componentIndex] : storage)
+        auto entityStorageIter = storage.begin();
+
+        while (entityStorageIter != storage.end())
         {
+            ComponentID componentID = entityStorageIter->first;
+
+            entityStorageIter++;
+
             RemoveComponent(entity, componentID);
         }
 
@@ -85,12 +95,14 @@ namespace Vision
         }
 
         m_EntityCount--;
+
+        VN_CORE_INFO("Freeing Entity: {0}", tag);
     }
 
     Entity Scene::QueryEntity(const std::string& tag)
     {
         auto it = m_Tags.find(tag);
-        
+
         if (it == m_Tags.end())
         {
             return entity::null;
@@ -98,7 +110,7 @@ namespace Vision
 
         return it->second;
     }
-    
+
     void Scene::EachEntity(std::function<void(Entity)> callbackFn)
     {
         for (Entity entityHandle = 1;
@@ -116,10 +128,8 @@ namespace Vision
     }
 
     Scene* Scene::s_ActiveScene = nullptr;
-    
-#ifdef VN_EDIT
 
+#ifdef VN_EDITOR
     EditorState Scene::EditorState;
-
 #endif
 }

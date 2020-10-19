@@ -21,7 +21,7 @@ namespace Vision
 
     using ComponentID    = size_t;
     using ComponentIndex = uint32;
-    
+
     struct ComponentStorage
     {
         uint32 SizeInBytes = 0;
@@ -29,13 +29,21 @@ namespace Vision
 
         uint8*  Data    = nullptr;
         uint32* Entites = nullptr;
+
+        ~ComponentStorage()
+        {
+            delete[] Data;
+            delete[] Entites;
+
+            VN_CORE_INFO("Freeing Components....");
+        }
     };
 
     struct TagComponent
     {
         std::string Tag;
     };
-    
+
     struct TransformComponent
     {
         glm::mat4 Transform = glm::mat4(1.0f);
@@ -45,12 +53,12 @@ namespace Vision
     {
         float AspectRatio =  1.0f;
         float Size        =  1.0f;
-        
+
         float Near = -1.0f;
         float Far  =  1.0f;
 
         glm::mat4 Projection = glm::mat4(1);
-       
+
         bool Static = false;
     };
 
@@ -63,16 +71,16 @@ namespace Vision
         float Far  = 1000.0f;
 
         glm::mat4 Projection = glm::mat4(1);
-        
+
         bool Static = false;
     };
 
     struct SpriteRendererComponent
     {
         Ref<Texture2D> Texture = Texture2D::GetDefault();
-        
+
         glm::vec4 Color = { 1.0f, 1.0f, 1.0f, 1.0f };
-        
+
         glm::vec2 BottomLeftPoint = { 0.0f, 0.0f };
         glm::vec2 TopRightPoint   = { 1.0f, 1.0f };
 

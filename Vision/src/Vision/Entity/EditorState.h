@@ -15,7 +15,7 @@ namespace Vision
 
     using ComponentInspectFn = std::function<void(void*)>;
     using ComponentAddFn = std::function<void(Entity)>;
-    
+
     struct ComponentInfo
     {
         std::string        Name;
@@ -28,7 +28,7 @@ namespace Vision
 
     struct EditorState
     {
-        std::string SeleteEntityTag;   
+        std::string SeleteEntityTag;
         ComponentInfoMap ComponentInspector;
     };
 
@@ -46,7 +46,7 @@ namespace Vision
         componentInfo.InspectFn = inspectFn;
         componentInfo.AddFn     = AddComponentInInspectorFn<Component>;
 
-        editorState.ComponentInspector[componentID] = componentInfo;
+        editorState.ComponentInspector.insert_or_assign(componentID, componentInfo);
     }
 
     template<typename Component>

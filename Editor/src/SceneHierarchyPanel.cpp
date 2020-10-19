@@ -8,7 +8,7 @@ namespace Vision
 	void SceneHierarchyPanel::OnImGuiRender()
 	{
 		Scene& scene = Scene::GetActiveScene();
-		auto& editorState = Scene::EditorState;
+		EditorState& editorState = Scene::EditorState;
 
 		ImGui::Begin("Scene Hierarchy");
 
@@ -57,11 +57,11 @@ namespace Vision
 			ImGui::OpenPopup("Create Entity Popup");
 		}
 
+		static char buffer[1024];
+
 		if (ImGui::BeginPopup("Create Entity Popup"))
 		{
-			static char buffer[1024];
-			memset(buffer, 0, sizeof(buffer));
-			bool created = false;
+			memset(buffer, 0, 1024);
 
 			if (ImGui::InputText("Tag", buffer, 1024, ImGuiInputTextFlags_EnterReturnsTrue) ||
 				ImGui::IsItemDeactivated())

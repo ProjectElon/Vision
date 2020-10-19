@@ -47,7 +47,7 @@ workspace ("Vision")
 
 		defines
 		{
-			"VN_EDIT"
+			"VN_EDITOR"
 		}
 		
 	filter ("configurations:Release")
@@ -58,7 +58,7 @@ workspace ("Vision")
 
 		defines
 		{
-			"VN_EDIT"
+			"VN_EDITOR"
 		}
 
 	filter ("configurations:Dist")
