@@ -117,37 +117,12 @@ namespace Vision
 
 		scene.EachGroup<TransformComponent, SpriteRendererComponent>([](auto& transform, auto& sprite)
 		{
-			Renderer2D::DrawSprite(transform.Transform, sprite);
+			Renderer2D::DrawSprite(transform.Position, transform.Rotation.z, transform.Scale, sprite);
 		});
 
 		Renderer2D::EndScene();
 
-		m_SceneFrameBuffer->UnBind();	
-
-		/*
-		Entity activeCamera = scene.GetActiveCamera();
-		
-		if (activeCamera.IsValid())
-		{
-			const auto& cameraTransform = activeCamera.GetComponent<TransformComponent>().Transform;
-			const auto& cameraComponent = activeCamera.GetComponent<OrthographicCameraComponent>();
-
-			m_GameFrameBuffer->Bind();
-
-			RenderCommand::Clear(RendererAPI::ColorBuffer);
-
-			Renderer2D::BeginScene(cameraTransform, cameraComponent, m_SpriteShader);
-
-			scene.EachGroup<TransformComponent, SpriteComponent>([](auto& transform, auto& sprite, Entity entity)
-			{
-				Renderer2D::DrawSprite(transform.Transform, sprite);
-			});
-
-			Renderer2D::EndScene();
-
-			m_GameFrameBuffer->UnBind();
-		}
-		*/
+		m_SceneFrameBuffer->UnBind();
  	}
 
 	void EditorLayer::OnEvent(Event& e)

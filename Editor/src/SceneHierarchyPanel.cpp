@@ -62,8 +62,8 @@ namespace Vision
 		if (ImGui::BeginPopup("Create Entity Popup"))
 		{
 			memset(buffer, 0, 1024);
-
-			if (ImGui::InputText("Tag", buffer, 1024, ImGuiInputTextFlags_EnterReturnsTrue) ||
+			
+			if (ImGui::InputText("##Tag", buffer, 1024, ImGuiInputTextFlags_EnterReturnsTrue) ||
 				ImGui::IsItemDeactivated())
 			{
 				std::string tag = buffer;

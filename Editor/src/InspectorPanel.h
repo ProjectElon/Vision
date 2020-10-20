@@ -4,7 +4,7 @@
 
 namespace Vision
 {
-	using ComponentStateMap = std::map<std::pair<Entity, ComponentID>, ComponentState>;	
+	using ComponentStateMap = std::map<std::pair<Entity, ComponentID>, ComponentState>;
 
 	class InspectorPanel
 	{

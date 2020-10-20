@@ -3,18 +3,39 @@
 
 #include <imgui.h>
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/quaternion.hpp>
-#include <glm/gtx/matrix_decompose.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 namespace Vision
 {
+
+    static void DrawVector3UIControl(const std::string& label,
+        glm::vec3& values,
+        float resetvalue = 0.0f,
+        float columnWidth = 100.0f)
+    {
+        ImGui::PushID(label.c_str());
+
+        ImGui::Columns(2);
+        ImGui::SetColumnWidth(0, columnWidth);
+        ImGui::Text(label.c_str());
+
+        ImGui::NextColumn();
+
+        // ImGui::Pust(3, ImGui::CalItemWidth());
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ 0, 0 });
+
+        // float lineHeight = GImGui->FontSize + GImGui->Style.FramePadding.y * 2.0f;
+        // ImVec2 buttonSize = { lineHeight + 3.0f, lineHeight };
+
+        ImGui::PopID();
+    }
+
 	InspectorPanel::InspectorPanel()
 	{
 		m_ComponentsToRemove.reserve(10);
 
         auto& editorState = Scene::EditorState;
-        
+
 		InspectComponent<TagComponent, false>("Tag", [&](void* component)
 		{
             char buffer[1024];
@@ -26,7 +47,7 @@ namespace Vision
             memset(buffer, 0, 1024);
 			memcpy(buffer, tagComponent.Tag.data(), tagComponent.Tag.size());
 
-			if (ImGui::InputText("Tag", buffer, 1024, ImGuiInputTextFlags_EnterReturnsTrue) ||
+			if (ImGui::InputText("##Tag", buffer, 1024, ImGuiInputTextFlags_EnterReturnsTrue) ||
 				ImGui::IsItemDeactivated())
 			{
                 std::string newTag = buffer;
@@ -34,7 +55,7 @@ namespace Vision
                 if (scene.QueryEntity(newTag) == entity::null)
 				{
                     Entity entity = scene.QueryEntity(editorState.SeleteEntityTag);
-                   
+
                     scene.m_Tags.emplace(newTag, entity);
                     scene.m_Tags.erase(oldTag);
 
@@ -59,51 +80,32 @@ namespace Vision
 
         InspectComponent<TransformComponent>("Transform", [&](void* component)
         {
-            static glm::vec3 Position;
-            static glm::quat Rotation;
-            static glm::vec3 RotationAngles;
-            static glm::vec3 Scale;
-            static glm::vec3 Skew;
-            static glm::vec4 Perspective;
-
             auto& transform = ComponentCast<TransformComponent>(component);
 
-            glm::decompose(transform.Transform, Scale, Rotation, Position, Skew, Perspective);
-            RotationAngles = glm::degrees(glm::eulerAngles(Rotation));
+            DrawVector3UIControl("Position", transform.Position);
 
-            bool changed = false;
+            glm::vec3 rotation = glm::degrees(transform.Rotation);
 
-            changed |= ImGui::InputFloat3("Position ", &Position.x);
-            changed |= ImGui::InputFloat3("Rotation ", &RotationAngles.x);
-            changed |= ImGui::InputFloat3("Scale ", &Scale.x);
+            DrawVector3UIControl("Rotation", rotation);
 
-            Rotation = glm::quat(glm::radians(RotationAngles));
+            transform.Rotation = glm::radians(rotation);
 
-            if (changed)
-            {
-                transform.Transform =
-                    glm::translate(glm::mat4(1.0f), Position) *
-                    glm::mat4_cast(Rotation) *
-                    glm::scale(glm::mat4(1.0f), Scale);
-            }
+            DrawVector3UIControl("Scale", rotation, 1.0f);
         });
 
         InspectComponent<OrthographicCameraComponent>("Orthographic Camera", [&](void* component)
         {
             Scene& scene = Scene::GetActiveScene();
-            
+
             auto& camera = ComponentCast<OrthographicCameraComponent>(component);
 
-            if (editorState.SeleteEntityTag != scene.ActiveCameraTag)
+            static bool primary = false;
+
+            primary = editorState.SeleteEntityTag == scene.ActiveCameraTag;
+
+            if (ImGui::Checkbox("Primary", &primary))
             {
-                if (ImGui::Button("Set as Primary"))
-                {
-                    scene.ActiveCameraTag = editorState.SeleteEntityTag;
-                }
-            }
-            else
-            {
-                ImGui::TextColored({ 0.931f, 0.618f, 0.265f, 1.0f }, "Primary Camera");
+                scene.ActiveCameraTag = editorState.SeleteEntityTag;
             }
 
             ImGui::Checkbox("Static", &camera.Static);
@@ -148,20 +150,20 @@ namespace Vision
             ImGui::Image((void*)(intptr_t)textureData.RendererID, ImVec2(64, 64));
 
             ImGui::Text("\n");
-            
+
             // Texture Properties
             {
                 ImGui::Text("Texture Properties");
-                
+
                 const TextureProps& properties = sprite.Texture->GetProperties();
-                
-                static const char* WrapModeStrings[] = 
+
+                static const char* WrapModeStrings[] =
                 {
                     "Repeat",
                     "Clamp To Edge"
                 };
 
-                static const char* FilterModeStrings[] = 
+                static const char* FilterModeStrings[] =
                 {
                     "Point",
                     "Bilinear"
@@ -218,7 +220,7 @@ namespace Vision
         auto& componentInspector = editorState.ComponentInspector;
 
 		ImGui::Begin("Inspector");
-		
+
         Entity seletedEntity = scene.QueryEntity(editorState.SeleteEntityTag);
 
 		// @Note: SeletedEntity can be invalid if we deleted the entity...
@@ -281,15 +283,15 @@ namespace Vision
                 ImGui::Text("\n");
             }
 
-			if (ImGui::Button("Add Components"))
+			if (ImGui::Button("Add Component"))
 			{
                 if (storage.size() < componentInspector.size())
                 {
-                    ImGui::OpenPopup("Components");
+                    ImGui::OpenPopup("Add Component Popup");
                 }
 			}
 
-			if (ImGui::BeginPopup("Components"))
+			if (ImGui::BeginPopup("Add Component Popup"))
 			{
 				for (const auto& [componentID, componentInfo] : componentInspector)
 				{
