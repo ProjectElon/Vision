@@ -1,11 +1,11 @@
 -- build script
 
 workspace ("Vision")
-	
+
 	architecture ("x64")
 	systemversion ("latest")
 	startproject ("Editor")
-	
+
 	configurations
 	{
 		"Debug",
@@ -26,14 +26,14 @@ workspace ("Vision")
 		}
 
 	filter ("system:linux")
-		
+
 		defines
 		{
 			"VN_PLATFORM_DESKTOP"
 		}
 
 	filter ("system:macos")
-		
+
 		defines
 		{
 			"VN_PLATFORM_DESKTOP"
@@ -49,7 +49,7 @@ workspace ("Vision")
 		{
 			"VN_EDITOR"
 		}
-		
+
 	filter ("configurations:Release")
 
 		defines ("VN_RELEASE")
@@ -84,17 +84,17 @@ group ("Dependencies")
 	include ("ThirdParty/GLFW")
 	include ("ThirdParty/Glad")
 	include ("ThirdParty/imgui")
-	
+
 group ("")
 
 project ("Vision")
-	
+
 	location ("Vision")
 	kind ("StaticLib")
 	language ("C++")
 	cppdialect ("C++17")
 	staticruntime ("on")
-	
+
 	pchheader ("pch.h")
 	pchsource ("Vision/src/pch.cpp")
 
@@ -140,7 +140,7 @@ project ("Editor")
 	language ("C++")
 	cppdialect ("C++17")
 	staticruntime ("on")
-	
+
 	files
 	{
 		"%{prj.name}/src/**.h",

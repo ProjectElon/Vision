@@ -17,6 +17,5 @@ namespace Vision
 
 	private:
 		ComponentStateMap m_ComponentState;
-		std::vector<ComponentID> m_ComponentsToRemove;
 	};
 }
