@@ -12,9 +12,6 @@ namespace Vision
 		InspectorPanel();
 
 		void OnImGuiRender();
-
-		const ComponentStateMap& GetComponentStateMap() { return m_ComponentState; }
-
 	private:
 		ComponentStateMap m_ComponentState;
 	};

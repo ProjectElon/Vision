@@ -4,7 +4,7 @@ workspace ("Vision")
 
 	architecture ("x64")
 	systemversion ("latest")
-	startproject ("Editor")
+	startproject ("EagleEye")
 
 	configurations
 	{
@@ -133,9 +133,9 @@ project ("Vision")
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
 
-project ("Editor")
+project ("EagleEye")
 
-	location ("Editor")
+	location ("EagleEye")
 	kind ("ConsoleApp")
 	language ("C++")
 	cppdialect ("C++17")
