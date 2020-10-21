@@ -226,7 +226,7 @@ namespace Vision
             return &data[componentIndex * componentStorage.SizeInBytes];
         }
 
-        void RemoveComponent(Entity entity, ComponentID componentID, const std::string& name = "T");
+        void RemoveComponent(Entity entity, ComponentID componentID, Entity swappedEntity = entity::null, const std::string& name = "T");
 
         static void SetActiveScene(Scene* scene);
         inline static Scene& GetActiveScene() { return *s_ActiveScene; }

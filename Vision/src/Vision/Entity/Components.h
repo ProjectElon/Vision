@@ -34,8 +34,6 @@ namespace Vision
         {
             delete[] Data;
             delete[] Entites;
-
-            VN_CORE_INFO("Freeing Components....");
         }
     };
 

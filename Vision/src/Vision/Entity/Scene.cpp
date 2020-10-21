@@ -12,49 +12,63 @@ namespace Vision
 
     Scene::~Scene()
     {
-        delete[] m_Entites;
-        VN_CORE_INFO("Freeing Entites...");
-    }
+        // printing entity data
+        VN_CORE_INFO("Scene Format: ");
 
-    void Scene::RemoveComponent(Entity entity, ComponentID componentID, const std::string& name)
-    {
-        VN_CORE_ASSERT(entity != entity::null && entity <= EntityCount, "Can't Remove a component of an invalid Entity");
+        VN_CORE_INFO("Scene: {0}", Name);
+        VN_CORE_INFO("Entity Count: {0}", EntityCount);
+        VN_CORE_INFO("Max Entity Count: {0}", MaxEntityCount);
 
-        EntityStorage& entityStorage = m_Entites[entity];
-        auto entityStorageIter = entityStorage.find(componentID);
+        VN_CORE_INFO("Entites: ");
 
-        VN_CORE_ASSERT(entityStorageIter != entityStorage.end(), "Entity doesn't own Component of Type: " + name);
-
-        const ComponentIndex& currentComponentIndex = entityStorageIter->second;
-
-        ComponentStorage& componentStorage = m_Components[componentID];
-
-        const uint32& componentSize = componentStorage.SizeInBytes;
-        uint8* data = componentStorage.Data;
-        Entity* entites = componentStorage.Entites;
-
-        const ComponentIndex lastComponentIndex = componentStorage.Count - 1;
-        VN_CORE_ASSERT(lastComponentIndex >= 0, "lastComponentIndex is less than zero");
-
-        static uint8 tempStorage[1024];
-        VN_CORE_ASSERT(componentSize <= 1024, "Component Size is more than 1024 bytes");
-
-        if (lastComponentIndex != currentComponentIndex)
+        for (uint32 entity = 1;
+             entity <= EntityCount;
+             ++entity)
         {
-            Entity lastComponentEntity = entites[lastComponentIndex];
+            auto& tagComponent = GetComponent<TagComponent>(entity);
 
-            std::swap(entites[currentComponentIndex], entites[lastComponentIndex]);
+            VN_CORE_INFO("\tEntityTag: {0}", tagComponent.Tag);
+            VN_CORE_INFO("\tComponentCount: {0}", m_Entites[entity].size());
+            VN_CORE_INFO("\tEntityComponents: ");
+            VN_CORE_INFO(" ");
 
-            memcpy(tempStorage, &data[currentComponentIndex * componentSize], componentSize);
-            memcpy(&data[currentComponentIndex * componentSize], &data[lastComponentIndex * componentSize], componentSize);
-            memcpy(&data[lastComponentIndex * componentSize], tempStorage, componentSize);
+            for (const auto& [componentID, componentIndex] : m_Entites[entity])
+            {
+                const ComponentInfo& info = EditorState.ComponentInspector[componentID];
 
-            m_Entites[lastComponentEntity][componentID] = currentComponentIndex;
+                VN_CORE_INFO("\t\tName: {0}", info.Name);
+                VN_CORE_INFO("\t\tComponentID: {0}", componentID);
+                VN_CORE_INFO("\t\tComponentIndex: {0}", componentIndex);
+                VN_CORE_INFO(" ");
+            }
         }
 
-        entityStorage.extract(entityStorageIter);
+        VN_CORE_INFO("Components: ");
 
-        componentStorage.Count--;
+        for (const auto& [componentID, componentStorage] : m_Components)
+        {
+            const ComponentInfo& info = EditorState.ComponentInspector[componentID];
+
+            VN_CORE_INFO("\tName: {0}", info.Name);
+            VN_CORE_INFO("\tID: {0}", componentID);
+            VN_CORE_INFO("\tSizeInBytes: {0}", componentStorage.SizeInBytes);
+            VN_CORE_INFO("\tCount: {0}", componentStorage.Count);
+            VN_CORE_INFO("\tMemory: {0}", (char*)componentStorage.Data);
+            VN_CORE_INFO("\tEntites: ");
+            VN_CORE_INFO(" ");
+            for (uint32 componentIndex = 0;
+                 componentIndex < componentStorage.Count;
+                 ++componentIndex)
+            {
+                Entity entity = componentStorage.Entites[componentIndex];
+                auto& tagComponent = GetComponent<TagComponent>(entity);
+
+                VN_CORE_INFO("\t\t Entity: {0}, {1}", entity, tagComponent.Tag);
+            }
+            VN_CORE_INFO(" ");
+        }
+
+        delete[] m_Entites;
     }
 
     void Scene::FreeEntity(const std::string& tag)
@@ -74,7 +88,12 @@ namespace Vision
 
         m_Tags.insert_or_assign(removedEntityTag, entity::null);
 
-        EntityStorage& storage = m_Entites[entity];
+        if (entity != lastEntity)
+        {
+            std::swap(m_Entites[lastEntity], m_Entites[entity]);
+        }
+
+        EntityStorage& storage = m_Entites[lastEntity];
 
         auto entityStorageIter = storage.begin();
 
@@ -84,15 +103,10 @@ namespace Vision
 
             entityStorageIter++;
 
-            RemoveComponent(entity, componentID);
+            RemoveComponent(lastEntity, componentID, entity);
         }
 
         storage.clear();
-
-        if (EntityCount > 1 && entity != lastEntity)
-        {
-            std::swap(m_Entites[lastEntity], m_Entites[entity]);
-        }
 
         EntityCount--;
 
@@ -121,10 +135,61 @@ namespace Vision
         }
     }
 
+    void Scene::RemoveComponent(Entity entity, ComponentID componentID, Entity swappedEntity, const std::string& name)
+    {
+        VN_CORE_ASSERT(entity != entity::null && entity <= EntityCount, "Can't Remove a component of an invalid Entity");
+
+        EntityStorage& entityStorage = m_Entites[entity];
+        auto entityStorageIter = entityStorage.find(componentID);
+
+        VN_CORE_ASSERT(entityStorageIter != entityStorage.end(), "Entity doesn't own Component of Type: " + name);
+
+        const ComponentIndex& currentComponentIndex = entityStorageIter->second;
+
+        ComponentStorage& componentStorage = m_Components[componentID];
+
+        const uint32& componentSize = componentStorage.SizeInBytes;
+        uint8* data = componentStorage.Data;
+        Entity* entites = componentStorage.Entites;
+
+        const ComponentIndex lastComponentIndex = componentStorage.Count - 1;
+        VN_CORE_ASSERT(lastComponentIndex >= 0, "lastComponentIndex is less than zero");
+
+        static uint8 tempStorage[1024];
+        VN_CORE_ASSERT(componentSize <= 1024, "Component Size is more than 1024 bytes");
+
+        if (lastComponentIndex != currentComponentIndex)
+        {
+            std::swap(entites[currentComponentIndex], entites[lastComponentIndex]);
+
+            memcpy(tempStorage, &data[currentComponentIndex * componentSize], componentSize);
+            memcpy(&data[currentComponentIndex * componentSize], &data[lastComponentIndex * componentSize], componentSize);
+            memcpy(&data[lastComponentIndex * componentSize], tempStorage, componentSize);
+
+            Entity currentComponentEntity = entites[currentComponentIndex];
+            m_Entites[currentComponentEntity][componentID] = currentComponentIndex;
+            
+            if (swappedEntity != entity::null)
+            {
+                entites[currentComponentIndex] = swappedEntity;
+            }
+        }
+
+        entityStorage.extract(entityStorageIter);
+
+        componentStorage.Count--;
+    }
+
     void Scene::SetActiveScene(Scene* scene)
     {
-        VN_CORE_ASSERT(s_ActiveScene != scene, "Scene is already active.");
-        s_ActiveScene = scene;
+        if (s_ActiveScene != scene)
+        {
+            s_ActiveScene = scene;
+        }
+        else
+        {
+            VN_CORE_INFO("Scene is already active.");
+        }
     }
 
     Scene* Scene::s_ActiveScene = nullptr;
