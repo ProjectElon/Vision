@@ -18,6 +18,9 @@ namespace Vision
     public:
         std::string Name;
 
+        uint32 EntityCount = 0; //@don't change
+        uint32 MaxEntityCount; //@don't change
+
         std::string ActiveCameraTag;
 
         Scene(const std::string& name, uint32 maxEntityCount);
@@ -26,7 +29,7 @@ namespace Vision
         template<typename ... Components>
         Entity CreateEntity(const std::string& tag, const Components ... components)
         {
-            if (m_EntityCount == m_MaxEntityCount)
+            if (EntityCount == MaxEntityCount)
             {
                 VN_CORE_INFO("Can't create more than the max number of entites");
                 return entity::null;
@@ -38,8 +41,8 @@ namespace Vision
                 return entity::null;
             }
 
-            Entity entity = m_EntityCount + 1;
-            m_EntityCount++;
+            Entity entity = EntityCount + 1;
+            EntityCount++;
 
             m_Tags.insert_or_assign(tag, entity);
 
@@ -80,7 +83,7 @@ namespace Vision
         void EachGroup(const std::function<void(Component&, Components&...)>& callbackFn)
         {
             for (Entity entity = 1;
-                 entity <= m_EntityCount;
+                 entity <= EntityCount;
                  ++entity)
             {
                 if (HasComponents<Component, Components...>(entity))
@@ -102,8 +105,8 @@ namespace Vision
             {
                 componentStorage.SizeInBytes = sizeof(Component);
 
-                componentStorage.Data    = new uint8[m_MaxEntityCount * sizeof(Component)];
-                componentStorage.Entites = new ComponentIndex[m_MaxEntityCount];
+                componentStorage.Data    = new uint8[MaxEntityCount * sizeof(Component)];
+                componentStorage.Entites = new ComponentIndex[MaxEntityCount];
             }
 
             uint8* data = componentStorage.Data;
@@ -147,7 +150,7 @@ namespace Vision
         template<typename Component>
         inline bool HasComponent(Entity entity)
         {
-            VN_CORE_ASSERT(entity != entity::null && entity <= m_EntityCount, "Entity is not valid");
+            VN_CORE_ASSERT(entity != entity::null && entity <= EntityCount, "Entity is not valid");
 
             const std::type_info& typeInfo = typeid(Component);
             const ComponentID& componentID = typeInfo.hash_code();
@@ -179,7 +182,7 @@ namespace Vision
             const std::type_info& typeInfo = typeid(Component);
             const ComponentID& componentID = typeInfo.hash_code();
 
-            VN_CORE_ASSERT(entity != entity::null && entity <= m_EntityCount, "Entity is not valid");
+            VN_CORE_ASSERT(entity != entity::null && entity <= EntityCount, "Entity is not valid");
 
             EntityStorage& entityStorage = m_Entites[entity];
 
@@ -228,17 +231,11 @@ namespace Vision
         static void SetActiveScene(Scene* scene);
         inline static Scene& GetActiveScene() { return *s_ActiveScene; }
 
-        uint32 GetEntityCount() const { return m_EntityCount; }
-        uint32 GetMaxEntityCount() const { return m_MaxEntityCount; }
-
     private:
         TagMap m_Tags;
 
         EntityStorage* m_Entites;
         ComponentMap   m_Components;
-
-        uint32 m_EntityCount = 0;
-        uint32 m_MaxEntityCount;
 
         static Scene* s_ActiveScene;
 

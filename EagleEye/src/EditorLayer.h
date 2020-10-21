@@ -3,12 +3,12 @@
 #include <Vision.h>
 #include <rapidjson/document.h>
 
-#include "Menubar.h"
-#include "SceneHierarchyPanel.h"
-#include "InspectorPanel.h"
-#include "ConsolePanel.h"
-#include "SceneViewPanel.h"
-#include "GameViewPanel.h"
+#include "Widgets/Menubar.h"
+#include "Widgets/SceneHierarchyPanel.h"
+#include "Widgets/InspectorPanel.h"
+#include "Widgets/ConsolePanel.h"
+#include "Widgets/SceneViewPanel.h"
+#include "Widgets/GameViewPanel.h"
 
 namespace Vision
 {

@@ -22,7 +22,7 @@ namespace Vision
 
 		glTextureParameteri(m_Data.RendererID, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTextureParameteri(m_Data.RendererID, GL_TEXTURE_MAG_FILTER, s_FilterModeMap[(uint32)props.FilterMode]);
-		
+
 		glTextureParameteri(m_Data.RendererID, GL_TEXTURE_WRAP_S, s_WrapModeMap[(uint32)props.WrapX]);
 		glTextureParameteri(m_Data.RendererID, GL_TEXTURE_WRAP_T, s_WrapModeMap[(uint32)props.WrapY]);
 	}
@@ -35,8 +35,9 @@ namespace Vision
 		size_t start = (lastSlash == std::string::npos) ? 0 : lastSlash + 1;
 		size_t count = (lastDot == std::string::npos) ? filepath.length() - start : lastDot - start;
 
+		m_Properties = props;
 		m_Data.Name = filepath.substr(start, count);
-		
+
 		int width, height;
 		int channelCount;
 
@@ -75,10 +76,10 @@ namespace Vision
 			glTextureParameteri(m_Data.RendererID, GL_TEXTURE_WRAP_S, s_WrapModeMap[(int)props.WrapX]);
 			glTextureParameteri(m_Data.RendererID, GL_TEXTURE_WRAP_T, s_WrapModeMap[(int)props.WrapY]);
 
-			glTextureSubImage2D(m_Data.RendererID, 0, 0, 0, m_Data.Width, m_Data.Height, m_TextureFormat, GL_UNSIGNED_BYTE, data);			
+			glTextureSubImage2D(m_Data.RendererID, 0, 0, 0, m_Data.Width, m_Data.Height, m_TextureFormat, GL_UNSIGNED_BYTE, data);
 
 			stbi_image_free(data);
-			
+
  			VN_CORE_INFO("[TEXTURE]({0}) ... Loaded Successfully", m_Data.Name);
 		}
 		else
@@ -115,19 +116,19 @@ namespace Vision
 	void OpenGLTexture2D::SetData(void* data, uint32_t sizeInBytes)
 	{
 		uint32_t bytesPerPixel = (m_TextureFormat == GL_RGBA) ? 4 : 3;
-		VN_CORE_ASSERT(bytesPerPixel * m_Data.Width * m_Data.Height == sizeInBytes, "data must have the same size as the texture");	
+		VN_CORE_ASSERT(bytesPerPixel * m_Data.Width * m_Data.Height == sizeInBytes, "data must have the same size as the texture");
 		glTextureSubImage2D(m_Data.RendererID, 0, 0, 0, m_Data.Width, m_Data.Height, m_TextureFormat, GL_UNSIGNED_BYTE, data);
 	}
 
-	const uint32_t OpenGLTexture2D::s_WrapModeMap[2] = 
-	{ 
-		GL_REPEAT, 
+	const uint32_t OpenGLTexture2D::s_WrapModeMap[2] =
+	{
+		GL_REPEAT,
 		GL_CLAMP_TO_EDGE
 	};
 
-	const uint32_t OpenGLTexture2D::s_FilterModeMap[2] = 
-	{ 
+	const uint32_t OpenGLTexture2D::s_FilterModeMap[2] =
+	{
 		GL_NEAREST,
-		GL_LINEAR 
+		GL_LINEAR
 	};
 }

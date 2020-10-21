@@ -8,6 +8,33 @@
 
 namespace Vision
 {
+    static bool DrawFloatUIControl(const std::string& label, float& value, float columnWidth = 100.0f)
+    {
+        bool changed = false;
+        ImGui::PushID(label.c_str());
+        ImGui::Columns(2);
+        ImGui::SetColumnWidth(0, columnWidth);
+        ImGui::Text(label.c_str());
+        ImGui::NextColumn();
+        changed = ImGui::DragFloat("##X", &value, 0.1f);
+        ImGui::Columns(1);
+        ImGui::PopID();
+        return changed;
+    }
+
+    static bool DrawBoolUIControl(const std::string& label, bool& value, float columnWidth = 100.0f)
+    {
+        bool changed = false;
+        ImGui::PushID(label.c_str());
+        ImGui::Columns(2);
+        ImGui::SetColumnWidth(0, columnWidth);
+        ImGui::Text(label.c_str());
+        ImGui::NextColumn();
+        changed = ImGui::Checkbox("##X", &value);
+        ImGui::Columns(1);
+        ImGui::PopID();
+        return changed;
+    }
 
     static void DrawVector3UIControl(const std::string& label,
         glm::vec3& values,
@@ -18,6 +45,7 @@ namespace Vision
 
         ImGui::Columns(2);
         ImGui::SetColumnWidth(0, columnWidth);
+
         ImGui::Text(label.c_str());
         ImGui::NextColumn();
 
@@ -131,15 +159,15 @@ namespace Vision
         {
             auto& transform = ComponentCast<TransformComponent>(component);
 
-            DrawVector3UIControl("Position", transform.Position);
+            DrawVector3UIControl("Position", transform.Position, 78.0f);
 
             glm::vec3 rotation = glm::degrees(transform.Rotation);
 
-            DrawVector3UIControl("Rotation", rotation);
+            DrawVector3UIControl("Rotation", rotation, 78.0f);
 
             transform.Rotation = glm::radians(rotation);
 
-            DrawVector3UIControl("Scale", transform.Scale, 100.0f, 1.0f);
+            DrawVector3UIControl("Scale", transform.Scale, 78.0f, 1.0f);
         });
 
         InspectComponent<OrthographicCameraComponent>("Orthographic Camera", [&](void* component)
@@ -148,43 +176,35 @@ namespace Vision
 
             auto& camera = ComponentCast<OrthographicCameraComponent>(component);
 
-            static bool primary = false;
+            static bool isPrimary;
+            isPrimary = editorState.SeleteEntityTag == scene.ActiveCameraTag;
 
-            primary = editorState.SeleteEntityTag == scene.ActiveCameraTag;
-
-            if (ImGui::Checkbox("Primary", &primary))
+            if (DrawBoolUIControl("Primary", isPrimary, 70.0f))
             {
                 scene.ActiveCameraTag = editorState.SeleteEntityTag;
             }
 
-            ImGui::Checkbox("Static", &camera.Static);
+            DrawBoolUIControl("Static", camera.Static, 70.0f);
 
-            if (camera.Static)
+            ImGui::Text("");
+
+            bool changed = false;
+
+            changed |= DrawFloatUIControl("Aspect Ratio", camera.AspectRatio, 100.0f);
+            changed |= DrawFloatUIControl("Size", camera.Size, 100.0f);
+            changed |= DrawFloatUIControl("Near", camera.Near, 100.0f);
+            changed |= DrawFloatUIControl("Far", camera.Far, 100.0f);
+
+            if (changed)
             {
-                ImGui::TextDisabled("Aspect Ratio: %f", camera.AspectRatio);
-                ImGui::TextDisabled("Size: %f", camera.Size);
-                ImGui::TextDisabled("Near: %f", camera.Near);
-                ImGui::TextDisabled("Far: %f", camera.Far);
+                camera.Projection = glm::ortho(-camera.AspectRatio * camera.Size,
+                                                camera.AspectRatio * camera.Size,
+                                               -camera.Size,
+                                                camera.Size,
+                                                camera.Near,
+                                                camera.Far);
             }
-            else
-            {
-                bool changed = false;
 
-                changed |= ImGui::InputFloat("Aspect Ratio", &camera.AspectRatio);
-                changed |= ImGui::InputFloat("Size", &camera.Size);
-                changed |= ImGui::InputFloat("Near", &camera.Near);
-                changed |= ImGui::InputFloat("Far", &camera.Far);
-
-                if (changed)
-                {
-                    camera.Projection = glm::ortho(-camera.AspectRatio * camera.Size,
-                                                    camera.AspectRatio * camera.Size,
-                                                   -camera.Size,
-                                                    camera.Size,
-                                                    camera.Near,
-                                                    camera.Far);
-                }
-            }
         });
 
         InspectComponent<SpriteRendererComponent>("Sprite Renderer", [&](void* component)
@@ -193,17 +213,18 @@ namespace Vision
 
             const TextureData& textureData = sprite.Texture->GetData();
 
-            std::string textureName = "Texture: " + textureData.Name + "\n";
-            ImGui::Text(textureName.c_str());
+            ImGui::Text(textureData.Name.c_str());
 
+            ImGui::Columns(2);
+
+            ImGui::SetColumnWidth(0, 80.0f);
+            
             ImGui::Image((void*)(intptr_t)textureData.RendererID, ImVec2(64, 64));
 
-            ImGui::Text("\n");
+            ImGui::NextColumn();
 
             // Texture Properties
             {
-                ImGui::Text("Texture Properties");
-
                 const TextureProps& properties = sprite.Texture->GetProperties();
 
                 static const char* WrapModeStrings[] =
@@ -221,8 +242,11 @@ namespace Vision
                 int32 seletedWrapXMode  = (int32)properties.WrapX;
                 int32 seletedWrapYMode  = (int32)properties.WrapY;
                 int32 seletedFilterMode = (int32)properties.FilterMode;
+                
+                ImGui::Text("Wrap X    ");
+                ImGui::SameLine();
 
-                if (ImGui::Combo("Wrap X", &seletedWrapXMode, WrapModeStrings, 2))
+                if (ImGui::Combo("##Wrap X", &seletedWrapXMode, WrapModeStrings, 2))
                 {
                     if (seletedWrapXMode != (int32)properties.WrapX)
                     {
@@ -230,7 +254,10 @@ namespace Vision
                     }
                 }
 
-                if (ImGui::Combo("Wrap Y", &seletedWrapYMode, WrapModeStrings, 2))
+                ImGui::Text("Wrap Y    ");
+                ImGui::SameLine();
+
+                if (ImGui::Combo("##Wrap Y", &seletedWrapYMode, WrapModeStrings, 2))
                 {
                     if (seletedWrapYMode != (int32)properties.WrapY)
                     {
@@ -238,7 +265,10 @@ namespace Vision
                     }
                 }
 
-                if (ImGui::Combo("Filter Mode", &seletedFilterMode, FilterModeStrings, 2))
+                ImGui::Text("FilterMode");
+                ImGui::SameLine();
+
+                if (ImGui::Combo("##Filter Mode", &seletedFilterMode, FilterModeStrings, 2))
                 {
                     if (seletedFilterMode != (int32)properties.FilterMode)
                     {
@@ -247,18 +277,34 @@ namespace Vision
                 }
             }
 
-            ImGui::Text("\n");
-
-            ImGui::ColorEdit4("Color", &sprite.Color.r);
+            ImGui::Columns(1);
 
             ImGui::Text("\n");
 
-            ImGui::InputFloat2("Bottom Left Point", &sprite.BottomLeftPoint.x);
-            ImGui::InputFloat2("Top Right Point", &sprite.TopRightPoint.x);
-
+            ImGui::Text("Color");
+            ImGui::SameLine();
+            
+            ImGui::ColorEdit4("##Color", &sprite.Color.r);
             ImGui::Text("\n");
-            ImGui::Checkbox("Flip X", &sprite.FlipX);
-            ImGui::Checkbox("Flip Y", &sprite.FlipY);
+
+            ImGui::Text("Top Right UV  ");
+            ImGui::SameLine();
+
+            ImGui::DragFloat2("##Top Right UV", glm::value_ptr(sprite.TopRightPoint), 0.1f);
+
+            ImGui::Text("Bottom Left UV");
+            ImGui::SameLine();
+
+            ImGui::DragFloat2("##Bottom Left UV", glm::value_ptr(sprite.BottomLeftPoint), 0.1f);
+            ImGui::Text("\n");
+
+            ImGui::Text("Flip X");
+            ImGui::SameLine();
+            ImGui::Checkbox("##Flip X", &sprite.FlipX);
+
+            ImGui::Text("Flip Y");
+            ImGui::SameLine();
+            ImGui::Checkbox("##Flip Y", &sprite.FlipY);
         });
 	}
 
@@ -303,12 +349,18 @@ namespace Vision
 
                     ImGui::SameLine(0, 0);
 
-                    if (ImGui::Button("-", { 18, 18 }))
+                    // ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
+                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.9f, 0.2f, 0.2f, 1.0f });
+                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
+
+                    if (ImGui::Button("-", { 19, 19 }))
                     {
                         VN_CORE_INFO("\tRemoving Component: {0}", componentInfo.Name);
                         m_ComponentState[{ seletedEntity, componentID }] = ComponentState();
                         scene.RemoveComponent(seletedEntity, componentID);
                     }
+
+                    ImGui::PopStyleColor(2);
                 }
 
                 const auto& inspectFn = componentInfo.InspectFn;

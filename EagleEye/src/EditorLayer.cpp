@@ -13,7 +13,7 @@ namespace Vision
 		m_Window = &Application::Get().GetWindow();
 		m_Window->SetVSync(true);
 
-		m_MainScene = Vision::CreateScope<Scene>("MainScene", 1000);
+		m_MainScene = Vision::CreateScope<Scene>("MainScene", 10);
 		Scene::SetActiveScene(m_MainScene.get());
 		
 		LoadSettings();
@@ -154,9 +154,9 @@ namespace Vision
 		m_Menubar.OnImGuiRender();
 		m_SceneHierarchyPanel.OnImGuiRender();
 		// m_GameViewPanel.OnImGuiRender();
-		m_SceneViewPanel.OnImGuiRender();
 		m_InspectorPanel.OnImGuiRender();
 		m_ConsolePanel.OnImGuiRender();
+		m_SceneViewPanel.OnImGuiRender();
 
 		static bool deleteWasDown = false;
 
@@ -192,7 +192,7 @@ namespace Vision
 			contents += line;
 		}
 
-		m_Settings.Parse(contents.c_str());
+		m_Settings.Parse(contents.c_str(), contents.length());
 
 		int32  windowX      = m_Settings["WindowX"].GetInt();
 		int32  windowY      = m_Settings["WindowY"].GetInt();

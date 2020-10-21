@@ -24,12 +24,6 @@ namespace Vision
 		ImGui::Begin("Scene Viewport");
 		ImGui::PopStyleVar();
 
-		if (m_FoucsOnStartUp)
-		{	
-			ImGui::SetWindowFocus();
-			m_FoucsOnStartUp = false;
-		}
-
 		m_IsViewportResized = false;
 		m_IsInteractable = ImGui::IsWindowFocused() && ImGui::IsWindowHovered();
 

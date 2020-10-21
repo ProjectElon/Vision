@@ -22,7 +22,7 @@ namespace Vision
 		inline static float GetMouseX() { return s_Instance->GetMouseXImp(); }
 		inline static float GetMouseY() { return s_Instance->GetMouseYImp(); }
 
-		inline static bool IsCursorHovering()          { s_Instance->IsCursorHoveringImp(); }
+		inline static bool IsCursorHovering()                { s_Instance->IsCursorHoveringImp(); }
 		inline static void SetCursorVisibility(bool visible) { s_Instance->SetCursorVisibilityImp(visible); }
 
 	protected:

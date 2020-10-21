@@ -5,7 +5,7 @@ namespace Vision
 {
 	Scene::Scene(const std::string& name, uint32 maxEntityCount)
 		: Name(name)
-        , m_MaxEntityCount(maxEntityCount)
+        , MaxEntityCount(maxEntityCount)
     {
         m_Entites = new EntityStorage[maxEntityCount + 1];
 	}
@@ -18,7 +18,7 @@ namespace Vision
 
     void Scene::RemoveComponent(Entity entity, ComponentID componentID, const std::string& name)
     {
-        VN_CORE_ASSERT(entity != entity::null && entity <= m_EntityCount, "Can't Remove a component of an invalid Entity");
+        VN_CORE_ASSERT(entity != entity::null && entity <= EntityCount, "Can't Remove a component of an invalid Entity");
 
         EntityStorage& entityStorage = m_Entites[entity];
         auto entityStorageIter = entityStorage.find(componentID);
@@ -60,9 +60,9 @@ namespace Vision
     void Scene::FreeEntity(const std::string& tag)
     {
         Entity entity = QueryEntity(tag);
-        Entity lastEntity = m_EntityCount;
+        Entity lastEntity = EntityCount;
 
-        VN_CORE_ASSERT(entity != entity::null && entity <= m_EntityCount, "Can't Free an invalid Entity");
+        VN_CORE_ASSERT(entity != entity::null && entity <= EntityCount, "Can't Free an invalid Entity");
 
         if (entity != lastEntity)
         {
@@ -89,12 +89,12 @@ namespace Vision
 
         storage.clear();
 
-        if (m_EntityCount > 1 && entity != lastEntity)
+        if (EntityCount > 1 && entity != lastEntity)
         {
             std::swap(m_Entites[lastEntity], m_Entites[entity]);
         }
 
-        m_EntityCount--;
+        EntityCount--;
 
         VN_CORE_INFO("Freeing Entity: {0}", tag);
     }
@@ -114,7 +114,7 @@ namespace Vision
     void Scene::EachEntity(std::function<void(Entity)> callbackFn)
     {
         for (Entity entityHandle = 1;
-             entityHandle <= m_EntityCount;
+             entityHandle <= EntityCount;
              ++entityHandle)
         {
             callbackFn(entityHandle);

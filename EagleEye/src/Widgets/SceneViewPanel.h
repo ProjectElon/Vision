@@ -12,9 +12,9 @@ namespace Vision
 		SceneViewPanel();
 
 		void SetFrameBuffer(FrameBuffer* SceneFrameBuffer);
-		
+
 		void OnImGuiRender();
-		
+
 		inline bool IsIntractable() { return m_IsInteractable; }
 		inline bool IsViewportResized() { return m_IsViewportResized; }
 		inline const glm::vec2& GetViewportSize() { return m_ViewportSize; }
@@ -22,10 +22,8 @@ namespace Vision
 	private:
 		bool m_IsInteractable;
 		bool m_IsViewportResized;
-		bool m_FoucsOnStartUp = true;
-
 		glm::vec2 m_ViewportSize;
-			
-		FrameBuffer* m_FrameBuffer; 
+
+		FrameBuffer* m_FrameBuffer;
 	};
 }
