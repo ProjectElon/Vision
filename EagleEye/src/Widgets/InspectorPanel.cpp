@@ -131,22 +131,29 @@ namespace Vision
 
                 if (scene.QueryEntity(newTag) == entity::null)
 				{
-                    Entity entity = scene.QueryEntity(editorState.SeleteEntityTag);
-
-                    scene.m_Tags.emplace(newTag, entity);
-                    scene.m_Tags.erase(oldTag);
-
-                    if (oldTag == editorState.SeleteEntityTag)
+                    if (!newTag.empty())
                     {
-                        editorState.SeleteEntityTag = newTag;
-                    }
+                        Entity entity = scene.QueryEntity(editorState.SeleteEntityTag);
 
-                    if (oldTag == scene.ActiveCameraTag)
+                        scene.m_Tags.emplace(newTag, entity);
+                        scene.m_Tags.erase(oldTag);
+
+                        if (oldTag == editorState.SeleteEntityTag)
+                        {
+                            editorState.SeleteEntityTag = newTag;
+                        }
+
+                        if (oldTag == scene.ActiveCameraTag)
+                        {
+                            scene.ActiveCameraTag = newTag;
+                        }
+
+                        oldTag = newTag;
+                    }
+                    else
                     {
-                        scene.ActiveCameraTag = newTag;
+                        VN_CORE_INFO("Can't Accept an Empty Tag Resetting to old one");
                     }
-
-                    oldTag = newTag;
 				}
                 else
                 {
@@ -218,7 +225,7 @@ namespace Vision
             ImGui::Columns(2);
 
             ImGui::SetColumnWidth(0, 80.0f);
-            
+
             ImGui::Image((void*)(intptr_t)textureData.RendererID, ImVec2(64, 64));
 
             ImGui::NextColumn();
@@ -242,7 +249,7 @@ namespace Vision
                 int32 seletedWrapXMode  = (int32)properties.WrapX;
                 int32 seletedWrapYMode  = (int32)properties.WrapY;
                 int32 seletedFilterMode = (int32)properties.FilterMode;
-                
+
                 ImGui::Text("Wrap X    ");
                 ImGui::SameLine();
 
@@ -283,7 +290,7 @@ namespace Vision
 
             ImGui::Text("Color");
             ImGui::SameLine();
-            
+
             ImGui::ColorEdit4("##Color", &sprite.Color.r);
             ImGui::Text("\n");
 

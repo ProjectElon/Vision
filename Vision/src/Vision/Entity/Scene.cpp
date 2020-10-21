@@ -55,7 +55,7 @@ namespace Vision
             VN_CORE_INFO("\tCount: {0}", componentStorage.Count);
             VN_CORE_INFO("\tMemory: {0}", (char*)componentStorage.Data);
             VN_CORE_INFO("\tEntites: ");
-            VN_CORE_INFO(" ");
+            
             for (uint32 componentIndex = 0;
                  componentIndex < componentStorage.Count;
                  ++componentIndex)
@@ -74,26 +74,17 @@ namespace Vision
     void Scene::FreeEntity(const std::string& tag)
     {
         Entity entity = QueryEntity(tag);
-        Entity lastEntity = EntityCount;
-
+        
         VN_CORE_ASSERT(entity != entity::null && entity <= EntityCount, "Can't Free an invalid Entity");
 
-        if (entity != lastEntity)
-        {
-            const auto& swappedEntityTag = GetComponent<TagComponent>(lastEntity).Tag;
-            m_Tags.insert_or_assign(swappedEntityTag, entity);
-        }
+        Entity lastEntity = EntityCount;
 
-        const auto& removedEntityTag = GetComponent<TagComponent>(entity).Tag;
+        std::string swappedEntityTag = GetComponent<TagComponent>(lastEntity).Tag;
+        const std::string& removedEntityTag = GetComponent<TagComponent>(entity).Tag;
 
-        m_Tags.insert_or_assign(removedEntityTag, entity::null);
+        m_Tags.extract(removedEntityTag);
 
-        if (entity != lastEntity)
-        {
-            std::swap(m_Entites[lastEntity], m_Entites[entity]);
-        }
-
-        EntityStorage& storage = m_Entites[lastEntity];
+        EntityStorage& storage = m_Entites[entity];
 
         auto entityStorageIter = storage.begin();
 
@@ -103,12 +94,24 @@ namespace Vision
 
             entityStorageIter++;
 
-            RemoveComponent(lastEntity, componentID, entity);
+            RemoveComponent(entity, componentID);
         }
 
         storage.clear();
-
         EntityCount--;
+
+        if (entity != lastEntity)
+        {
+            m_Tags.insert_or_assign(swappedEntityTag, entity);
+
+            std::swap(m_Entites[lastEntity], m_Entites[entity]);
+
+            for (const auto& [componentID, componentIndex] : m_Entites[entity])
+            {
+                ComponentStorage& components = m_Components[componentID];
+                components.Entites[componentIndex] = entity;
+            }
+        }
 
         VN_CORE_INFO("Freeing Entity: {0}", tag);
     }
@@ -135,7 +138,7 @@ namespace Vision
         }
     }
 
-    void Scene::RemoveComponent(Entity entity, ComponentID componentID, Entity swappedEntity, const std::string& name)
+    void Scene::RemoveComponent(Entity entity, ComponentID componentID, const std::string& name)
     {
         VN_CORE_ASSERT(entity != entity::null && entity <= EntityCount, "Can't Remove a component of an invalid Entity");
 
@@ -160,19 +163,15 @@ namespace Vision
 
         if (lastComponentIndex != currentComponentIndex)
         {
+            Entity lastComponentEntity = entites[lastComponentIndex];
+
             std::swap(entites[currentComponentIndex], entites[lastComponentIndex]);
 
             memcpy(tempStorage, &data[currentComponentIndex * componentSize], componentSize);
             memcpy(&data[currentComponentIndex * componentSize], &data[lastComponentIndex * componentSize], componentSize);
             memcpy(&data[lastComponentIndex * componentSize], tempStorage, componentSize);
 
-            Entity currentComponentEntity = entites[currentComponentIndex];
-            m_Entites[currentComponentEntity][componentID] = currentComponentIndex;
-            
-            if (swappedEntity != entity::null)
-            {
-                entites[currentComponentIndex] = swappedEntity;
-            }
+            m_Entites[lastComponentEntity][componentID] = currentComponentIndex;
         }
 
         entityStorage.extract(entityStorageIter);

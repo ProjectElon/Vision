@@ -13,39 +13,18 @@ namespace Vision
 		ImGui::Begin("Scene Hierarchy");
 
 		m_IsInteractable = ImGui::IsWindowFocused() && ImGui::IsWindowHovered();
-		
-		if (ImGui::Button("Create Entity"))
+
+		if (ImGui::BeginPopupContextWindow(0, 1, false))
 		{
-			ImGui::OpenPopup("Create Entity Popup");
-		}
-
-		if (ImGui::BeginPopup("Create Entity Popup"))
-		{
-			static char buffer[1024];
-			memset(buffer, 0, 1024);
-
-			ImGui::Text("Tag");
-			ImGui::SameLine();
-
-			ImGui::SetKeyboardFocusHere(0);
-
-			if (ImGui::InputText("##Tag", buffer, 1024, ImGuiInputTextFlags_EnterReturnsTrue) ||
-				ImGui::IsItemDeactivated())
+			if (ImGui::MenuItem("Create Empty Entity"))
 			{
-				std::string tag = buffer;
+				Entity entity = scene.CreateEntity("Empty Entity");
 
-				if (!tag.empty())
+				if (entity)
 				{
-					Entity entity = scene.CreateEntity(tag);
-
-					if (entity)
+					if (scene.EditorState.SeleteEntityTag.empty())
 					{
-						if (scene.EditorState.SeleteEntityTag.empty())
-						{
-							scene.EditorState.SeleteEntityTag = tag;
-						}
-
-						ImGui::CloseCurrentPopup();
+						scene.EditorState.SeleteEntityTag = "Empty Entity";
 					}
 				}
 			}
@@ -90,6 +69,21 @@ namespace Vision
 				{
 					VN_CORE_INFO("Entity: {0} Selected", tag);
 					editorState.SeleteEntityTag = tag;
+				}
+
+				if (ImGui::BeginPopupContextItem())
+				{
+					if (ImGui::MenuItem("Delete Entity"))
+					{
+						if (tag == editorState.SeleteEntityTag)
+						{
+							editorState.SeleteEntityTag = "";
+						}
+
+						scene.FreeEntity(tag);
+					}
+
+					ImGui::EndPopup();
 				}
 
 				if (expanded)
