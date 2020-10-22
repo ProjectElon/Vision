@@ -39,6 +39,10 @@
 #include "Vision/Renderer/FrameBuffer.h"
 /*--------------------------------*/
 
+/*----------  UI  ----------*/
+#include "Vision/ImGui/ImGuiWidgets.h"
+/*--------------------------------*/
+
 /*----------  ECS  ----------*/
 #include "Vision/Entity/Entity.h"
 #include "Vision/Entity/Components.h"

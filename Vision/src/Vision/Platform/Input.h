@@ -13,7 +13,8 @@ namespace Vision
 	{
 	public:
 		static void Init();
-		
+		static void Shutdown();
+
 		static bool IsKeyDown(uint32 keyCode);
 		static bool IsKeyUp(uint32 keyCode);
 		

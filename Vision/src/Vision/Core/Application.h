@@ -38,7 +38,7 @@ namespace Vision
 		ImGuiLayer*   m_ImGuiLayer;
 
 		LayerStack   m_LayerStack;
-		Scope<Timer> m_FrameTimer;
+		Timer m_FrameTimer;
 
 		bool m_Running   = true;
 		bool m_Minimized = false;

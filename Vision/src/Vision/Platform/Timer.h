@@ -7,12 +7,14 @@ namespace Vision
 	class Timer
 	{
 	public:
-		virtual void Start() = 0;
-		virtual void Stop() = 0;
-		
-		virtual const double& GetElapsedTime() = 0;
-		virtual bool IsTicking() const = 0;
+		double ElapsedTime = 0.0;
+		bool Ticking = false;
 
-		static Scope<Timer> Create();
+		void Start();
+		void Stop();
+		
+	private:
+		double m_StartTimePoint = 0.0;
+		double m_EndTimePoint = 0.0;
 	};
 }

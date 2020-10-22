@@ -8,107 +8,6 @@
 
 namespace Vision
 {
-    static bool DrawFloatUIControl(const std::string& label, float& value, float columnWidth = 100.0f)
-    {
-        bool changed = false;
-        ImGui::PushID(label.c_str());
-        ImGui::Columns(2);
-        ImGui::SetColumnWidth(0, columnWidth);
-        ImGui::Text(label.c_str());
-        ImGui::NextColumn();
-        changed = ImGui::DragFloat("##X", &value, 0.1f);
-        ImGui::Columns(1);
-        ImGui::PopID();
-        return changed;
-    }
-
-    static bool DrawBoolUIControl(const std::string& label, bool& value, float columnWidth = 100.0f)
-    {
-        bool changed = false;
-        ImGui::PushID(label.c_str());
-        ImGui::Columns(2);
-        ImGui::SetColumnWidth(0, columnWidth);
-        ImGui::Text(label.c_str());
-        ImGui::NextColumn();
-        changed = ImGui::Checkbox("##X", &value);
-        ImGui::Columns(1);
-        ImGui::PopID();
-        return changed;
-    }
-
-    static void DrawVector3UIControl(const std::string& label,
-        glm::vec3& values,
-        float columnWidth = 100.0f,
-        float resetValue = 0.0f)
-    {
-        ImGui::PushID(label.c_str());
-
-        ImGui::Columns(2);
-        ImGui::SetColumnWidth(0, columnWidth);
-
-        ImGui::Text(label.c_str());
-        ImGui::NextColumn();
-
-        ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ 0, 0 });
-
-        float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
-        ImVec2 buttonSize = { lineHeight + 3.0f, lineHeight };
-
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.9f, 0.2f, 0.2f, 1.0f });
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
-
-        if (ImGui::Button("X", buttonSize))
-        {
-            values.x = resetValue;
-        }
-
-        ImGui::PopStyleColor(3);
-
-        ImGui::SameLine();
-        ImGui::DragFloat("##X", &values.x, 0.1f);
-        ImGui::PopItemWidth();
-        ImGui::SameLine();
-
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f });
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.3f, 0.8f, 0.3f, 1.0f });
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f });
-
-        if (ImGui::Button("Y", buttonSize))
-        {
-            values.y = resetValue;
-        }
-
-        ImGui::PopStyleColor(3);
-
-        ImGui::SameLine();
-        ImGui::DragFloat("##Y", &values.y, 0.1f);
-        ImGui::PopItemWidth();
-        ImGui::SameLine();
-
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.2f, 0.35f, 0.9f, 1.0f });
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
-
-        if (ImGui::Button("Z", buttonSize))
-        {
-            values.z = resetValue;
-        }
-
-        ImGui::PopStyleColor(3);
-
-        ImGui::SameLine();
-        ImGui::DragFloat("##Z", &values.z, 0.1f);
-        ImGui::PopItemWidth();
-
-        ImGui::PopStyleVar();
-
-        ImGui::Columns(1);
-
-        ImGui::PopID();
-    }
-
 	InspectorPanel::InspectorPanel()
 	{
         EditorState& editorState = Scene::EditorState;
@@ -166,15 +65,15 @@ namespace Vision
         {
             auto& transform = ComponentCast<TransformComponent>(component);
 
-            DrawVector3UIControl("Position", transform.Position, 78.0f);
+            ImGuiWidgets::DrawFloat3("Position", transform.Position, 78.0f);
 
             glm::vec3 rotation = glm::degrees(transform.Rotation);
 
-            DrawVector3UIControl("Rotation", rotation, 78.0f);
+            ImGuiWidgets::DrawFloat3("Rotation", rotation, 78.0f);
 
             transform.Rotation = glm::radians(rotation);
 
-            DrawVector3UIControl("Scale", transform.Scale, 78.0f, 1.0f);
+            ImGuiWidgets::DrawFloat3("Scale", transform.Scale, 78.0f, 1.0f);
         });
 
         InspectComponent<OrthographicCameraComponent>("Orthographic Camera", [&](void* component)
@@ -186,21 +85,21 @@ namespace Vision
             static bool isPrimary;
             isPrimary = editorState.SeleteEntityTag == scene.ActiveCameraTag;
 
-            if (DrawBoolUIControl("Primary", isPrimary, 70.0f))
+            if (ImGuiWidgets::DrawBool("Primary", isPrimary, 70.0f))
             {
                 scene.ActiveCameraTag = editorState.SeleteEntityTag;
             }
 
-            DrawBoolUIControl("Static", camera.Static, 70.0f);
+            ImGuiWidgets::DrawBool("Static", camera.Static, 70.0f);
 
             ImGui::Text("");
 
             bool changed = false;
 
-            changed |= DrawFloatUIControl("Aspect Ratio", camera.AspectRatio, 100.0f);
-            changed |= DrawFloatUIControl("Size", camera.Size, 100.0f);
-            changed |= DrawFloatUIControl("Near", camera.Near, 100.0f);
-            changed |= DrawFloatUIControl("Far", camera.Far, 100.0f);
+            changed |= ImGuiWidgets::DrawFloat("Aspect Ratio", camera.AspectRatio, 100.0f);
+            changed |= ImGuiWidgets::DrawFloat("Size", camera.Size, 100.0f);
+            changed |= ImGuiWidgets::DrawFloat("Near", camera.Near, 100.0f);
+            changed |= ImGuiWidgets::DrawFloat("Far", camera.Far, 100.0f);
 
             if (changed)
             {
@@ -427,7 +326,7 @@ namespace Vision
             {
                 m_ComponentState[std::make_pair(entity, componentID)] = ComponentState();
                 scene.RemoveComponent(entity, componentID);
-            }   
+            }
 
             ImGui::EndPopup();
         }

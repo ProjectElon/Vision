@@ -17,6 +17,10 @@ namespace Vision
 		window = (GLFWwindow*)app.GetWindow().GetNativeHandle();
 	}
 
+	void Input::Shutdown()
+	{
+	}
+
 	bool Input::IsKeyDown(uint32 keyCode)
 	{
 		int state = glfwGetKey(window, keyCode);

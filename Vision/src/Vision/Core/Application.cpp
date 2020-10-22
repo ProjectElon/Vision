@@ -26,14 +26,14 @@ namespace Vision
 		m_ImGuiLayer = new ImGuiLayer();
 		PushOverlay(m_ImGuiLayer);
 
-		m_FrameTimer = Timer::Create();
-		m_FrameTimer->Start();
+		m_FrameTimer.Start();
 
 		Renderer::OnWindowResize(windowData.Width, windowData.Height);
 	}
 
 	Application::~Application()
 	{
+		Input::Shutdown();
 		Renderer::Shutdown();
 	}
 
@@ -41,9 +41,9 @@ namespace Vision
 	{
 		while (m_Running)
 		{
-			m_FrameTimer->Stop();
-			float deltaTime = (float)m_FrameTimer->GetElapsedTime();
-			m_FrameTimer->Start();
+			m_FrameTimer.Stop();
+			float deltaTime = (float)m_FrameTimer.ElapsedTime;
+			m_FrameTimer.Start();
 
 			if (!m_Minimized)
 			{
