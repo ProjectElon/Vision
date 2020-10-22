@@ -18,6 +18,8 @@ namespace Vision
 		void Begin();
 		void End();
 
+		void SetDarkThemeColors();
+
 	private:
 		Window* m_Window;
 	};

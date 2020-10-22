@@ -45,6 +45,7 @@ namespace Vision
 			}
 		}
 
+		/*
 		// Max Entites Constraint
 		{
 			ImGui::Text("Max Entites");
@@ -56,9 +57,9 @@ namespace Vision
 			if (ImGui::DragInt("##Max Entites", &maxEntityCount, 1.0f, entityCount, MAXINT))
 			{
 				scene.MaxEntityCount = maxEntityCount;
-				// @Note: We need to reallocate Entites and Components memory or simply Reload Scene
 			}
 		}
+		*/
 
 		// Drawing Entites
 		{
@@ -89,7 +90,7 @@ namespace Vision
 
 		const std::string& tag = tagComponent.Tag;
 
-		uint32 flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_FramePadding;
+		ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding;
 
 		if (tag == editorState.SeleteEntityTag)
 		{

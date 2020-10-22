@@ -12,55 +12,6 @@ namespace Vision
 	{
         EditorState& editorState = Scene::EditorState;
 
-		InspectComponent<TagComponent, false>("Tag", [&](void* component)
-		{
-            char buffer[1024];
-
-            Scene& scene = Scene::GetActiveScene();
-			auto& tagComponent = ComponentCast<TagComponent>(component);
-            std::string& oldTag = tagComponent.Tag;
-
-            memset(buffer, 0, 1024);
-			memcpy(buffer, tagComponent.Tag.data(), tagComponent.Tag.size());
-
-			if (ImGui::InputText("##Tag", buffer, 1024, ImGuiInputTextFlags_EnterReturnsTrue) ||
-				ImGui::IsItemDeactivated())
-			{
-                std::string newTag = buffer;
-
-                if (scene.QueryEntity(newTag) == entity::null)
-				{
-                    if (!newTag.empty())
-                    {
-                        Entity entity = scene.QueryEntity(editorState.SeleteEntityTag);
-
-                        scene.m_Tags.emplace(newTag, entity);
-                        scene.m_Tags.erase(oldTag);
-
-                        if (oldTag == editorState.SeleteEntityTag)
-                        {
-                            editorState.SeleteEntityTag = newTag;
-                        }
-
-                        if (oldTag == scene.ActiveCameraTag)
-                        {
-                            scene.ActiveCameraTag = newTag;
-                        }
-
-                        oldTag = newTag;
-                    }
-                    else
-                    {
-                        VN_CORE_INFO("Can't Accept an Empty Tag Resetting to old one");
-                    }
-				}
-                else
-                {
-                    VN_CORE_INFO("Tag is Already Taken");
-                }
-			}
-		});
-
         InspectComponent<TransformComponent>("Transform", [&](void* component)
         {
             auto& transform = ComponentCast<TransformComponent>(component);
@@ -121,11 +72,13 @@ namespace Vision
 
             ImGui::Text(textureData.Name.c_str());
 
+            float halfWidth = ImGui::GetContentRegionAvail().x / 2.0f;
+
             ImGui::Columns(2);
 
-            ImGui::SetColumnWidth(0, 80.0f);
+            ImGui::SetColumnWidth(0, halfWidth - 72.0f);
 
-            ImGui::Image((void*)(intptr_t)textureData.RendererID, ImVec2(64, 64));
+            ImGui::Image((void*)(intptr_t)textureData.RendererID, ImVec2(72.0f, 72.0f));
 
             ImGui::NextColumn();
 
@@ -149,7 +102,7 @@ namespace Vision
                 int32 seletedWrapYMode  = (int32)properties.WrapY;
                 int32 seletedFilterMode = (int32)properties.FilterMode;
 
-                ImGui::Text("Wrap X    ");
+                ImGui::Text("Wrap X");
                 ImGui::SameLine();
 
                 if (ImGui::Combo("##Wrap X", &seletedWrapXMode, WrapModeStrings, 2))
@@ -160,7 +113,7 @@ namespace Vision
                     }
                 }
 
-                ImGui::Text("Wrap Y    ");
+                ImGui::Text("Wrap Y");
                 ImGui::SameLine();
 
                 if (ImGui::Combo("##Wrap Y", &seletedWrapYMode, WrapModeStrings, 2))
@@ -193,7 +146,7 @@ namespace Vision
             ImGui::ColorEdit4("##Color", &sprite.Color.r);
             ImGui::Text("\n");
 
-            ImGui::Text("Top Right UV  ");
+            ImGui::Text("Top Right UV   ");
             ImGui::SameLine();
 
             ImGui::DragFloat2("##Top Right UV", glm::value_ptr(sprite.TopRightPoint), 0.1f);
@@ -223,41 +176,80 @@ namespace Vision
 
         Entity seletedEntity = scene.QueryEntity(editorState.SeleteEntityTag);
         const EntityStorage& storage = scene.m_Entites[seletedEntity];
-
+        
 		if (seletedEntity)
 		{
-            DrawComponents(seletedEntity, storage);
+            auto& tagComponent = scene.GetComponent<TagComponent>(seletedEntity);
+            std::string& oldTag = tagComponent.Tag;
+
+            char buffer[1024];
+            memset(buffer, 0, 1024);
+            memcpy(buffer, tagComponent.Tag.data(), tagComponent.Tag.size());
+
+            if (ImGui::InputText("##Tag", buffer, 1024, ImGuiInputTextFlags_EnterReturnsTrue) ||
+                ImGui::IsItemDeactivated())
+            {
+                std::string newTag = buffer;
+
+                if (scene.QueryEntity(newTag) == entity::null && !newTag.empty())
+                {
+                    Entity entity = scene.QueryEntity(editorState.SeleteEntityTag);
+
+                    scene.m_Tags.emplace(newTag, entity);
+                    scene.m_Tags.erase(oldTag);
+
+                    if (oldTag == editorState.SeleteEntityTag)
+                    {
+                        editorState.SeleteEntityTag = newTag;
+                    }
+
+                    if (oldTag == scene.ActiveCameraTag)
+                    {
+                        scene.ActiveCameraTag = newTag;
+                    }
+
+                    oldTag = newTag;
+                }
+            }
 
             // Add Component Popup
             {
-    			if (ImGui::Button("Add Component"))
-    			{
+                ImGui::SameLine();
+                ImGui::PushItemWidth(-1);
+
+                if (ImGui::Button("Add Component"))
+                {
                     if (storage.size() < editorState.ComponentMeta.size())
                     {
                         ImGui::OpenPopup("Add Component Popup");
                     }
-    			}
+                }
 
-    			if (ImGui::BeginPopup("Add Component Popup"))
-    			{
-    				for (const auto& [componentID, componentInfo] : editorState.ComponentMeta)
-    				{
-    					if (storage.find(componentID) != storage.end())
-    					{
-    						continue;
-    					}
+                if (ImGui::BeginPopup("Add Component Popup"))
+                {
+                    for (const auto& [componentID, componentInfo] : editorState.ComponentMeta)
+                    {
+                        if (storage.find(componentID) != storage.end())
+                        {
+                            continue;
+                        }
 
-                        const char* componentName = componentInfo.Name.c_str();
+                        const char* name = componentInfo.Name.c_str();
 
-    					if (ImGui::Selectable(componentName))
-    					{
+                        if (ImGui::MenuItem(name))
+                        {
                             componentInfo.AddFn(seletedEntity);
-    					}
-    				}
+                            ImGui::CloseCurrentPopup();
+                        }
+                    }
 
-    				ImGui::EndPopup();
-    			}
+                    ImGui::EndPopup();
+                }
             }
+
+            ImGui::PopItemWidth();
+
+            DrawComponents(seletedEntity, storage);
 		}
 
 		ImGui::End();
@@ -287,13 +279,44 @@ namespace Vision
             ComponentState& state = m_ComponentState[{ entity, componentID }];
             const char* name = info.Name.c_str();
 
-            uint32 flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_FramePadding;
+            const ImGuiTreeNodeFlags flags = 
+                ImGuiTreeNodeFlags_DefaultOpen | 
+                ImGuiTreeNodeFlags_Framed | 
+                ImGuiTreeNodeFlags_FramePadding | 
+                ImGuiTreeNodeFlags_SpanAvailWidth | 
+                ImGuiTreeNodeFlags_AllowItemOverlap;
+            
+            ImVec2 contentRegionAvail = ImGui::GetContentRegionAvail();
 
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{ 4, 4 });
+            float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
+            ImGui::Separator();
             ImGui::SetNextTreeNodeOpen(state.Open);
             state.Open = ImGui::TreeNodeEx((void*)(intptr_t)componentID, flags, name);
+            ImGui::PopStyleVar();
+            
+            // @Note: don't show for tag for now until we have more component setttings
+            if (info.Removable)
+            {
+                ImGui::SameLine(contentRegionAvail.x - lineHeight * 0.5f);
 
-            DrawComponentSettings(entity, componentID, info);
+                if (ImGui::Button("+", { lineHeight, lineHeight }))
+                {
+                    ImGui::OpenPopup("ComponentSettings");
+                }
+            }
 
+            if (ImGui::BeginPopup("ComponentSettings"))
+            {
+                if (ImGui::Selectable("Remove Component"))
+                {
+                    m_ComponentState[std::make_pair(entity, componentID)] = ComponentState();
+                    scene.RemoveComponent(entity, componentID);
+                }
+
+                ImGui::EndPopup();
+            }
+            
             if (state.Open)
             {
                 void* componentMemory = scene.GetComponentMemory(componentID, componentIndex);
@@ -304,31 +327,4 @@ namespace Vision
         }
     }
 
-    void InspectorPanel::DrawComponentSettings(Entity entity, ComponentID componentID, const ComponentInfo& info)
-    {
-        Scene& scene = Scene::GetActiveScene();
-        EditorState& editorState = Scene::EditorState;
-
-        // @Note: don't show for tag for now until we have more component setttings
-        if (info.Removable)
-        {
-            ImGui::SameLine(ImGui::GetWindowWidth() - 30.0f);
-
-            if (ImGui::Button("+", { 20, 20 }))
-            {
-                ImGui::OpenPopup("ComponentSettings");
-            }
-        }
-
-        if (ImGui::BeginPopup("ComponentSettings"))
-        {
-            if (ImGui::Selectable("Remove Component"))
-            {
-                m_ComponentState[std::make_pair(entity, componentID)] = ComponentState();
-                scene.RemoveComponent(entity, componentID);
-            }
-
-            ImGui::EndPopup();
-        }
-    }
 }

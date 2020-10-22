@@ -18,6 +18,5 @@ namespace Vision
 
     private:
         void DrawComponents(Entity entity, const EntityStorage& storage);
-        void DrawComponentSettings(Entity entity, ComponentID componentID, const ComponentInfo& info);
 	};
 }
