@@ -1,16 +1,28 @@
 #pragma once
 
-/* From glfw.h */
+// From glfw3.h
 
-#define VN_MOUSE_BUTTON_1         0
-#define VN_MOUSE_BUTTON_2         1
-#define VN_MOUSE_BUTTON_3         2
-#define VN_MOUSE_BUTTON_4         3
-#define VN_MOUSE_BUTTON_5         4
-#define VN_MOUSE_BUTTON_6         5
-#define VN_MOUSE_BUTTON_7         6
-#define VN_MOUSE_BUTTON_8         7
-#define VN_MOUSE_BUTTON_LAST      VN_MOUSE_BUTTON_8
-#define VN_MOUSE_BUTTON_LEFT      VN_MOUSE_BUTTON_1
-#define VN_MOUSE_BUTTON_RIGHT     VN_MOUSE_BUTTON_2
-#define VN_MOUSE_BUTTON_MIDDLE    VN_MOUSE_BUTTON_3
+namespace Vision
+{
+	using MouseCode = uint32;
+
+	namespace Mouse
+	{
+		enum : MouseCode
+		{
+			Button0 = 0,
+			Button1 = 1,
+			Button2 = 2,
+			Button3 = 3,
+			Button4 = 4,
+			Button5 = 5,
+			Button6 = 6,
+			Button7 = 7,
+
+			ButtonLast = Button7,
+			ButtonLeft = Button0,
+			ButtonRight = Button1,
+			ButtonMiddle = Button2
+		};
+	}
+}

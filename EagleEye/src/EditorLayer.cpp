@@ -89,12 +89,12 @@ namespace Vision
 			static bool RWasDown = false;
 			static bool SpaceWasDown = false;
 
-			if (Input::IsKeyDown(VN_KEY_R))
+			if (Input::IsKeyDown(Key::R))
 			{
 				RWasDown = true;
 			}
 
-			if (Input::IsKeyUp(VN_KEY_R) && RWasDown)
+			if (Input::IsKeyUp(Key::R) && RWasDown)
 			{
 				m_SpriteShader->Reload();
 				RWasDown = false;
@@ -162,12 +162,12 @@ namespace Vision
 
 		if (m_SceneHierarchyPanel.IsInteractable())
 		{
-			if (Input::IsKeyDown(VN_KEY_DELETE))
+			if (Input::IsKeyDown(Key::Delete))
 			{
 				deleteWasDown = true;
 			}
 
-			if (Input::IsKeyUp(VN_KEY_DELETE) && deleteWasDown)
+			if (Input::IsKeyUp(Key::Delete) && deleteWasDown)
 			{
 				deleteWasDown = false;
 				scene.FreeEntity(scene.EditorState.SeleteEntityTag);

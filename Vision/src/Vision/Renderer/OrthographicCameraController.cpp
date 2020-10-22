@@ -40,22 +40,22 @@ namespace Vision
 	{
 		m_CameraMovementSpeed = Camera.Size;
 
-		if (Input::IsKeyDown(VN_KEY_W))
+		if (Input::IsKeyDown(Key::W))
 		{
 			m_CameraPosition.y += m_CameraMovementSpeed * dt;
 		}
 
-		if (Input::IsKeyDown(VN_KEY_S))
+		if (Input::IsKeyDown(Key::S))
 		{
 			m_CameraPosition.y -= m_CameraMovementSpeed * dt;
 		}
 		
-		if (Input::IsKeyDown(VN_KEY_D))
+		if (Input::IsKeyDown(Key::D))
 		{
 			m_CameraPosition.x += m_CameraMovementSpeed * dt;
 		}
 
-		if (Input::IsKeyDown(VN_KEY_A))
+		if (Input::IsKeyDown(Key::A))
 		{
 			m_CameraPosition.x -= m_CameraMovementSpeed * dt;
 		}
