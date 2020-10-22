@@ -14,87 +14,114 @@ namespace Vision
 
 		m_IsInteractable = ImGui::IsWindowFocused() && ImGui::IsWindowHovered();
 
-		if (ImGui::BeginPopupContextWindow(0, 1, false))
+		// Deselect Entity
 		{
-			if (ImGui::MenuItem("Create Empty Entity"))
+			if (ImGui::IsMouseDown(0) &&
+				ImGui::IsWindowHovered() &&
+			    !scene.EditorState.SeleteEntityTag.empty())
 			{
-				Entity entity = scene.CreateEntity("Empty Entity");
+				scene.EditorState.SeleteEntityTag = "";
+			}
+		}
 
-				if (entity)
+		// Create Empty Entity when right clicking on blank space
+		{
+			if (ImGui::BeginPopupContextWindow(0, 1, false))
+			{
+				if (ImGui::MenuItem("Create Empty Entity"))
 				{
-					if (scene.EditorState.SeleteEntityTag.empty())
+					Entity entity = scene.CreateEntity("Empty Entity");
+
+					if (entity)
 					{
-						scene.EditorState.SeleteEntityTag = "Empty Entity";
+						if (scene.EditorState.SeleteEntityTag.empty())
+						{
+							scene.EditorState.SeleteEntityTag = "Empty Entity";
+						}
 					}
 				}
+
+				ImGui::EndPopup();
+			}
+		}
+
+		// Max Entites Constraint
+		{
+			ImGui::Text("Max Entites");
+			ImGui::SameLine();
+
+			int32 maxEntityCount = scene.MaxEntityCount;
+			int32 entityCount = scene.EntityCount;
+
+			if (ImGui::DragInt("##Max Entites", &maxEntityCount, 1.0f, entityCount, MAXINT))
+			{
+				scene.MaxEntityCount = maxEntityCount;
+				// @Note: We need to reallocate Entites and Components memory or simply Reload Scene
+			}
+		}
+
+		// Drawing Entites
+		{
+			std::string sceneDisplaytext = scene.Name + " (" + std::to_string(scene.EntityCount) + "/" + std::to_string(scene.MaxEntityCount) + ")";
+
+			uint32 flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_FramePadding;
+
+			if (ImGui::TreeNodeEx(sceneDisplaytext.c_str(), flags))
+			{
+				scene.EachEntity([&](Entity entity)
+				{
+					DrawEntity(entity);
+				});
+
+				ImGui::TreePop();
+			}
+
+			ImGui::End();
+		}
+	}
+
+	void SceneHierarchyPanel::DrawEntity(Entity entity)
+	{
+		Scene& scene = Scene::GetActiveScene();
+		EditorState& editorState = Scene::EditorState;
+
+		auto& tagComponent = scene.GetComponent<TagComponent>(entity);
+
+		const std::string& tag = tagComponent.Tag;
+
+		uint32 flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_FramePadding;
+
+		if (tag == editorState.SeleteEntityTag)
+		{
+			flags |= ImGuiTreeNodeFlags_Selected;
+		}
+
+		bool open     = ImGui::TreeNodeEx((void*)(intptr_t)entity, flags, tag.c_str());
+		bool selected = ImGui::IsItemClicked() || ImGui::IsItemToggledOpen();
+
+		if (selected && tag != editorState.SeleteEntityTag)
+		{
+			editorState.SeleteEntityTag = tag;
+		}
+
+		if (ImGui::BeginPopupContextItem())
+		{
+			if (ImGui::MenuItem("Delete Entity"))
+			{
+				if (tag == editorState.SeleteEntityTag && !editorState.SeleteEntityTag.empty())
+				{
+					editorState.SeleteEntityTag = "";
+				}
+
+				scene.FreeEntity(tag);
 			}
 
 			ImGui::EndPopup();
 		}
 
-		ImGui::Text("Max Entites");
-		ImGui::SameLine();
-
-		int32 maxEntityCount = scene.MaxEntityCount;
-		int32 entityCount = scene.EntityCount;
-		
-		if (ImGui::DragInt("##Max Entites", &maxEntityCount, 1.0f, entityCount, MAXINT))
+		if (open)
 		{
-			scene.MaxEntityCount = maxEntityCount;
-			// @Note: We need to reallocate Entites and Components memory or simply Reload Scene
-		}
-
-		std::string sceneDisplaytext = scene.Name + " (" + std::to_string(scene.EntityCount) + "/" + std::to_string(scene.MaxEntityCount) + ")";
-
-		uint32 flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_FramePadding;
-		
-		if (ImGui::TreeNodeEx(sceneDisplaytext.c_str(), flags))
-		{
-			scene.EachEntity([&](Entity entity)
-			{
-				auto& tagComponent = scene.GetComponent<TagComponent>(entity);
-				const std::string& tag = tagComponent.Tag;
-
-				flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_FramePadding;
-
-				if (tag == editorState.SeleteEntityTag)
-				{
-					flags |= ImGuiTreeNodeFlags_Selected;
-				}
-
-				bool expanded  = ImGui::TreeNodeEx((void*)(intptr_t)entity, flags, tag.c_str());
-				bool isSeleted = ImGui::IsItemClicked() || ImGui::IsItemToggledOpen();
-
-				if (isSeleted && editorState.SeleteEntityTag != tag)
-				{
-					VN_CORE_INFO("Entity: {0} Selected", tag);
-					editorState.SeleteEntityTag = tag;
-				}
-
-				if (ImGui::BeginPopupContextItem())
-				{
-					if (ImGui::MenuItem("Delete Entity"))
-					{
-						if (tag == editorState.SeleteEntityTag)
-						{
-							editorState.SeleteEntityTag = "";
-						}
-
-						scene.FreeEntity(tag);
-					}
-
-					ImGui::EndPopup();
-				}
-
-				if (expanded)
-				{
-					ImGui::TreePop();
-				}
-			});
-
 			ImGui::TreePop();
 		}
-
-		ImGui::End();
 	}
 }

@@ -12,69 +12,13 @@ namespace Vision
 
     Scene::~Scene()
     {
-        // printing entity data
-        VN_CORE_INFO("Scene Format: ");
-
-        VN_CORE_INFO("Scene: {0}", Name);
-        VN_CORE_INFO("Entity Count: {0}", EntityCount);
-        VN_CORE_INFO("Max Entity Count: {0}", MaxEntityCount);
-
-        VN_CORE_INFO("Entites: ");
-
-        for (uint32 entity = 1;
-             entity <= EntityCount;
-             ++entity)
-        {
-            auto& tagComponent = GetComponent<TagComponent>(entity);
-
-            VN_CORE_INFO("\tEntityTag: {0}", tagComponent.Tag);
-            VN_CORE_INFO("\tComponentCount: {0}", m_Entites[entity].size());
-            VN_CORE_INFO("\tEntityComponents: ");
-            VN_CORE_INFO(" ");
-
-            for (const auto& [componentID, componentIndex] : m_Entites[entity])
-            {
-                const ComponentInfo& info = EditorState.ComponentInspector[componentID];
-
-                VN_CORE_INFO("\t\tName: {0}", info.Name);
-                VN_CORE_INFO("\t\tComponentID: {0}", componentID);
-                VN_CORE_INFO("\t\tComponentIndex: {0}", componentIndex);
-                VN_CORE_INFO(" ");
-            }
-        }
-
-        VN_CORE_INFO("Components: ");
-
-        for (const auto& [componentID, componentStorage] : m_Components)
-        {
-            const ComponentInfo& info = EditorState.ComponentInspector[componentID];
-
-            VN_CORE_INFO("\tName: {0}", info.Name);
-            VN_CORE_INFO("\tID: {0}", componentID);
-            VN_CORE_INFO("\tSizeInBytes: {0}", componentStorage.SizeInBytes);
-            VN_CORE_INFO("\tCount: {0}", componentStorage.Count);
-            VN_CORE_INFO("\tMemory: {0}", (char*)componentStorage.Data);
-            VN_CORE_INFO("\tEntites: ");
-            
-            for (uint32 componentIndex = 0;
-                 componentIndex < componentStorage.Count;
-                 ++componentIndex)
-            {
-                Entity entity = componentStorage.Entites[componentIndex];
-                auto& tagComponent = GetComponent<TagComponent>(entity);
-
-                VN_CORE_INFO("\t\t Entity: {0}, {1}", entity, tagComponent.Tag);
-            }
-            VN_CORE_INFO(" ");
-        }
-
         delete[] m_Entites;
     }
 
     void Scene::FreeEntity(const std::string& tag)
     {
         Entity entity = QueryEntity(tag);
-        
+
         VN_CORE_ASSERT(entity != entity::null && entity <= EntityCount, "Can't Free an invalid Entity");
 
         Entity lastEntity = EntityCount;
@@ -128,13 +72,13 @@ namespace Vision
         return it->second;
     }
 
-    void Scene::EachEntity(std::function<void(Entity)> callbackFn)
+    void Scene::EachEntity(const std::function<void(Entity)>& callbackFn)
     {
-        for (Entity entityHandle = 1;
-             entityHandle <= EntityCount;
-             ++entityHandle)
+        for (Entity entity = 1;
+             entity <= EntityCount;
+             ++entity)
         {
-            callbackFn(entityHandle);
+            callbackFn(entity);
         }
     }
 

@@ -15,7 +15,7 @@ namespace Vision
 
 		m_MainScene = Vision::CreateScope<Scene>("MainScene", 10);
 		Scene::SetActiveScene(m_MainScene.get());
-		
+
 		LoadSettings();
 	}
 
@@ -55,15 +55,15 @@ namespace Vision
 		transparent.FilterMode = FilterMode::Bilinear;
 
 		std::string texturePath = "Assets/Textures/";
-		
+
 		m_CheckboardTexture = Texture2D::CreateFromFile(texturePath + "Checkerboard.png", tiled);
 		m_PlayerTexture = Texture2D::CreateFromFile(texturePath + "brick_red.png", transparent);
-		
+
 		Entity camera0 = m_MainScene->CreateEntity("Camera0", TransformComponent{}, OrthographicCameraComponent{});
 		m_MainScene->ActiveCameraTag = "Camera0";
 
 		Entity camera1 = m_MainScene->CreateEntity("Camera1", TransformComponent{}, OrthographicCameraComponent{});
-		
+
 		Entity entity0 = m_MainScene->CreateEntity("Entity0", TransformComponent{}, SpriteRendererComponent{});
 		auto& sc = m_MainScene->GetComponent<SpriteRendererComponent>(entity0);
 		sc.Texture = m_PlayerTexture;
@@ -101,7 +101,7 @@ namespace Vision
 			}
 		}
 
-		Scene& scene = Scene::GetActiveScene();	
+		Scene& scene = Scene::GetActiveScene();
 
 		m_SceneFrameBuffer->Bind();
 
@@ -150,7 +150,7 @@ namespace Vision
 			auto viewportSize = m_SceneViewPanel.GetViewportSize();
 			m_CameraController->Resize((uint32)viewportSize.x, (uint32)viewportSize.y);
 		}
-		
+
 		m_Menubar.OnImGuiRender();
 		m_SceneHierarchyPanel.OnImGuiRender();
 		// m_GameViewPanel.OnImGuiRender();
@@ -199,10 +199,10 @@ namespace Vision
 		uint32 windowWidth  = m_Settings["WindowWidth"].GetUint();
 		uint32 windowHeight = m_Settings["WindowHeight"].GetUint();
 		bool   maximized    = m_Settings["Maximized"].GetBool();
-		
+
 		m_Window->SetPosition(windowX, windowY);
 		m_Window->SetSize(windowWidth, windowHeight);
-		
+
 		if (maximized)
 		{
 			m_Window->Maximize();

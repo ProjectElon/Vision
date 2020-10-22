@@ -34,7 +34,6 @@ namespace Vision
 
 	Application::~Application()
 	{
-		Input::ShutDown();
 		Renderer::Shutdown();
 	}
 

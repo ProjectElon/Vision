@@ -1,75 +1,72 @@
 #include "pch.h"
-#include "DesktopInput.h"
+
+#include "Vision/Platform/Input.h"
 #include "Vision/Core/Application.h"
+
+#ifdef VN_PLATFORM_DESKTOP
+
+#include <GLFW/glfw3.h>
 
 namespace Vision
 {
-	DesktopInput::DesktopInput()
+	static GLFWwindow* window;
+
+	void Input::Init()
 	{
-		m_Window = (GLFWwindow*)Application::Get().GetWindow().GetNativeHandle();
+		Application& app = Application::Get();
+		window = (GLFWwindow*)app.GetWindow().GetNativeHandle();
 	}
 
-	bool DesktopInput::IsKeyDownImp(unsigned int keyCode) const
+	bool Input::IsKeyDown(uint32 keyCode)
 	{
-		int state = glfwGetKey(m_Window, keyCode);
+		int state = glfwGetKey(window, keyCode);
 		return state == GLFW_PRESS || state == GLFW_REPEAT;
 	}
 
-	bool DesktopInput::IsKeyUpImp(unsigned int keyCode) const
+	bool Input::IsKeyUp(uint32 keyCode)
 	{
-		return glfwGetKey(m_Window, keyCode) == GLFW_RELEASE;
+		return glfwGetKey(window, keyCode) == GLFW_RELEASE;
 	}
 
-	bool DesktopInput::IsMouseButtonDownImp(unsigned int button) const
+	bool Input::IsMouseButtonDown(uint32 button)
 	{
-		return glfwGetMouseButton(m_Window, button) == GLFW_PRESS;
+		return glfwGetMouseButton(window, button) == GLFW_PRESS;
 	}
 
-	bool DesktopInput::IsMouseButtonUpImp(unsigned int button) const
+	bool Input::IsMouseButtonUp(uint32 button)
 	{
-		return glfwGetMouseButton(m_Window, button) == GLFW_RELEASE;
+		return glfwGetMouseButton(window, button) == GLFW_RELEASE;
 	}
 
-	std::pair<float, float> DesktopInput::GetMousePositionImp() const
+	glm::vec2 Input::GetMousePosition()
 	{
-		double xpos, ypos;
-		glfwGetCursorPos(m_Window, &xpos, &ypos);
-
-		return { static_cast<float>(xpos), static_cast<float>(ypos) };
+		double x, y;
+		glfwGetCursorPos(window, &x, &y);
+		return { (float)x, (float)y };
 	}
 
-	float DesktopInput::GetMouseXImp() const
+	bool Input::IsCursorHovering()
 	{
-		auto [xpos, ypos] = GetMousePositionImp();
-		return xpos;
+		return glfwGetWindowAttrib(window, GLFW_HOVERED);
 	}
 
-	float DesktopInput::GetMouseYImp() const
-	{
-		auto [xpos, ypos] = GetMousePositionImp();
-		return ypos;
-	}
-
-	bool DesktopInput::IsCursorHoveringImp() const
-	{
-		return glfwGetWindowAttrib(m_Window, GLFW_HOVERED);
-	}
-
-	void DesktopInput::SetCursorVisibilityImp(bool visible) const
+	void Input::SetCursorVisibility(bool visible)
 	{
 		if (visible)
 		{
-			glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-			glfwSetInputMode(m_Window, GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+			glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
 		}
 		else
 		{
-			glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 			
 			if (glfwRawMouseMotionSupported())
 			{
-				glfwSetInputMode(m_Window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+				glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 			}
 		}
 	}
 }
+
+#endif

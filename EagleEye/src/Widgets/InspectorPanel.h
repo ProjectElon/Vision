@@ -12,7 +12,12 @@ namespace Vision
 		InspectorPanel();
 
 		void OnImGuiRender();
+
 	private:
 		ComponentStateMap m_ComponentState;
+
+    private:
+        void DrawComponents(Entity entity, const EntityStorage& storage);
+        void DrawComponentSettings(Entity entity, ComponentID componentID, const ComponentInfo& info);
 	};
 }

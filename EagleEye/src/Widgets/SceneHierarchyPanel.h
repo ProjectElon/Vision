@@ -6,9 +6,13 @@ namespace Vision
     {
     public:
         void OnImGuiRender();
-        bool IsInteractable() { return m_IsInteractable; }
+
+        inline bool IsInteractable() { return m_IsInteractable; }
 
     private:
         bool m_IsInteractable;
+
+    private:
+        void DrawEntity(Entity entity);
     };
 }

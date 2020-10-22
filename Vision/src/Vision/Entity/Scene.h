@@ -55,10 +55,10 @@ namespace Vision
 
         void FreeEntity(const std::string& tag);
 
-        void EachEntity(std::function<void(Entity)> callbackFn);
+        void EachEntity(const std::function<void(Entity)>& callbackFn);
 
         template<typename Component>
-        void EachComponent(std::function<void(Component&)> callbackFn)
+        void EachComponent(const std::function<void(Component&)>& callbackFn)
         {
             const std::type_info& typeInfo = typeid(Component);
             const ComponentID& componentID = typeInfo.hash_code();
@@ -105,8 +105,8 @@ namespace Vision
             {
                 componentStorage.SizeInBytes = sizeof(Component);
 
-                componentStorage.Data    = new uint8[MaxEntityCount * sizeof(Component)]{};
-                componentStorage.Entites = new Entity[MaxEntityCount]{};
+                componentStorage.Data    = new uint8[MaxEntityCount * sizeof(Component)];
+                componentStorage.Entites = new Entity[MaxEntityCount];
             }
 
             uint8* data = componentStorage.Data;
@@ -120,20 +120,6 @@ namespace Vision
 
             uint8* componentPointer = &data[componentIndex * sizeof(Component)];
             memcpy(componentPointer, &component, sizeof(Component));
-
-#if VN_EDITOR
-            auto& componentInspector = EditorState.ComponentInspector;
-
-            if (componentInspector.find(componentID) == componentInspector.end())
-            {
-                ComponentInfo componentInfo;
-                componentInfo.AddFn     = AddComponentInInspectorFn<Component>;
-                componentInfo.Name      = typeInfo.name();
-                componentInfo.Removable = true;
-
-                componentInspector.insert_or_assign(componentID, componentInfo);
-            }
-#endif
         }
 
         template<typename Component, typename ... Components>
