@@ -3,16 +3,32 @@
 
 namespace Vision
 {
-	Scene::Scene(const std::string& name, uint32 maxEntityCount)
-		: Name(name)
-        , MaxEntityCount(maxEntityCount)
+	Scene::Scene()
     {
-        m_Entites = new EntityStorage[maxEntityCount + 1];
 	}
 
     Scene::~Scene()
     {
-        delete[] m_Entites;
+        delete[] m_Entities;
+    }
+
+
+    void Scene::ReConstruct()
+    {
+        EntityStorage* newStorage = new EntityStorage[MaxEntityCount + 1];
+
+        if (m_Entities)
+        {
+            memcpy(newStorage + 1, m_Entities + 1, sizeof(EntityStorage) * EntityCount);
+            delete[] m_Entities;
+        }
+
+        for (auto& [componentID, componentStorage] : m_Components)
+        {
+            componentStorage.ReConstruct(MaxEntityCount);
+        }
+
+        m_Entities = newStorage;
     }
 
     void Scene::FreeEntity(const std::string& tag)
@@ -28,7 +44,7 @@ namespace Vision
 
         m_Tags.extract(removedEntityTag);
 
-        EntityStorage& storage = m_Entites[entity];
+        EntityStorage& storage = m_Entities[entity];
 
         auto entityStorageIter = storage.begin();
 
@@ -48,12 +64,12 @@ namespace Vision
         {
             m_Tags.insert_or_assign(swappedEntityTag, entity);
 
-            std::swap(m_Entites[lastEntity], m_Entites[entity]);
+            std::swap(m_Entities[lastEntity], m_Entities[entity]);
 
-            for (const auto& [componentID, componentIndex] : m_Entites[entity])
+            for (const auto& [componentID, componentIndex] : m_Entities[entity])
             {
                 ComponentStorage& components = m_Components[componentID];
-                components.Entites[componentIndex] = entity;
+                components.Entities[componentIndex] = entity;
             }
         }
 
@@ -86,7 +102,7 @@ namespace Vision
     {
         VN_CORE_ASSERT(entity != entity::null && entity <= EntityCount, "Can't Remove a component of an invalid Entity");
 
-        EntityStorage& entityStorage = m_Entites[entity];
+        EntityStorage& entityStorage = m_Entities[entity];
         auto entityStorageIter = entityStorage.find(componentID);
 
         VN_CORE_ASSERT(entityStorageIter != entityStorage.end(), "Entity doesn't own Component of Type: " + name);
@@ -97,7 +113,7 @@ namespace Vision
 
         const uint32& componentSize = componentStorage.SizeInBytes;
         uint8* data = componentStorage.Data;
-        Entity* entites = componentStorage.Entites;
+        Entity* entites = componentStorage.Entities;
 
         const ComponentIndex lastComponentIndex = componentStorage.Count - 1;
         VN_CORE_ASSERT(lastComponentIndex >= 0, "lastComponentIndex is less than zero");
@@ -115,7 +131,7 @@ namespace Vision
             memcpy(&data[currentComponentIndex * componentSize], &data[lastComponentIndex * componentSize], componentSize);
             memcpy(&data[lastComponentIndex * componentSize], tempStorage, componentSize);
 
-            m_Entites[lastComponentEntity][componentID] = currentComponentIndex;
+            m_Entities[lastComponentEntity][componentID] = currentComponentIndex;
         }
 
         entityStorage.extract(entityStorageIter);

@@ -28,13 +28,11 @@ namespace Vision
         uint32 Count       = 0;
 
         uint8*  Data    = nullptr;
-        uint32* Entites = nullptr;
+        uint32* Entities = nullptr;
 
-        ~ComponentStorage()
-        {
-            delete[] Data;
-            delete[] Entites;
-        }
+        void ReConstruct(uint32 MaxEntityCount);
+
+        ~ComponentStorage();
     };
 
     struct TagComponent

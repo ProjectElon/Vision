@@ -1,0 +1,68 @@
+{
+    "Scene": "MainScene",
+    "MaxEntityCount": 10,
+    "PrimaryCamera": "",
+    "SelectedEntity": "",
+    "Entities": [
+        {
+            "Tag": "Entity0",
+            "Components": [
+                {
+                    "Name": "Transform",
+                    "ID": 1066925509535886804,
+                    "Data": "Component Data Goes Here"
+                },
+                {
+                    "Name": "Sprite Renderer",
+                    "ID": 13080639714729183211,
+                    "Data": "Component Data Goes Here"
+                },
+                {
+                    "Name": "Orthographic Camera",
+                    "ID": 1734294881175729993,
+                    "Data": "Component Data Goes Here"
+                }
+            ]
+        },
+        {
+            "Tag": "Entity1",
+            "Components": [
+                {
+                    "Name": "Transform",
+                    "ID": 1066925509535886804,
+                    "Data": "Component Data Goes Here"
+                },
+                {
+                    "Name": "Orthographic Camera",
+                    "ID": 1734294881175729993,
+                    "Data": "Component Data Goes Here"
+                },
+                {
+                    "Name": "Sprite Renderer",
+                    "ID": 13080639714729183211,
+                    "Data": "Component Data Goes Here"
+                }
+            ]
+        },
+        {
+            "Tag": "Entity2",
+            "Components": [
+                {
+                    "Name": "Sprite Renderer",
+                    "ID": 13080639714729183211,
+                    "Data": "Component Data Goes Here"
+                },
+                {
+                    "Name": "Transform",
+                    "ID": 1066925509535886804,
+                    "Data": "Component Data Goes Here"
+                },
+                {
+                    "Name": "Orthographic Camera",
+                    "ID": 1734294881175729993,
+                    "Data": "Component Data Goes Here"
+                }
+            ]
+        }
+    ]
+}

@@ -16,15 +16,16 @@ namespace Vision
     class Scene
     {
     public:
-        std::string Name;
-
+        std::string Name = "Untitled";
         uint32 EntityCount = 0; //@don't change
-        uint32 MaxEntityCount; //@don't change
+        uint32 MaxEntityCount = 100; //@don't change
 
-        std::string ActiveCameraTag;
+        std::string PrimaryCameraTag;
 
-        Scene(const std::string& name, uint32 maxEntityCount);
+        Scene();
         ~Scene();
+
+        void ReConstruct();
 
         template<typename ... Components>
         Entity CreateEntity(const std::string& tag, const Components ... components)
@@ -105,18 +106,18 @@ namespace Vision
             {
                 componentStorage.SizeInBytes = sizeof(Component);
 
-                componentStorage.Data    = new uint8[MaxEntityCount * sizeof(Component)];
-                componentStorage.Entites = new Entity[MaxEntityCount];
+                componentStorage.Data     = new uint8[MaxEntityCount * sizeof(Component)];
+                componentStorage.Entities = new Entity[MaxEntityCount];
             }
 
             uint8* data = componentStorage.Data;
-            Entity* entites = componentStorage.Entites;
+            Entity* entites = componentStorage.Entities;
 
             uint32 componentIndex = componentStorage.Count;
             componentStorage.Count++;
 
             entites[componentIndex] = entity;
-            m_Entites[entity].insert_or_assign(componentID, componentIndex);
+            m_Entities[entity].insert_or_assign(componentID, componentIndex);
 
             uint8* componentPointer = &data[componentIndex * sizeof(Component)];
             memcpy(componentPointer, &component, sizeof(Component));
@@ -141,7 +142,7 @@ namespace Vision
             const std::type_info& typeInfo = typeid(Component);
             const ComponentID& componentID = typeInfo.hash_code();
 
-            const EntityStorage& entityStorage = m_Entites[entity];
+            const EntityStorage& entityStorage = m_Entities[entity];
 
             return entityStorage.find(componentID) != entityStorage.end();
         }
@@ -170,7 +171,7 @@ namespace Vision
 
             VN_CORE_ASSERT(entity != entity::null && entity <= EntityCount, "Entity is not valid");
 
-            EntityStorage& entityStorage = m_Entites[entity];
+            EntityStorage& entityStorage = m_Entities[entity];
 
             VN_CORE_ASSERT(entityStorage.find(componentID) != entityStorage.end(), "Entity doesn't own Component of Type: " + std::string(typeInfo.name()));
 
@@ -217,10 +218,12 @@ namespace Vision
         static void SetActiveScene(Scene* scene);
         inline static Scene& GetActiveScene() { return *s_ActiveScene; }
 
+        friend class SceneSerializer;
+
     private:
         TagMap m_Tags;
 
-        EntityStorage* m_Entites;
+        EntityStorage* m_Entities = nullptr;
         ComponentMap   m_Components;
 
         static Scene* s_ActiveScene;

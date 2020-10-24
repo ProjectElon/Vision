@@ -18,9 +18,9 @@ namespace Vision
 		{
 			if (ImGui::IsMouseDown(0) &&
 				ImGui::IsWindowHovered() &&
-			    !scene.EditorState.SeleteEntityTag.empty())
+			    !scene.EditorState.SelectedEntityTag.empty())
 			{
-				scene.EditorState.SeleteEntityTag = "";
+				scene.EditorState.SelectedEntityTag = "";
 			}
 		}
 
@@ -34,9 +34,9 @@ namespace Vision
 
 					if (entity)
 					{
-						if (scene.EditorState.SeleteEntityTag.empty())
+						if (scene.EditorState.SelectedEntityTag.empty())
 						{
-							scene.EditorState.SeleteEntityTag = "Empty Entity";
+							scene.EditorState.SelectedEntityTag = "Empty Entity";
 						}
 					}
 				}
@@ -92,7 +92,7 @@ namespace Vision
 
 		ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding;
 
-		if (tag == editorState.SeleteEntityTag)
+		if (tag == editorState.SelectedEntityTag)
 		{
 			flags |= ImGuiTreeNodeFlags_Selected;
 		}
@@ -100,18 +100,18 @@ namespace Vision
 		bool open     = ImGui::TreeNodeEx((void*)(intptr_t)entity, flags, tag.c_str());
 		bool selected = ImGui::IsItemClicked() || ImGui::IsItemToggledOpen();
 
-		if (selected && tag != editorState.SeleteEntityTag)
+		if (selected && tag != editorState.SelectedEntityTag)
 		{
-			editorState.SeleteEntityTag = tag;
+			editorState.SelectedEntityTag = tag;
 		}
 
 		if (ImGui::BeginPopupContextItem())
 		{
 			if (ImGui::MenuItem("Delete Entity"))
 			{
-				if (tag == editorState.SeleteEntityTag && !editorState.SeleteEntityTag.empty())
+				if (tag == editorState.SelectedEntityTag && !editorState.SelectedEntityTag.empty())
 				{
-					editorState.SeleteEntityTag = "";
+					editorState.SelectedEntityTag = "";
 				}
 
 				scene.FreeEntity(tag);

@@ -1,8 +1,8 @@
 #include "EditorLayer.h"
+#include <fstream>
 #include <imgui.h>
 #include <rapidjson/prettywriter.h>
 #include <rapidjson/stringbuffer.h>
-#include <fstream>
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace Vision
@@ -12,9 +12,6 @@ namespace Vision
 	{
 		m_Window = &Application::Get().GetWindow();
 		m_Window->SetVSync(true);
-
-		m_MainScene = Vision::CreateScope<Scene>("MainScene", 10);
-		Scene::SetActiveScene(m_MainScene.get());
 
 		LoadSettings();
 	}
@@ -38,7 +35,7 @@ namespace Vision
 		m_SceneViewPanel.SetFrameBuffer(m_SceneFrameBuffer.get());
 		m_GameViewPanel.SetFrameBuffer(m_GameFrameBuffer.get());
 
-		float aspectRatio  = (float)frameBufferProps.Width / (float)frameBufferProps.Height;
+		float32 aspectRatio  = (float32)frameBufferProps.Width / (float32)frameBufferProps.Height;
 		m_CameraController = CreateScope<OrthographicCameraController>(aspectRatio, m_Settings["CameraZoomLevel"].GetFloat());
 
 		m_SpriteShader = Shader::CreateFromFile("Assets/Shaders/Sprite.glsl");
@@ -59,18 +56,18 @@ namespace Vision
 		m_CheckboardTexture = Texture2D::CreateFromFile(texturePath + "Checkerboard.png", tiled);
 		m_PlayerTexture = Texture2D::CreateFromFile(texturePath + "brick_red.png", transparent);
 
-		Entity camera0 = m_MainScene->CreateEntity("Camera0", TransformComponent{}, OrthographicCameraComponent{});
-		m_MainScene->ActiveCameraTag = "Camera0";
+		m_MainScene = Vision::CreateScope<Scene>();
+		Scene::SetActiveScene(m_MainScene.get());
 
-		Entity camera1 = m_MainScene->CreateEntity("Camera1", TransformComponent{}, OrthographicCameraComponent{});
-
-		Entity entity0 = m_MainScene->CreateEntity("Entity0", TransformComponent{}, SpriteRendererComponent{});
-		auto& sc = m_MainScene->GetComponent<SpriteRendererComponent>(entity0);
-		sc.Texture = m_PlayerTexture;
+		SceneSerializer::Deserialize("Assets/Scenes/MainScene.scene", *m_MainScene.get());
+		
+		VN_CORE_INFO("DeSerialize MainScene.scene");
 	}
 
 	void EditorLayer::OnDetach()
 	{
+		VN_CORE_INFO("Serialize MainScene.scene");
+		SceneSerializer::Serialize("Assets/Scenes/MainScene.scene", *m_MainScene.get());
 	}
 
 	void EditorLayer::OnUpdate(float deltaTime)
@@ -142,12 +139,12 @@ namespace Vision
 	{
 		using namespace Vision;
 
-		auto& window = Application::Get().GetWindow();
+		Window& window = Application::Get().GetWindow();
 		Scene& scene = Scene::GetActiveScene();
 
 		if (m_SceneViewPanel.IsViewportResized())
 		{
-			auto viewportSize = m_SceneViewPanel.GetViewportSize();
+			glm::vec2 viewportSize = m_SceneViewPanel.GetViewportSize();
 			m_CameraController->Resize((uint32)viewportSize.x, (uint32)viewportSize.y);
 		}
 
@@ -170,8 +167,12 @@ namespace Vision
 			if (Input::IsKeyUp(Key::Delete) && deleteWasDown)
 			{
 				deleteWasDown = false;
-				scene.FreeEntity(scene.EditorState.SeleteEntityTag);
-				scene.EditorState.SeleteEntityTag = "";
+
+				if (!scene.EditorState.SelectedEntityTag.empty())
+				{
+					scene.FreeEntity(scene.EditorState.SelectedEntityTag);
+					scene.EditorState.SelectedEntityTag = "";
+				}
 			}
 		}
 	}

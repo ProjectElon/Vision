@@ -28,7 +28,7 @@ namespace Vision
 
     struct EditorState
     {
-        std::string SeleteEntityTag;
+        std::string SelectedEntityTag;
         ComponentMetaMap ComponentMeta;
     };
 

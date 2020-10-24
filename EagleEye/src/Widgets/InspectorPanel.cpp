@@ -12,6 +12,12 @@ namespace Vision
 	{
         EditorState& editorState = Scene::EditorState;
 
+        // adding tag manually
+
+        ComponentInfo& info = editorState.ComponentMeta[typeid(TagComponent).hash_code()];
+        info.Name = "Tag";
+        info.Removable = false;
+
         InspectComponent<TransformComponent>("Transform", [&](void* component)
         {
             auto& transform = ComponentCast<TransformComponent>(component);
@@ -34,11 +40,11 @@ namespace Vision
             auto& camera = ComponentCast<OrthographicCameraComponent>(component);
 
             static bool isPrimary;
-            isPrimary = editorState.SeleteEntityTag == scene.ActiveCameraTag;
+            isPrimary = editorState.SelectedEntityTag == scene.PrimaryCameraTag;
 
             if (ImGuiWidgets::DrawBool("Primary", isPrimary, 70.0f))
             {
-                scene.ActiveCameraTag = editorState.SeleteEntityTag;
+                scene.PrimaryCameraTag = editorState.SelectedEntityTag;
             }
 
             ImGuiWidgets::DrawBool("Static", camera.Static, 70.0f);
@@ -174,8 +180,8 @@ namespace Vision
 
 		ImGui::Begin("Inspector");
 
-        Entity seletedEntity = scene.QueryEntity(editorState.SeleteEntityTag);
-        const EntityStorage& storage = scene.m_Entites[seletedEntity];
+        Entity seletedEntity = scene.QueryEntity(editorState.SelectedEntityTag);
+        const EntityStorage& storage = scene.m_Entities[seletedEntity];
         
 		if (seletedEntity)
 		{
@@ -193,19 +199,19 @@ namespace Vision
 
                 if (scene.QueryEntity(newTag) == entity::null && !newTag.empty())
                 {
-                    Entity entity = scene.QueryEntity(editorState.SeleteEntityTag);
+                    Entity entity = scene.QueryEntity(editorState.SelectedEntityTag);
 
                     scene.m_Tags.emplace(newTag, entity);
                     scene.m_Tags.erase(oldTag);
 
-                    if (oldTag == editorState.SeleteEntityTag)
+                    if (oldTag == editorState.SelectedEntityTag)
                     {
-                        editorState.SeleteEntityTag = newTag;
+                        editorState.SelectedEntityTag = newTag;
                     }
 
-                    if (oldTag == scene.ActiveCameraTag)
+                    if (oldTag == scene.PrimaryCameraTag)
                     {
-                        scene.ActiveCameraTag = newTag;
+                        scene.PrimaryCameraTag = newTag;
                     }
 
                     oldTag = newTag;
