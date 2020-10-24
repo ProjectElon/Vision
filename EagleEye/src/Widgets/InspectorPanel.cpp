@@ -33,6 +33,20 @@ namespace Vision
             ImGuiWidgets::DrawFloat3("Scale", transform.Scale, 78.0f, 1.0f);
         });
 
+        SerializeComponent<TransformComponent>([&](Writer& w, void* component)
+        {
+            const auto& transform = ComponentCast<TransformComponent>(component);
+            
+            w.Key("X", 1);
+            w.Double(transform.Position.x);
+        });
+
+        DeserializeComponent<TransformComponent>([&](const Reader& v, void* component)
+        {
+            auto& transform = ComponentCast<TransformComponent>(component);
+            transform.Position.x = v["X"].GetFloat();
+        });
+
         InspectComponent<OrthographicCameraComponent>("Orthographic Camera", [&](void* component)
         {
             Scene& scene = Scene::GetActiveScene();
@@ -325,7 +339,7 @@ namespace Vision
             
             if (state.Open)
             {
-                void* componentMemory = scene.GetComponentMemory(componentID, componentIndex);
+                void* componentMemory = scene.GetComponent(componentID, componentIndex);
                 info.InspectFn(componentMemory);
 
                 ImGui::TreePop();

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <rapidjson/document.h>
-#include <rapidjson/writer.h>
 #include <rapidjson/prettywriter.h>
 #include "Vision/Core/Base.h"
 

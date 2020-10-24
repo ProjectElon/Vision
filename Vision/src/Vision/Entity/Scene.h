@@ -206,11 +206,18 @@ namespace Vision
             }
         }
 
-        inline void* GetComponentMemory(ComponentID componentID, ComponentIndex componentIndex)
+        inline void* GetComponent(ComponentID componentID, ComponentIndex componentIndex)
         {
             ComponentStorage& componentStorage = m_Components[componentID];
             uint8* data = componentStorage.Data;
             return &data[componentIndex * componentStorage.SizeInBytes];
+        }
+
+        inline void* GetComponent(Entity entity, ComponentID componentID)
+        {
+            EntityStorage& entityStorage = m_Entities[entity];
+            ComponentIndex componentIndex = entityStorage[componentID];
+            return GetComponent(componentID, componentIndex);
         }
 
         void RemoveComponent(Entity entity, ComponentID componentID, const std::string& name = "T");

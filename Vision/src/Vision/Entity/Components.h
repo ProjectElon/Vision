@@ -19,7 +19,7 @@ namespace Vision
         return *(T*)(component);
     }
 
-    using ComponentID    = size_t;
+    using ComponentID    = uint64;
     using ComponentIndex = uint32;
 
     struct ComponentStorage

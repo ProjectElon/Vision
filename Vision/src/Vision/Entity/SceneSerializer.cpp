@@ -78,7 +78,15 @@ namespace Vision
 
             SerializeString(w, "Name", info.Name);
             SerializeUint64(w, "ID", componentID);
-            SerializeString(w, "Data", "Component Data Goes Here");
+
+            if (info.SerializeFn)
+            {
+                w.Key("Data");
+                w.StartObject();
+                void* componentMemory = scene.GetComponent(entity, componentID);
+                info.SerializeFn(w, componentMemory);
+                w.EndObject();
+            }
 
             w.EndObject();
         }
@@ -170,10 +178,16 @@ namespace Vision
             {
                 const Value& component = components[componentIndex];
                 const char* name = component["Name"].GetString();
-                ComponentID id = component["ID"].GetUint64();
-                ComponentInfo& info = editorState.ComponentMeta[id];
+                ComponentID componentID = component["ID"].GetUint64();
+                ComponentInfo& info = editorState.ComponentMeta[componentID];
                 info.AddFn(entityIndex + 1);
-                const char* data = component["Data"].GetString();
+
+                if (info.DeserializeFn)
+                {
+                    const Value& data = component["Data"];
+                    void* componentMemory = scene.GetComponent(entityIndex + 1, componentID);
+                    info.DeserializeFn(data, componentMemory);
+                }
             }
         }
 
