@@ -25,7 +25,7 @@ namespace Vision
 		inline unsigned int GetWidth()  const { return m_Width;  }
 		inline unsigned int GetHeight() const { return m_Height; }
 
-		const std::string& ToString() const override
+		std::string ToString() const override
 		{
 			std::stringstream ss;
 			ss << "WidnowResizeEvent : (" << m_Width << ", " << m_Height << ")";
@@ -71,7 +71,7 @@ namespace Vision
 		inline unsigned int GetX() const { return m_WindowX; }
 		inline unsigned int GetY() const { return m_WindowY; }
 
-		const std::string& ToString() const override
+		std::string ToString() const override
 		{
 			std::stringstream ss;
 			ss << "WidnowMovedEvent : (" << m_WindowX << ", " << m_WindowY << ")";

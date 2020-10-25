@@ -46,28 +46,18 @@ namespace Vision
 		tiled.WrapY  = WrapMode::Repeat;
 		tiled.FilterMode = FilterMode::Point;
 
-		TextureProps transparent;
-		transparent.WrapX  = WrapMode::ClampToEdge;
-		transparent.WrapY  = WrapMode::ClampToEdge;
-		transparent.FilterMode = FilterMode::Bilinear;
-
 		std::string texturePath = "Assets/Textures/";
-
 		m_CheckboardTexture = Texture2D::CreateFromFile(texturePath + "Checkerboard.png", tiled);
-		m_PlayerTexture = Texture2D::CreateFromFile(texturePath + "brick_red.png", transparent);
-
-		m_MainScene = Vision::CreateScope<Scene>();
-		Scene::SetActiveScene(m_MainScene.get());
-
-		SceneSerializer::Deserialize("Assets/Scenes/MainScene.scene", *m_MainScene.get());
-		
-		VN_CORE_INFO("DeSerialize MainScene.scene");
 	}
 
 	void EditorLayer::OnDetach()
 	{
-		VN_CORE_INFO("Serialize MainScene.scene");
-		SceneSerializer::Serialize("Assets/Scenes/MainScene.scene", *m_MainScene.get());
+		Scene* scene = Scene::GetActiveScene();
+
+		if (scene)
+		{
+			delete scene;
+		}
 	}
 
 	void EditorLayer::OnUpdate(float deltaTime)
@@ -98,32 +88,37 @@ namespace Vision
 			}
 		}
 
-		Scene& scene = Scene::GetActiveScene();
+		Scene* scene = Scene::GetActiveScene();
 
-		m_SceneFrameBuffer->Bind();
-
-		RenderCommand::Clear(RendererAPI::ColorBuffer);
-
-		Renderer2D::BeginScene(m_CameraController->GetCameraTransform(), m_CameraController->Camera, m_SpriteShader);
-
-		Renderer2D::DrawTexture(glm::vec3(0.0f, 0.0f, 0.0f), 0.0f,
-								glm::vec2(100.0f, 100.0f),
-								m_CheckboardTexture,
-								glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
-								100.0f);
-
-		scene.EachGroup<TransformComponent, SpriteRendererComponent>([](auto& transform, auto& sprite)
+		if (scene)
 		{
-			Renderer2D::DrawSprite(transform.Position, transform.Rotation.z, transform.Scale, sprite);
-		});
+			m_SceneFrameBuffer->Bind();
 
-		Renderer2D::EndScene();
+			RenderCommand::Clear(RendererAPI::ColorBuffer);
 
-		m_SceneFrameBuffer->UnBind();
+			Renderer2D::BeginScene(m_CameraController->GetCameraTransform(), m_CameraController->Camera, m_SpriteShader);
+
+			Renderer2D::DrawTexture(glm::vec3(0.0f, 0.0f, 0.0f), 0.0f,
+				glm::vec2(100.0f, 100.0f),
+				m_CheckboardTexture,
+				glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
+				100.0f);
+
+			scene->EachGroup<TransformComponent, SpriteRendererComponent>([](auto& transform, auto& sprite)
+			{
+				Renderer2D::DrawSprite(transform.Position, transform.Rotation.z, transform.Scale, sprite);
+			});
+
+			Renderer2D::EndScene();
+
+			m_SceneFrameBuffer->UnBind();
+		}
  	}
 
 	void EditorLayer::OnEvent(Event& e)
 	{
+		m_Menubar.OnEvent(e);
+
 		if (m_SceneViewPanel.IsIntractable())
 		{
 			e.Handled = false;
@@ -140,7 +135,7 @@ namespace Vision
 		using namespace Vision;
 
 		Window& window = Application::Get().GetWindow();
-		Scene& scene = Scene::GetActiveScene();
+		Scene* scene = Scene::GetActiveScene();
 
 		if (m_SceneViewPanel.IsViewportResized())
 		{
@@ -168,10 +163,13 @@ namespace Vision
 			{
 				deleteWasDown = false;
 
-				if (!scene.EditorState.SelectedEntityTag.empty())
+				if (scene)
 				{
-					scene.FreeEntity(scene.EditorState.SelectedEntityTag);
-					scene.EditorState.SelectedEntityTag = "";
+					if (!scene->EditorState.SelectedEntityTag.empty())
+					{
+						scene->FreeEntity(scene->EditorState.SelectedEntityTag);
+						scene->EditorState.SelectedEntityTag = "";
+					}
 				}
 			}
 		}

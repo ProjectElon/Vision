@@ -1,0 +1,71 @@
+{
+    "Scene": "Untitled",
+    "MaxEntityCount": 1000,
+    "PrimaryCamera": "",
+    "SelectedEntity": "Entity0",
+    "Entities": [
+        {
+            "Tag": "Entity0",
+            "Components": [
+                {
+                    "Name": "Transform",
+                    "ID": 1066925509535886804,
+                    "Data": {
+                        "Position": [
+                            1.2999999523162842,
+                            0.0,
+                            0.0
+                        ],
+                        "Rotation": [
+                            -0.012217304669320584,
+                            0.0,
+                            0.005235987715423107
+                        ],
+                        "Scale": [
+                            0.5,
+                            1.0,
+                            1.0
+                        ]
+                    }
+                },
+                {
+                    "Name": "Sprite Renderer",
+                    "ID": 13080639714729183211,
+                    "Data": {
+                        "Texture Path": "",
+                        "Texture Wrap X": 0,
+                        "Texture Wrap Y": 0,
+                        "Texture Fliter Mode": 0,
+                        "Color": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            1.0
+                        ],
+                        "Bottom Left Point": [
+                            0.0,
+                            0.0
+                        ],
+                        "Top Right Point": [
+                            1.0,
+                            1.0
+                        ],
+                        "Flip X": false,
+                        "Flip Y": false
+                    }
+                },
+                {
+                    "Name": "Orthographic Camera",
+                    "ID": 1734294881175729993,
+                    "Data": {
+                        "Aspect Ratio": 1.0,
+                        "Size": 1.0,
+                        "Near": -1.0,
+                        "Far": 1.0,
+                        "Static": false
+                    }
+                }
+            ]
+        }
+    ]
+}

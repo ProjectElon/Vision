@@ -14,7 +14,7 @@ namespace Vision
 
 		inline unsigned int GetButton() const { return m_Button; }
 
-		const std::string& ToString() const override
+		std::string ToString() const override
 		{
 			std::stringstream ss;
 			ss << "MouseButtonPressedEvent : (" << m_Button << ")";
@@ -39,7 +39,7 @@ namespace Vision
 
 		inline unsigned int GetButton() const { return m_Button; }
 
-		const std::string& ToString() const override
+		std::string ToString() const override
 		{
 			std::stringstream ss;
 			ss << "MouseButtonReleasedEvent : (" << m_Button << ")";
@@ -66,7 +66,7 @@ namespace Vision
 		inline float GetMouseX() const { return m_MouseX; }
 		inline float GetMouseY() const { return m_MouseY; }
 
-		const std::string& ToString() const override
+		std::string ToString() const override
 		{
 			std::stringstream ss;
 			ss << "MouseMovedEvent : (" << m_MouseX << ", " << m_MouseY << ")";
@@ -94,7 +94,7 @@ namespace Vision
 		inline float GetXOffset() const { return m_XOffset; }
 		inline float GetYOffset() const { return m_YOffset; }
 
-		const std::string& ToString() const override
+		std::string ToString() const override
 		{
 			std::stringstream ss;
 			ss << "MouseWheelScrolledEvent : (" << m_XOffset << ", " << m_YOffset << ")";

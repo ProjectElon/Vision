@@ -15,7 +15,6 @@ namespace Vision
         bool Open = true;
     };
 
-
     using Writer = rapidjson::PrettyWriter<rapidjson::StringBuffer>;
     using Reader = rapidjson::Value;
     
@@ -81,7 +80,7 @@ namespace Vision
     template<typename Component>
     void AddComponentInInspectorFn(Entity entity)
     {
-        Scene& scene = Scene::GetActiveScene();
+        Scene& scene = *Scene::GetActiveScene();
         scene.AddComponent<Component>(entity);
     }
 }

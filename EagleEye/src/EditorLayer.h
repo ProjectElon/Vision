@@ -40,8 +40,7 @@ namespace Vision
 		GameViewPanel		m_GameViewPanel;
 
 		rapidjson::Document    m_Settings;
-		std::unique_ptr<Scene> m_MainScene;
-
+		
 		Vision::Scope<OrthographicCameraController> m_CameraController;
 
 		Vision::Ref<Shader> m_SpriteShader;

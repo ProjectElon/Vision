@@ -17,8 +17,10 @@ namespace Vision
     {
     public:
         std::string Name = "Untitled";
+        std::string Path = "";
+
         uint32 EntityCount = 0; //@don't change
-        uint32 MaxEntityCount = 100; //@don't change
+        uint32 MaxEntityCount = 1000; //@don't change
 
         std::string PrimaryCameraTag;
 
@@ -223,7 +225,7 @@ namespace Vision
         void RemoveComponent(Entity entity, ComponentID componentID, const std::string& name = "T");
 
         static void SetActiveScene(Scene* scene);
-        inline static Scene& GetActiveScene() { return *s_ActiveScene; }
+        inline static Scene* GetActiveScene() { return s_ActiveScene; }
 
         friend class SceneSerializer;
 

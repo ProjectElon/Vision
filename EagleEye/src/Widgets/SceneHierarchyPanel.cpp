@@ -7,83 +7,69 @@ namespace Vision
 {
 	void SceneHierarchyPanel::OnImGuiRender()
 	{
-		Scene& scene = Scene::GetActiveScene();
 		EditorState& editorState = Scene::EditorState;
+		Scene* scene = Scene::GetActiveScene();
 
 		ImGui::Begin("Scene Hierarchy");
 
 		m_IsInteractable = ImGui::IsWindowFocused() && ImGui::IsWindowHovered();
 
-		// Deselect Entity
+		if (scene)
 		{
-			if (ImGui::IsMouseDown(0) &&
-				ImGui::IsWindowHovered() &&
-			    !scene.EditorState.SelectedEntityTag.empty())
+			// Deselect Entity
 			{
-				scene.EditorState.SelectedEntityTag = "";
-			}
-		}
-
-		// Create Empty Entity when right clicking on blank space
-		{
-			if (ImGui::BeginPopupContextWindow(0, 1, false))
-			{
-				if (ImGui::MenuItem("Create Empty Entity"))
+				if (ImGui::IsMouseDown(0) &&
+					ImGui::IsWindowHovered() &&
+					editorState.SelectedEntityTag.empty())
 				{
-					Entity entity = scene.CreateEntity("Empty Entity");
+					editorState.SelectedEntityTag = "";
+				}
+			}
 
-					if (entity)
+			// Create Empty Entity when right clicking on blank space
+			{
+				if (ImGui::BeginPopupContextWindow(0, 1, false))
+				{
+					if (ImGui::MenuItem("Create Empty Entity"))
 					{
-						if (scene.EditorState.SelectedEntityTag.empty())
+						Entity entity = scene->CreateEntity("Empty Entity");
+
+						if (entity)
 						{
-							scene.EditorState.SelectedEntityTag = "Empty Entity";
+							if (editorState.SelectedEntityTag.empty())
+							{
+								editorState.SelectedEntityTag = "Empty Entity";
+							}
 						}
 					}
+
+					ImGui::EndPopup();
 				}
-
-				ImGui::EndPopup();
 			}
-		}
 
-		/*
-		// Max Entites Constraint
-		{
-			ImGui::Text("Max Entites");
-			ImGui::SameLine();
-
-			int32 maxEntityCount = scene.MaxEntityCount;
-			int32 entityCount = scene.EntityCount;
-
-			if (ImGui::DragInt("##Max Entites", &maxEntityCount, 1.0f, entityCount, MAXINT))
+			// Drawing Entites
 			{
-				scene.MaxEntityCount = maxEntityCount;
-			}
-		}
-		*/
+				std::string sceneName = scene->Name + " (" + std::to_string(scene->EntityCount) + "/" + std::to_string(scene->MaxEntityCount) + ")";
 
-		// Drawing Entites
-		{
-			std::string sceneDisplaytext = scene.Name + " (" + std::to_string(scene.EntityCount) + "/" + std::to_string(scene.MaxEntityCount) + ")";
+				uint32 flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_FramePadding;
 
-			uint32 flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_FramePadding;
-
-			if (ImGui::TreeNodeEx(sceneDisplaytext.c_str(), flags))
-			{
-				scene.EachEntity([&](Entity entity)
+				if (ImGui::TreeNodeEx(sceneName.c_str(), flags))
 				{
-					DrawEntity(entity);
-				});
+					scene->EachEntity([&](Entity entity)
+					{
+						DrawEntity(*scene, entity);
+					});
 
-				ImGui::TreePop();
+					ImGui::TreePop();
+				}
 			}
-
-			ImGui::End();
 		}
+
+		ImGui::End();
 	}
 
-	void SceneHierarchyPanel::DrawEntity(Entity entity)
+	void SceneHierarchyPanel::DrawEntity(Scene& scene, Entity entity)
 	{
-		Scene& scene = Scene::GetActiveScene();
 		EditorState& editorState = Scene::EditorState;
 
 		auto& tagComponent = scene.GetComponent<TagComponent>(entity);

@@ -21,10 +21,11 @@ namespace Vision
     struct TextureData
     {
         std::string Name;
-        
+        std::string Path;
+
         uint32 RendererID = 0;
         uint32 Width      = 0;
-        uint32 Height     = 0;  
+        uint32 Height     = 0;
     };
 
     struct TextureProps
@@ -34,16 +35,16 @@ namespace Vision
 
         FilterMode FilterMode = FilterMode::Point;
     };
-    
+
     class Texture2D
     {
     public:
         virtual ~Texture2D() {}
-        
+
         virtual void SetData(void* data, uint32_t sizeInBytes) = 0;
 
         virtual void Bind(uint32_t slot) = 0;
-        
+
         virtual void SetWrapMode(WrapMode wrapModeX, WrapMode wrapModeY) = 0;
         virtual void SetFilterMode(FilterMode filterMode) = 0;
 

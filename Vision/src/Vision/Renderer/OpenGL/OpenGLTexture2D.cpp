@@ -37,6 +37,7 @@ namespace Vision
 
 		m_Properties = props;
 		m_Data.Name = filepath.substr(start, count);
+		m_Data.Path = filepath;
 
 		int width, height;
 		int channelCount;

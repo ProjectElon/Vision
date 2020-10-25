@@ -17,6 +17,6 @@ namespace Vision
 		ComponentStateMap m_ComponentState;
 
     private:
-        void DrawComponents(Entity entity, const EntityStorage& storage);
+        void DrawComponents(Scene& scene, Entity entity, const EntityStorage& storage);
 	};
 }

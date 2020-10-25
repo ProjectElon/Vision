@@ -1,14 +1,14 @@
-#include "Editor.h"
+#include "EagleEye.h"
 #include "EditorLayer.h"
 
 namespace Vision
 {
-	Editor::Editor()
+	EagleEye::EagleEye()
 	{
 		PushLayer(new EditorLayer);
 	}
 
-	Editor::~Editor()
+	EagleEye::~EagleEye()
 	{
 	}
 }

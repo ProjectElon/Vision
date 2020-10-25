@@ -1,5 +1,6 @@
 #include "InspectorPanel.h"
 #include "Vision/Entity/EditorState.h"
+#include "Vision/Entity/SceneSerializer.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -18,266 +19,351 @@ namespace Vision
         info.Name = "Tag";
         info.Removable = false;
 
-        InspectComponent<TransformComponent>("Transform", [&](void* component)
+        // Transform
         {
-            auto& transform = ComponentCast<TransformComponent>(component);
-
-            ImGuiWidgets::DrawFloat3("Position", transform.Position, 78.0f);
-
-            glm::vec3 rotation = glm::degrees(transform.Rotation);
-
-            ImGuiWidgets::DrawFloat3("Rotation", rotation, 78.0f);
-
-            transform.Rotation = glm::radians(rotation);
-
-            ImGuiWidgets::DrawFloat3("Scale", transform.Scale, 78.0f, 1.0f);
-        });
-
-        SerializeComponent<TransformComponent>([&](Writer& w, void* component)
-        {
-            const auto& transform = ComponentCast<TransformComponent>(component);
-            
-            w.Key("X", 1);
-            w.Double(transform.Position.x);
-        });
-
-        DeserializeComponent<TransformComponent>([&](const Reader& v, void* component)
-        {
-            auto& transform = ComponentCast<TransformComponent>(component);
-            transform.Position.x = v["X"].GetFloat();
-        });
-
-        InspectComponent<OrthographicCameraComponent>("Orthographic Camera", [&](void* component)
-        {
-            Scene& scene = Scene::GetActiveScene();
-
-            auto& camera = ComponentCast<OrthographicCameraComponent>(component);
-
-            static bool isPrimary;
-            isPrimary = editorState.SelectedEntityTag == scene.PrimaryCameraTag;
-
-            if (ImGuiWidgets::DrawBool("Primary", isPrimary, 70.0f))
+            InspectComponent<TransformComponent>("Transform", [&](void* component)
             {
-                scene.PrimaryCameraTag = editorState.SelectedEntityTag;
-            }
+                auto& transform = ComponentCast<TransformComponent>(component);
 
-            ImGuiWidgets::DrawBool("Static", camera.Static, 70.0f);
+                ImGuiWidgets::DrawFloat3("Position", transform.Position, 78.0f);
 
-            ImGui::Text("");
+                glm::vec3 rotation = glm::degrees(transform.Rotation);
 
-            bool changed = false;
+                ImGuiWidgets::DrawFloat3("Rotation", rotation, 78.0f);
 
-            changed |= ImGuiWidgets::DrawFloat("Aspect Ratio", camera.AspectRatio, 100.0f);
-            changed |= ImGuiWidgets::DrawFloat("Size", camera.Size, 100.0f);
-            changed |= ImGuiWidgets::DrawFloat("Near", camera.Near, 100.0f);
-            changed |= ImGuiWidgets::DrawFloat("Far", camera.Far, 100.0f);
+                transform.Rotation = glm::radians(rotation);
 
-            if (changed)
+                ImGuiWidgets::DrawFloat3("Scale", transform.Scale, 78.0f, 1.0f);
+            });
+
+            SerializeComponent<TransformComponent>([&](Writer& w, void* component)
             {
+                const auto& transform = ComponentCast<TransformComponent>(component);
+
+                SceneSerializer::SerializeVector3(w, "Position", transform.Position);
+                SceneSerializer::SerializeVector3(w, "Rotation", transform.Rotation);
+                SceneSerializer::SerializeVector3(w, "Scale", transform.Scale);
+            });
+
+            DeserializeComponent<TransformComponent>([&](const Reader& r, void* component)
+            {
+                auto& transform = ComponentCast<TransformComponent>(component);
+                transform.Position = SceneSerializer::DeserializeVector3(r, "Position");
+                transform.Rotation = SceneSerializer::DeserializeVector3(r, "Rotation");
+                transform.Scale = SceneSerializer::DeserializeVector3(r, "Scale");
+            });
+        }
+
+        // OrthographicCameraComponent
+        {
+            InspectComponent<OrthographicCameraComponent>("Orthographic Camera", [&](void* component)
+            {
+                Scene& scene = *Scene::GetActiveScene();
+
+                auto& camera = ComponentCast<OrthographicCameraComponent>(component);
+
+                static bool isPrimary;
+                isPrimary = editorState.SelectedEntityTag == scene.PrimaryCameraTag;
+
+                if (ImGuiWidgets::DrawBool("Primary", isPrimary, 70.0f))
+                {
+                    scene.PrimaryCameraTag = editorState.SelectedEntityTag;
+                }
+
+                ImGuiWidgets::DrawBool("Static", camera.Static, 70.0f);
+
+                ImGui::Text("");
+
+                bool changed = false;
+
+                changed |= ImGuiWidgets::DrawFloat("Aspect Ratio", camera.AspectRatio, 100.0f);
+                changed |= ImGuiWidgets::DrawFloat("Size", camera.Size, 100.0f);
+                changed |= ImGuiWidgets::DrawFloat("Near", camera.Near, 100.0f);
+                changed |= ImGuiWidgets::DrawFloat("Far", camera.Far, 100.0f);
+
+                if (changed)
+                {
+                    camera.Projection = glm::ortho(-camera.AspectRatio * camera.Size,
+                        camera.AspectRatio * camera.Size,
+                        -camera.Size,
+                        camera.Size,
+                        camera.Near,
+                        camera.Far);
+                }
+
+            });
+
+            SerializeComponent<OrthographicCameraComponent>([&](Writer& w, void* component)
+            {
+                const auto& camera = ComponentCast<OrthographicCameraComponent>(component);
+
+                SceneSerializer::SerializeFloat(w, "Aspect Ratio", camera.AspectRatio);
+                SceneSerializer::SerializeFloat(w, "Size", camera.Size);
+                SceneSerializer::SerializeFloat(w, "Near", camera.Near);
+                SceneSerializer::SerializeFloat(w, "Far", camera.Far);
+                SceneSerializer::SerializeBool(w, "Static", camera.Static);
+            });
+
+            DeserializeComponent<OrthographicCameraComponent>([&](const Reader& r, void* component)
+            {
+                auto& camera = ComponentCast<OrthographicCameraComponent>(component);
+
+                camera.AspectRatio = SceneSerializer::DeserializeFloat(r, "Aspect Ratio");
+                camera.Size = SceneSerializer::DeserializeFloat(r, "Size");
+                camera.Near = SceneSerializer::DeserializeFloat(r, "Near");
+                camera.Far = SceneSerializer::DeserializeFloat(r, "Far");
+                camera.Static = SceneSerializer::DeserializeBool(r, "Static");
+
                 camera.Projection = glm::ortho(-camera.AspectRatio * camera.Size,
-                                                camera.AspectRatio * camera.Size,
-                                               -camera.Size,
-                                                camera.Size,
-                                                camera.Near,
-                                                camera.Far);
-            }
+                    camera.AspectRatio * camera.Size,
+                    -camera.Size,
+                    camera.Size,
+                    camera.Near,
+                    camera.Far);
+            });
+        }
 
-        });
-
-        InspectComponent<SpriteRendererComponent>("Sprite Renderer", [&](void* component)
+        // SpriteRendererComponent
         {
-            auto& sprite = ComponentCast<SpriteRendererComponent>(component);
-
-            const TextureData& textureData = sprite.Texture->GetData();
-
-            ImGui::Text(textureData.Name.c_str());
-
-            float halfWidth = ImGui::GetContentRegionAvail().x / 2.0f;
-
-            ImGui::Columns(2);
-
-            ImGui::SetColumnWidth(0, halfWidth - 72.0f);
-
-            ImGui::Image((void*)(intptr_t)textureData.RendererID, ImVec2(72.0f, 72.0f));
-
-            ImGui::NextColumn();
-
-            // Texture Properties
+            InspectComponent<SpriteRendererComponent>("Sprite Renderer", [&](void* component)
             {
-                const TextureProps& properties = sprite.Texture->GetProperties();
+                auto& sprite = ComponentCast<SpriteRendererComponent>(component);
 
-                static const char* WrapModeStrings[] =
+                const TextureData& textureData = sprite.Texture->GetData();
+
+                ImGui::Text(textureData.Name.c_str());
+
+                float halfWidth = ImGui::GetContentRegionAvail().x / 2.0f;
+
+                ImGui::Columns(2);
+
+                ImGui::SetColumnWidth(0, halfWidth - 72.0f);
+
+                ImGui::Image((void*)(intptr_t)textureData.RendererID, ImVec2(72.0f, 72.0f));
+
+                ImGui::NextColumn();
+
+                // Texture Properties
                 {
-                    "Repeat",
-                    "Clamp To Edge"
-                };
+                    const TextureProps& properties = sprite.Texture->GetProperties();
 
-                static const char* FilterModeStrings[] =
-                {
-                    "Point",
-                    "Bilinear"
-                };
-
-                int32 seletedWrapXMode  = (int32)properties.WrapX;
-                int32 seletedWrapYMode  = (int32)properties.WrapY;
-                int32 seletedFilterMode = (int32)properties.FilterMode;
-
-                ImGui::Text("Wrap X");
-                ImGui::SameLine();
-
-                if (ImGui::Combo("##Wrap X", &seletedWrapXMode, WrapModeStrings, 2))
-                {
-                    if (seletedWrapXMode != (int32)properties.WrapX)
+                    static const char* WrapModeStrings[] =
                     {
-                        sprite.Texture->SetWrapMode((WrapMode)seletedWrapXMode, (WrapMode)seletedWrapYMode);
+                        "Repeat",
+                        "Clamp To Edge"
+                    };
+
+                    static const char* FilterModeStrings[] =
+                    {
+                        "Point",
+                        "Bilinear"
+                    };
+
+                    int32 seletedWrapXMode = (int32)properties.WrapX;
+                    int32 seletedWrapYMode = (int32)properties.WrapY;
+                    int32 seletedFilterMode = (int32)properties.FilterMode;
+
+                    ImGui::Text("Wrap X");
+                    ImGui::SameLine();
+
+                    if (ImGui::Combo("##Wrap X", &seletedWrapXMode, WrapModeStrings, 2))
+                    {
+                        if (seletedWrapXMode != (int32)properties.WrapX)
+                        {
+                            sprite.Texture->SetWrapMode((WrapMode)seletedWrapXMode, (WrapMode)seletedWrapYMode);
+                        }
+                    }
+
+                    ImGui::Text("Wrap Y");
+                    ImGui::SameLine();
+
+                    if (ImGui::Combo("##Wrap Y", &seletedWrapYMode, WrapModeStrings, 2))
+                    {
+                        if (seletedWrapYMode != (int32)properties.WrapY)
+                        {
+                            sprite.Texture->SetWrapMode((WrapMode)seletedWrapXMode, (WrapMode)seletedWrapYMode);
+                        }
+                    }
+
+                    ImGui::Text("FilterMode");
+                    ImGui::SameLine();
+
+                    if (ImGui::Combo("##Filter Mode", &seletedFilterMode, FilterModeStrings, 2))
+                    {
+                        if (seletedFilterMode != (int32)properties.FilterMode)
+                        {
+                            sprite.Texture->SetFilterMode((FilterMode)seletedFilterMode);
+                        }
                     }
                 }
 
-                ImGui::Text("Wrap Y");
+                ImGui::Columns(1);
+
+                ImGui::Text("\n");
+
+                ImGui::Text("Color");
                 ImGui::SameLine();
 
-                if (ImGui::Combo("##Wrap Y", &seletedWrapYMode, WrapModeStrings, 2))
-                {
-                    if (seletedWrapYMode != (int32)properties.WrapY)
-                    {
-                        sprite.Texture->SetWrapMode((WrapMode)seletedWrapXMode, (WrapMode)seletedWrapYMode);
-                    }
-                }
+                ImGui::ColorEdit4("##Color", &sprite.Color.r);
+                ImGui::Text("\n");
 
-                ImGui::Text("FilterMode");
+                ImGui::Text("Top Right UV   ");
                 ImGui::SameLine();
 
-                if (ImGui::Combo("##Filter Mode", &seletedFilterMode, FilterModeStrings, 2))
-                {
-                    if (seletedFilterMode != (int32)properties.FilterMode)
-                    {
-                        sprite.Texture->SetFilterMode((FilterMode)seletedFilterMode);
-                    }
-                }
-            }
+                ImGui::DragFloat2("##Top Right UV", glm::value_ptr(sprite.TopRightPoint), 0.1f);
 
-            ImGui::Columns(1);
+                ImGui::Text("Bottom Left UV");
+                ImGui::SameLine();
 
-            ImGui::Text("\n");
+                ImGui::DragFloat2("##Bottom Left UV", glm::value_ptr(sprite.BottomLeftPoint), 0.1f);
+                ImGui::Text("\n");
 
-            ImGui::Text("Color");
-            ImGui::SameLine();
+                ImGui::Text("Flip X");
+                ImGui::SameLine();
+                ImGui::Checkbox("##Flip X", &sprite.FlipX);
 
-            ImGui::ColorEdit4("##Color", &sprite.Color.r);
-            ImGui::Text("\n");
+                ImGui::Text("Flip Y");
+                ImGui::SameLine();
+                ImGui::Checkbox("##Flip Y", &sprite.FlipY);
+            });
 
-            ImGui::Text("Top Right UV   ");
-            ImGui::SameLine();
+            SerializeComponent<SpriteRendererComponent>([&](Writer& w, void* component)
+            {
+                const auto& sprite = ComponentCast<SpriteRendererComponent>(component);
+                
+                const TextureData& data = sprite.Texture->GetData();
+                const TextureProps& props = sprite.Texture->GetProperties();
 
-            ImGui::DragFloat2("##Top Right UV", glm::value_ptr(sprite.TopRightPoint), 0.1f);
+                SceneSerializer::SerializeString(w, "Texture Path", data.Path);
+                SceneSerializer::SerializeUint32(w, "Texture Wrap X", (uint32)props.WrapX);
+                SceneSerializer::SerializeUint32(w, "Texture Wrap Y", (uint32)props.WrapY);
+                SceneSerializer::SerializeUint32(w, "Texture Fliter Mode", (uint32)props.FilterMode);
 
-            ImGui::Text("Bottom Left UV");
-            ImGui::SameLine();
+                SceneSerializer::SerializeVector4(w, "Color", sprite.Color);
+                SceneSerializer::SerializeVector2(w, "Bottom Left Point", sprite.BottomLeftPoint);
+                SceneSerializer::SerializeVector2(w, "Top Right Point", sprite.TopRightPoint);
+                SceneSerializer::SerializeBool(w, "Flip X", sprite.FlipX);
+                SceneSerializer::SerializeBool(w, "Flip Y", sprite.FlipY);
+            });
 
-            ImGui::DragFloat2("##Bottom Left UV", glm::value_ptr(sprite.BottomLeftPoint), 0.1f);
-            ImGui::Text("\n");
+            DeserializeComponent<SpriteRendererComponent>([&](const Reader& r, void* component)
+            {
+                auto& sprite = ComponentCast<SpriteRendererComponent>(component);
 
-            ImGui::Text("Flip X");
-            ImGui::SameLine();
-            ImGui::Checkbox("##Flip X", &sprite.FlipX);
+                std::string texturePath = SceneSerializer::DeserializeString(r, "Texture Path");
+                
+                uint32 wrapX = SceneSerializer::DeserializeUint32(r, "Texture Wrap X");
+                uint32 wrapY = SceneSerializer::DeserializeUint32(r, "Texture Wrap Y");
+                uint32 filterMode = SceneSerializer::DeserializeUint32(r, "Texture Fliter Mode");
+                
+                sprite.Texture->SetWrapMode((WrapMode)wrapX, (WrapMode)wrapY);
+                sprite.Texture->SetFilterMode((FilterMode)filterMode);
 
-            ImGui::Text("Flip Y");
-            ImGui::SameLine();
-            ImGui::Checkbox("##Flip Y", &sprite.FlipY);
-        });
+                sprite.Color = SceneSerializer::DeserializeVector4(r, "Color");
+                
+                sprite.BottomLeftPoint = SceneSerializer::DeserializeVector2(r, "Bottom Left Point");
+                sprite.TopRightPoint = SceneSerializer::DeserializeVector2(r, "Top Right Point");
+
+                sprite.FlipX = SceneSerializer::DeserializeBool(r, "Flip X");
+                sprite.FlipY = SceneSerializer::DeserializeBool(r, "Flip Y");
+            });
+        }
 	}
 
 	void InspectorPanel::OnImGuiRender()
 	{
-		Scene& scene = Scene::GetActiveScene();
         EditorState& editorState = Scene::EditorState;
+        Scene* scene = Scene::GetActiveScene();
 
 		ImGui::Begin("Inspector");
 
-        Entity seletedEntity = scene.QueryEntity(editorState.SelectedEntityTag);
-        const EntityStorage& storage = scene.m_Entities[seletedEntity];
-        
-		if (seletedEntity)
-		{
-            auto& tagComponent = scene.GetComponent<TagComponent>(seletedEntity);
-            std::string& oldTag = tagComponent.Tag;
 
-            char buffer[1024];
-            memset(buffer, 0, 1024);
-            memcpy(buffer, tagComponent.Tag.data(), tagComponent.Tag.size());
+        if (scene)
+        {
+            Entity seletedEntity = scene->QueryEntity(editorState.SelectedEntityTag);
+            const EntityStorage& storage = scene->m_Entities[seletedEntity];
 
-            if (ImGui::InputText("##Tag", buffer, 1024, ImGuiInputTextFlags_EnterReturnsTrue) ||
-                ImGui::IsItemDeactivated())
+            if (seletedEntity)
             {
-                std::string newTag = buffer;
+                auto& tagComponent = scene->GetComponent<TagComponent>(seletedEntity);
+                std::string& oldTag = tagComponent.Tag;
 
-                if (scene.QueryEntity(newTag) == entity::null && !newTag.empty())
+                char buffer[1024];
+                memset(buffer, 0, 1024);
+                memcpy(buffer, tagComponent.Tag.data(), tagComponent.Tag.size());
+
+                if (ImGui::InputText("##Tag", buffer, 1024, ImGuiInputTextFlags_EnterReturnsTrue) ||
+                    ImGui::IsItemDeactivated())
                 {
-                    Entity entity = scene.QueryEntity(editorState.SelectedEntityTag);
+                    std::string newTag = buffer;
 
-                    scene.m_Tags.emplace(newTag, entity);
-                    scene.m_Tags.erase(oldTag);
-
-                    if (oldTag == editorState.SelectedEntityTag)
+                    if (scene->QueryEntity(newTag) == entity::null && !newTag.empty())
                     {
-                        editorState.SelectedEntityTag = newTag;
-                    }
+                        Entity entity = scene->QueryEntity(editorState.SelectedEntityTag);
 
-                    if (oldTag == scene.PrimaryCameraTag)
-                    {
-                        scene.PrimaryCameraTag = newTag;
-                    }
+                        scene->m_Tags.emplace(newTag, entity);
+                        scene->m_Tags.erase(oldTag);
 
-                    oldTag = newTag;
-                }
-            }
-
-            // Add Component Popup
-            {
-                ImGui::SameLine();
-                ImGui::PushItemWidth(-1);
-
-                if (ImGui::Button("Add Component"))
-                {
-                    if (storage.size() < editorState.ComponentMeta.size())
-                    {
-                        ImGui::OpenPopup("Add Component Popup");
-                    }
-                }
-
-                if (ImGui::BeginPopup("Add Component Popup"))
-                {
-                    for (const auto& [componentID, componentInfo] : editorState.ComponentMeta)
-                    {
-                        if (storage.find(componentID) != storage.end())
+                        if (oldTag == editorState.SelectedEntityTag)
                         {
-                            continue;
+                            editorState.SelectedEntityTag = newTag;
                         }
 
-                        const char* name = componentInfo.Name.c_str();
-
-                        if (ImGui::MenuItem(name))
+                        if (oldTag == scene->PrimaryCameraTag)
                         {
-                            componentInfo.AddFn(seletedEntity);
-                            ImGui::CloseCurrentPopup();
+                            scene->PrimaryCameraTag = newTag;
+                        }
+
+                        oldTag = newTag;
+                    }
+                }
+
+                // Add Component Popup
+                {
+                    ImGui::SameLine();
+                    ImGui::PushItemWidth(-1);
+
+                    if (ImGui::Button("Add Component"))
+                    {
+                        if (storage.size() < editorState.ComponentMeta.size())
+                        {
+                            ImGui::OpenPopup("Add Component Popup");
                         }
                     }
 
-                    ImGui::EndPopup();
+                    if (ImGui::BeginPopup("Add Component Popup"))
+                    {
+                        for (const auto& [componentID, componentInfo] : editorState.ComponentMeta)
+                        {
+                            if (storage.find(componentID) != storage.end())
+                            {
+                                continue;
+                            }
+
+                            const char* name = componentInfo.Name.c_str();
+
+                            if (ImGui::MenuItem(name))
+                            {
+                                componentInfo.AddFn(seletedEntity);
+                                ImGui::CloseCurrentPopup();
+                            }
+                        }
+
+                        ImGui::EndPopup();
+                    }
                 }
+
+                ImGui::PopItemWidth();
+
+                DrawComponents(*scene, seletedEntity, storage);
             }
-
-            ImGui::PopItemWidth();
-
-            DrawComponents(seletedEntity, storage);
-		}
+        }
 
 		ImGui::End();
 	}
 
-    void InspectorPanel::DrawComponents(Entity entity, const EntityStorage& storage)
+    void InspectorPanel::DrawComponents(Scene& scene, Entity entity, const EntityStorage& storage)
     {
-        Scene& scene = Scene::GetActiveScene();
         EditorState& editorState = Scene::EditorState;
 
         auto entityStorageIter = storage.begin();
@@ -299,13 +385,13 @@ namespace Vision
             ComponentState& state = m_ComponentState[{ entity, componentID }];
             const char* name = info.Name.c_str();
 
-            const ImGuiTreeNodeFlags flags = 
-                ImGuiTreeNodeFlags_DefaultOpen | 
-                ImGuiTreeNodeFlags_Framed | 
-                ImGuiTreeNodeFlags_FramePadding | 
-                ImGuiTreeNodeFlags_SpanAvailWidth | 
+            const ImGuiTreeNodeFlags flags =
+                ImGuiTreeNodeFlags_DefaultOpen |
+                ImGuiTreeNodeFlags_Framed |
+                ImGuiTreeNodeFlags_FramePadding |
+                ImGuiTreeNodeFlags_SpanAvailWidth |
                 ImGuiTreeNodeFlags_AllowItemOverlap;
-            
+
             ImVec2 contentRegionAvail = ImGui::GetContentRegionAvail();
 
             ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{ 4, 4 });
@@ -314,7 +400,7 @@ namespace Vision
             ImGui::SetNextTreeNodeOpen(state.Open);
             state.Open = ImGui::TreeNodeEx((void*)(intptr_t)componentID, flags, name);
             ImGui::PopStyleVar();
-            
+
             // @Note: don't show for tag for now until we have more component setttings
             if (info.Removable)
             {
@@ -336,7 +422,7 @@ namespace Vision
 
                 ImGui::EndPopup();
             }
-            
+
             if (state.Open)
             {
                 void* componentMemory = scene.GetComponent(componentID, componentIndex);

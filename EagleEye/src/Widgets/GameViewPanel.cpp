@@ -4,12 +4,9 @@
 
 namespace Vision
 {
-	GameViewPanel::GameViewPanel()
-		: m_IsInteractable(false)
-		, m_IsViewportResized(false)
-		, m_ViewportSize(glm::vec2(0.0f, 0.0f))
-		, m_FrameBuffer(nullptr)
+	void GameViewPanel::SetContext(Scene* scene)
 	{
+		m_Scene = scene;
 	}
 
 	void GameViewPanel::SetFrameBuffer(FrameBuffer* frameBuffer)
@@ -35,31 +32,33 @@ namespace Vision
 
 			float aspectRatio = currentViewportSize.x / currentViewportSize.y;
 
-			Scene& scene = Scene::GetActiveScene();
-
-			scene.EachComponent<OrthographicCameraComponent>([&](auto& camera)
+			if (m_Scene)
 			{
-				if (!camera.Static)
-				{
-					camera.AspectRatio = aspectRatio;
-					camera.Projection = glm::ortho(-camera.AspectRatio * camera.Size,
-													camera.AspectRatio * camera.Size,
-												   -camera.Size,
-													camera.Size);
-				}
-			});
 
-			scene.EachComponent<PerspectiveCameraComponent>([&](auto& camera)
-			{
-				if (!camera.Static)
+				m_Scene->EachComponent<OrthographicCameraComponent>([&](auto& camera)
 				{
-					camera.AspectRatio = aspectRatio;
-					camera.Projection = glm::perspective(camera.FieldOfView,
-														 camera.AspectRatio,
-														 camera.Near,
-														 camera.Far);
-				}
-			});
+					if (!camera.Static)
+					{
+						camera.AspectRatio = aspectRatio;
+						camera.Projection = glm::ortho(-camera.AspectRatio * camera.Size,
+							camera.AspectRatio * camera.Size,
+							-camera.Size,
+							camera.Size);
+					}
+				});
+
+				m_Scene->EachComponent<PerspectiveCameraComponent>([&](auto& camera)
+				{
+					if (!camera.Static)
+					{
+						camera.AspectRatio = aspectRatio;
+						camera.Projection = glm::perspective(camera.FieldOfView,
+							camera.AspectRatio,
+							camera.Near,
+							camera.Far);
+					}
+				});
+			}
 		}
 
 		ImGui::End();

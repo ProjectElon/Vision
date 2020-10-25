@@ -2,9 +2,12 @@
 
 namespace Vision
 {
+    class Scene;
+
     class SceneHierarchyPanel
     {
     public:
+        
         void OnImGuiRender();
 
         inline bool IsInteractable() { return m_IsInteractable; }
@@ -13,6 +16,6 @@ namespace Vision
         bool m_IsInteractable;
 
     private:
-        void DrawEntity(Entity entity);
+        void DrawEntity(Scene& scene, Entity entity);
     };
 }

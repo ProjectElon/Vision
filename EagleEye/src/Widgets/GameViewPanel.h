@@ -5,12 +5,12 @@
 namespace Vision
 {
 	class FrameBuffer;
+	class Scene;
 
 	class GameViewPanel
 	{
 	public:
-		GameViewPanel();
-
+		void SetContext(Scene* scene);
 		void SetFrameBuffer(FrameBuffer* SceneFrameBuffer);
 		
 		void OnImGuiRender();
@@ -20,11 +20,13 @@ namespace Vision
 		inline const glm::vec2& GetViewportSize() { return m_ViewportSize; }
 		
 	private:
-		bool m_IsInteractable;
-		bool m_IsViewportResized;
+		Scene* m_Scene = nullptr;
 
-		glm::vec2 m_ViewportSize;
+		bool m_IsInteractable = false;
+		bool m_IsViewportResized = false;
+
+		glm::vec2 m_ViewportSize = { 0.0f, 0.0f };
 			
-		FrameBuffer* m_FrameBuffer;
+		FrameBuffer* m_FrameBuffer = nullptr;
 	};
 }

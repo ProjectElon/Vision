@@ -22,6 +22,7 @@
 #include "Vision/Platform/KeyCodes.h"
 #include "Vision/Platform/MouseCodes.h"
 #include "Vision/Platform/Timer.h"
+#include "Vision/Platform/PlatformUtils.h"
 /*--------------------------------*/
 
 /*----------  Renderer  ----------*/
@@ -48,4 +49,5 @@
 #include "Vision/Entity/Components.h"
 #include "Vision/Entity/Scene.h"
 #include "Vision/Entity/SceneSerializer.h"
+#include "Vision/Entity/EditorState.h"
 /*--------------------------------*/

@@ -98,6 +98,11 @@ namespace Vision
 		overlay->OnAttach();
 	}
 
+	void Application::Close()
+	{
+		m_Running = false;
+	}
+
 	bool Application::OnWindowResize(WindowResizeEvent& e)
 	{
 		Renderer::OnWindowResize(e.GetWidth(), e.GetHeight());
