@@ -17,7 +17,7 @@ namespace Vision
     {
     public:
         std::string Name = "Untitled";
-        std::string Path = "";
+        std::string Path = "NoPath";
 
         uint32 EntityCount = 0; //@don't change
         uint32 MaxEntityCount = 1000; //@don't change

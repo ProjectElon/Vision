@@ -5,13 +5,13 @@ namespace Vision
 {
 	Scene::Scene()
     {
+        ReConstruct();
 	}
 
     Scene::~Scene()
     {
         delete[] m_Entities;
     }
-
 
     void Scene::ReConstruct()
     {

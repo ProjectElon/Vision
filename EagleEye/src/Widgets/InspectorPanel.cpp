@@ -139,7 +139,9 @@ namespace Vision
 
                 ImGui::SetColumnWidth(0, halfWidth - 72.0f);
 
-                ImGui::Image((void*)(intptr_t)textureData.RendererID, ImVec2(72.0f, 72.0f));
+                if (ImGui::ImageButton((void*)(intptr_t)textureData.RendererID, ImVec2(72.0f, 72.0f)))
+                {
+                }
 
                 ImGui::NextColumn();
 
@@ -230,7 +232,7 @@ namespace Vision
             SerializeComponent<SpriteRendererComponent>([&](Writer& w, void* component)
             {
                 const auto& sprite = ComponentCast<SpriteRendererComponent>(component);
-                
+
                 const TextureData& data = sprite.Texture->GetData();
                 const TextureProps& props = sprite.Texture->GetProperties();
 
@@ -251,16 +253,16 @@ namespace Vision
                 auto& sprite = ComponentCast<SpriteRendererComponent>(component);
 
                 std::string texturePath = SceneSerializer::DeserializeString(r, "Texture Path");
-                
+
                 uint32 wrapX = SceneSerializer::DeserializeUint32(r, "Texture Wrap X");
                 uint32 wrapY = SceneSerializer::DeserializeUint32(r, "Texture Wrap Y");
                 uint32 filterMode = SceneSerializer::DeserializeUint32(r, "Texture Fliter Mode");
-                
+
                 sprite.Texture->SetWrapMode((WrapMode)wrapX, (WrapMode)wrapY);
                 sprite.Texture->SetFilterMode((FilterMode)filterMode);
 
                 sprite.Color = SceneSerializer::DeserializeVector4(r, "Color");
-                
+
                 sprite.BottomLeftPoint = SceneSerializer::DeserializeVector2(r, "Bottom Left Point");
                 sprite.TopRightPoint = SceneSerializer::DeserializeVector2(r, "Top Right Point");
 

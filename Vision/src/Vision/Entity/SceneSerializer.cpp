@@ -7,8 +7,16 @@
 
 namespace Vision
 {
-    bool SceneSerializer::Serialize(const std::string& filePath, Scene& scene)
+    bool SceneSerializer::Serialize(const std::string& filepath, Scene& scene)
     {
+        std::ofstream ofs(filepath);
+
+        if (!ofs.is_open())
+        {
+            VN_CORE_INFO("Can't Open File: {0}", filepath);
+            return false;
+        }
+
         EditorState& editorState = Scene::EditorState;
 
         using namespace rapidjson;
@@ -18,7 +26,6 @@ namespace Vision
 
         w.StartObject();
 
-        SerializeString(w, "Scene", scene.Name);
         SerializeUint32(w, "MaxEntityCount", scene.MaxEntityCount);
         SerializeString(w, "PrimaryCamera", scene.PrimaryCameraTag);
         SerializeString(w, "SelectedEntity", editorState.SelectedEntityTag);
@@ -37,33 +44,43 @@ namespace Vision
 
         w.EndObject();
 
-        std::ofstream ofs(filePath);
         ofs << s.GetString();
         ofs.close();
+
+        VN_CORE_INFO("Serializing: {0}", filepath);
 
         return true;
     }
 
-    bool SceneSerializer::Deserialize(const std::string& filePath, Scene& scene)
+    bool SceneSerializer::Deserialize(const std::string& filepath, Scene& scene)
     {
         using namespace rapidjson;
 
         EditorState& editorState = Scene::EditorState;
 
-        std::ifstream ifs(filePath);
-
-        std::string line;
+        std::ifstream ifs(filepath);
         std::string contents;
 
-        while (std::getline(ifs, line))
+        if (ifs.is_open())
         {
-            contents += line;
+            std::string line;
+
+            while (std::getline(ifs, line))
+            {
+                contents += line;
+            }
+
+            ifs.close();
+        }
+        else
+        {
+            VN_CORE_INFO("Can't Open Scene: {0}", filepath);
+            return false;
         }
 
         Document sd;
         sd.Parse(contents.c_str(), contents.length());
 
-        scene.Name = sd["Scene"].GetString();
         scene.MaxEntityCount = sd["MaxEntityCount"].GetUint();
         scene.PrimaryCameraTag = sd["PrimaryCamera"].GetString();
         editorState.SelectedEntityTag = sd["SelectedEntity"].GetString();
@@ -101,6 +118,8 @@ namespace Vision
                 }
             }
         }
+
+        VN_CORE_INFO("Deserializing: {0}", filepath);
 
         return true;
     }

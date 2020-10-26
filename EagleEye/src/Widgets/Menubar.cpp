@@ -12,9 +12,9 @@ namespace Vision
 
 		if (ImGui::BeginMenu("File", true))
 		{
-			if (ImGui::MenuItem("New Scene", "Ctrl+Shift+N"))
+			if (ImGui::MenuItem("New Scene...", "Ctrl+Shift+N"))
 			{
-				NewScene();
+				m_Action = "New Scene";
 			}
 
 			if (ImGui::MenuItem("Open Scene...", "Ctrl+Shift+O"))
@@ -22,47 +22,121 @@ namespace Vision
 				OpenScene();
 			}
 
-			
 			Scene* scene = Scene::GetActiveScene();
 			bool enabled = scene != nullptr;
+
+			if (ImGui::MenuItem("Save Scene", "Ctrl+S", false, enabled))
+			{
+				SaveScene(*scene);
+			}
 
 			if (ImGui::MenuItem("Save Scene As...", "Ctrl+Shift+S", false, enabled))
 			{
 				SaveSceneAs(*scene);
 			}
 
-			if (ImGui::MenuItem("Exit"))
+			if (ImGui::MenuItem("Close Scene", "Ctrl+E", false, enabled))
 			{
-				Application& app = Application::Get();
-				app.Close();
+				CloseScene(*scene);
 			}
 
 			ImGui::EndMenu();
 		}
 
+		// @CleanUp: Move Into a New Scene Diaglog Function and handle open state globally
+
+		if (m_Action == "New Scene")
+		{
+			ImGui::OpenPopup("New Scene");
+		}
+
+		bool open = true;
+		static std::string filepath = "";
+		static int32 maxEntityCount = 1;
+
+		ImGuiWindowFlags flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDocking;
+		if (ImGui::BeginPopupModal("New Scene", &open, flags))
+		{
+			ImGui::Text("Max Entity Count");
+			ImGui::SameLine();
+
+			ImGui::DragInt("##Max Entity Count Drag", &maxEntityCount, 1.0f, 1, MAXINT);
+
+			ImGui::Text("Location");
+			ImGui::InputText("##Location", filepath.data(), filepath.length() + 1);
+			ImGui::SameLine();
+
+			if (ImGui::Button("..."))
+			{
+				// @Note: Add Ext to SaveFile if not provided
+				filepath = FileDialog::SaveFile("Vision Scene (*.vscene)\0*.vscene\0");
+				
+				if (!filepath.empty())
+				{
+					uint32 lastDot = filepath.find_last_of('.');
+
+					if (lastDot == -1)
+					{
+						filepath += ".vscene";
+					}
+				}
+			}
+
+			if (!filepath.empty())
+			{
+				if (ImGui::Button("Create"))
+				{
+					NewScene(filepath, maxEntityCount);
+					ImGui::CloseCurrentPopup();
+					open = false;
+				}
+
+				ImGui::SameLine();
+			}
+
+			if (ImGui::Button("Cancel"))
+			{
+				ImGui::CloseCurrentPopup();
+				open = false;
+			}
+
+			ImGui::EndPopup();
+		}
+
+		if (!open)
+		{
+			m_Action = "";
+			filepath = "";
+			maxEntityCount = 1;
+		}
+
 		ImGui::EndMainMenuBar();
 	}
 
-	void Menubar::OnEvent(Event& e)
-	{
-		EventDispatcher dispatcher(e);
-		dispatcher.Dispatch<KeyPressedEvent>(VN_BIND_EVENT_FN(Menubar::OnKeyPressed));
-	}
-
-	void Menubar::NewScene()
+	void Menubar::NewScene(const std::string& filepath, uint32 maxEntityCount)
 	{
 		Scene* scene = Scene::GetActiveScene();
 
 		if (scene)
 		{
-			SceneSerializer::Serialize(scene->Name, *scene);
+			SceneSerializer::Serialize(scene->Path, *scene);
 			delete scene;
-		}
+		}		
+
+		// @Note: Clean Up File System
+		size_t lastSlash = filepath.find_last_of("/\\");
+		size_t lastDot = filepath.rfind('.');
+
+		size_t start = (lastSlash == std::string::npos) ? 0 : lastSlash + 1;
+		size_t count = (lastDot == std::string::npos) ? filepath.length() - start : lastDot - start;
 
 		Scene* newScene = new Scene();
-		newScene->ReConstruct();
+		newScene->Path = filepath;
+		newScene->Name = filepath.substr(start, count);
+		newScene->MaxEntityCount = maxEntityCount;
 
 		Scene::SetActiveScene(newScene);
+		SaveScene(*newScene);
 	}
 
 	void Menubar::OpenScene()
@@ -75,13 +149,22 @@ namespace Vision
 
 			if (scene)
 			{
-				SceneSerializer::Serialize(scene->Name, *scene);
+				SaveScene(*scene);
 				delete scene;
 			}
 
-			Scene* newScene = new Scene();
-			Scene::SetActiveScene(newScene);
+			// @Note: Clean Up File System
+			size_t lastSlash = filepath.find_last_of("/\\");
+			size_t lastDot = filepath.rfind('.');
 
+			size_t start = (lastSlash == std::string::npos) ? 0 : lastSlash + 1;
+			size_t count = (lastDot == std::string::npos) ? filepath.length() - start : lastDot - start;
+
+			Scene* newScene = new Scene();
+			newScene->Path = filepath;
+			newScene->Name = filepath.substr(start, count);
+
+			Scene::SetActiveScene(newScene);
 			SceneSerializer::Deserialize(filepath, *newScene);
 		}
 	}
@@ -92,15 +175,28 @@ namespace Vision
 
 		if (!filepath.empty())
 		{
+			// @Note: Add Ext to SaveFile if not provided
 			uint32 lastDot = filepath.find_last_of('.');
-			
+
 			if (lastDot == -1)
 			{
 				filepath += ".vscene";
 			}
 
-			SceneSerializer::Serialize(filepath, scene);	
+			SaveScene(scene);
 		}
+	}
+
+	void Menubar::SaveScene(Scene& scene)
+	{
+		SceneSerializer::Serialize(scene.Path, scene);
+	}
+
+	void Menubar::CloseScene(Scene& scene)
+	{
+		SaveScene(scene);
+		delete &scene;
+		Scene::SetActiveScene(nullptr);
 	}
 
 	bool Menubar::OnKeyPressed(KeyPressedEvent& e)
@@ -119,7 +215,7 @@ namespace Vision
 			{
 				if (control && shift)
 				{
-					NewScene();
+					if (m_Action.empty()) m_Action = "New Scene";
 				}
 			}
 			break;
@@ -131,6 +227,11 @@ namespace Vision
 					Scene* scene = Scene::GetActiveScene();
 					if (scene) SaveSceneAs(*scene);
 				}
+				else if (control)
+				{
+					Scene* scene = Scene::GetActiveScene();
+					if (scene) SaveScene(*scene);
+				}
 			}
 			break;
 
@@ -139,6 +240,16 @@ namespace Vision
 				if (control && shift)
 				{
 					OpenScene();
+				}
+			}
+			break;
+
+			case Key::E:
+			{
+				if (control)
+				{
+					Scene* scene = Scene::GetActiveScene();
+					if (scene) CloseScene(*scene);
 				}
 			}
 			break;

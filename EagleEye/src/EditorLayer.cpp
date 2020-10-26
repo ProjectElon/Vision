@@ -48,15 +48,38 @@ namespace Vision
 
 		std::string texturePath = "Assets/Textures/";
 		m_CheckboardTexture = Texture2D::CreateFromFile(texturePath + "Checkerboard.png", tiled);
+		
+		std::string lastScenePath = m_Settings["Last Scene Path"].GetString();
+		
+		if (!lastScenePath.empty())
+		{
+			// @Note: Clean Up File System
+			size_t lastSlash = lastScenePath.find_last_of("/\\");
+			size_t lastDot = lastScenePath.rfind('.');
+
+			size_t start = (lastSlash == std::string::npos) ? 0 : lastSlash + 1;
+			size_t count = (lastDot == std::string::npos) ? lastScenePath.length() - start : lastDot - start;
+
+			Scene* scene = new Scene();
+			scene->Path = lastScenePath;
+			scene->Name = lastScenePath.substr(start, count);
+
+			Scene::SetActiveScene(scene);
+			SceneSerializer::Deserialize(lastScenePath, *scene);
+		}
 	}
 
 	void EditorLayer::OnDetach()
 	{
 		Scene* scene = Scene::GetActiveScene();
+		m_LastScenePath = "";
 
 		if (scene)
 		{
+			m_LastScenePath = scene->Path;
+			SceneSerializer::Serialize(scene->Path, *scene);
 			delete scene;
+			Scene::SetActiveScene(nullptr);
 		}
 	}
 
@@ -71,54 +94,47 @@ namespace Vision
 
 		if (m_SceneViewPanel.IsIntractable())
 		{
-			m_CameraController->OnUpdate(deltaTime);
-
-			static bool RWasDown = false;
-			static bool SpaceWasDown = false;
-
-			if (Input::IsKeyDown(Key::R))
+			bool control = Input::IsKeyDown(Key::LeftControl) || Input::IsKeyDown(Key::RightControl);
+			bool shift = Input::IsKeyDown(Key::LeftShift) || Input::IsKeyDown(Key::RightShift);
+			
+			if (!control && !shift)
 			{
-				RWasDown = true;
-			}
-
-			if (Input::IsKeyUp(Key::R) && RWasDown)
-			{
-				m_SpriteShader->Reload();
-				RWasDown = false;
+				m_CameraController->OnUpdate(deltaTime);
 			}
 		}
+		
+		m_SceneFrameBuffer->Bind();
 
+		RenderCommand::Clear(RendererAPI::ColorBuffer);
+
+		Renderer2D::BeginScene(m_CameraController->GetCameraTransform(), m_CameraController->Camera, m_SpriteShader);
+		
 		Scene* scene = Scene::GetActiveScene();
 
 		if (scene)
 		{
-			m_SceneFrameBuffer->Bind();
-
-			RenderCommand::Clear(RendererAPI::ColorBuffer);
-
-			Renderer2D::BeginScene(m_CameraController->GetCameraTransform(), m_CameraController->Camera, m_SpriteShader);
-
 			Renderer2D::DrawTexture(glm::vec3(0.0f, 0.0f, 0.0f), 0.0f,
-				glm::vec2(100.0f, 100.0f),
-				m_CheckboardTexture,
-				glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
-				100.0f);
+									glm::vec2(100.0f, 100.0f),
+									m_CheckboardTexture,
+									glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
+									100.0f);
 
 			scene->EachGroup<TransformComponent, SpriteRendererComponent>([](auto& transform, auto& sprite)
 			{
 				Renderer2D::DrawSprite(transform.Position, transform.Rotation.z, transform.Scale, sprite);
 			});
-
-			Renderer2D::EndScene();
-
-			m_SceneFrameBuffer->UnBind();
 		}
+
+		Renderer2D::EndScene();
+
+		m_SceneFrameBuffer->UnBind();
  	}
 
 	void EditorLayer::OnEvent(Event& e)
 	{
-		m_Menubar.OnEvent(e);
-
+		EventDispatcher dispatcher(e);
+		dispatcher.Dispatch<KeyPressedEvent>(VN_BIND_EVENT_FN(EditorLayer::OnKeyPressed));
+		
 		if (m_SceneViewPanel.IsIntractable())
 		{
 			e.Handled = false;
@@ -149,21 +165,24 @@ namespace Vision
 		m_InspectorPanel.OnImGuiRender();
 		// m_ConsolePanel.OnImGuiRender();
 		m_SceneViewPanel.OnImGuiRender();
+	}
 
-		static bool deleteWasDown = false;
+	bool EditorLayer::OnKeyPressed(KeyPressedEvent& e)
+	{
+		m_Menubar.OnKeyPressed(e);
 
-		if (m_SceneHierarchyPanel.IsInteractable())
+		if (e.GetRepeatCount() > 0)
 		{
-			if (Input::IsKeyDown(Key::Delete))
-			{
-				deleteWasDown = true;
-			}
+			return false;
+		}
 
-			if (Input::IsKeyUp(Key::Delete) && deleteWasDown)
+		switch (e.GetKeyCode())
+		{
+			case Key::Delete:
 			{
-				deleteWasDown = false;
+				Scene* scene = Scene::GetActiveScene();
 
-				if (scene)
+				if (scene && m_SceneHierarchyPanel.IsInteractable())
 				{
 					if (!scene->EditorState.SelectedEntityTag.empty())
 					{
@@ -172,7 +191,14 @@ namespace Vision
 					}
 				}
 			}
+
+			case Key::R:
+			{
+				m_SpriteShader->Reload();
+			}
 		}
+
+		return false;
 	}
 
 	void EditorLayer::LoadSettings()
@@ -236,9 +262,21 @@ namespace Vision
 		writer.Key("CameraZoomLevel");
 		writer.Double(m_CameraController->Camera.Size);
 
+		writer.Key("Last Scene Path");
+		writer.String(m_LastScenePath.c_str(), m_LastScenePath.length());
+
 		writer.EndObject();
 
 		std::ofstream ofs("Settings.json");
-		ofs << s.GetString();
+		
+		if (ofs.is_open())
+		{
+			ofs << s.GetString();
+			VN_CORE_INFO("Saving Editor Settings");
+		}
+		else
+		{
+			VN_CORE_INFO("Can't OpenFile: Settings.json");
+		}
 	}
 }

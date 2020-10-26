@@ -25,6 +25,8 @@ namespace Vision
 		void OnEvent(Event& event) override;
 		void OnImGuiRender() override;
 
+		bool OnKeyPressed(KeyPressedEvent& e);
+
    	private:
 		void LoadSettings();
 		void SaveSettings();
@@ -40,6 +42,7 @@ namespace Vision
 		GameViewPanel		m_GameViewPanel;
 
 		rapidjson::Document    m_Settings;
+		std::string			   m_LastScenePath;
 		
 		Vision::Scope<OrthographicCameraController> m_CameraController;
 

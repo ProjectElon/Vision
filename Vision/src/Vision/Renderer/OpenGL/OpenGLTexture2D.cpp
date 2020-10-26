@@ -35,9 +35,9 @@ namespace Vision
 		size_t start = (lastSlash == std::string::npos) ? 0 : lastSlash + 1;
 		size_t count = (lastDot == std::string::npos) ? filepath.length() - start : lastDot - start;
 
-		m_Properties = props;
 		m_Data.Name = filepath.substr(start, count);
 		m_Data.Path = filepath;
+		m_Properties = props;
 
 		int width, height;
 		int channelCount;

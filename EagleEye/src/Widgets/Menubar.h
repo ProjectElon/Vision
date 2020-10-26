@@ -8,14 +8,16 @@ namespace Vision
 	{
 	public:
 		void OnImGuiRender();
-		void OnEvent(Event& e);
+		
+		bool OnKeyPressed(KeyPressedEvent& e);
 
 	private:
-		void NewScene();
+		void NewScene(const std::string& filepath, uint32 maxEntityCount);
 		void OpenScene();
 		void SaveSceneAs(Scene& scene);
-		void CloseScene();
+		void SaveScene(Scene& scene);
+		void CloseScene(Scene& scene);
 
-		bool OnKeyPressed(KeyPressedEvent& e);
+		std::string m_Action;
 	};
 }
