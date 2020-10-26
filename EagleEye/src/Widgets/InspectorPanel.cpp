@@ -9,6 +9,24 @@
 
 namespace Vision
 {
+    // @Clean Up: Asset System
+    static std::unordered_map<std::string, Ref<Texture2D>> textures;
+
+    // @Clean Up: Asset System
+    static Ref<Texture2D> LoadTexture2D(const std::string& filepath)
+    {
+        auto textureIter = textures.find(filepath);
+
+        if (textureIter == textures.end())
+        {
+            Ref<Texture2D> texture = Texture2D::CreateFromFile(filepath);
+            textures.emplace(filepath, texture);
+            return texture;
+        }
+        
+        return textureIter->second;
+    }
+
 	InspectorPanel::InspectorPanel()
 	{
         EditorState& editorState = Scene::EditorState;
@@ -141,11 +159,20 @@ namespace Vision
 
                 if (ImGui::ImageButton((void*)(intptr_t)textureData.RendererID, ImVec2(72.0f, 72.0f)))
                 {
+                    // @Clean Up: Asset System
+                    std::string filepath = FileDialog::OpenFile("Texture", { ".jpeg", ".png", ".bmp", ".tga", ".psd" });
+
+                    if (!filepath.empty())
+                    {
+                        sprite.Texture = LoadTexture2D(filepath);
+                    }
                 }
 
                 ImGui::NextColumn();
 
                 // Texture Properties
+                // @Note: Should we edit a texture properties in a texture editor
+                // or we should edit it per spite via a sampler ???
                 {
                     const TextureProps& properties = sprite.Texture->GetProperties();
 
@@ -168,6 +195,7 @@ namespace Vision
                     ImGui::Text("Wrap X");
                     ImGui::SameLine();
 
+                    // @CleanUp: Add Combo to ImGui Widgets
                     if (ImGui::Combo("##Wrap X", &seletedWrapXMode, WrapModeStrings, 2))
                     {
                         if (seletedWrapXMode != (int32)properties.WrapX)
@@ -179,6 +207,7 @@ namespace Vision
                     ImGui::Text("Wrap Y");
                     ImGui::SameLine();
 
+                    // @CleanUp: Add Combo to ImGui Widgets
                     if (ImGui::Combo("##Wrap Y", &seletedWrapYMode, WrapModeStrings, 2))
                     {
                         if (seletedWrapYMode != (int32)properties.WrapY)
@@ -190,6 +219,7 @@ namespace Vision
                     ImGui::Text("FilterMode");
                     ImGui::SameLine();
 
+                    // @CleanUp: Add Combo to ImGui Widgets
                     if (ImGui::Combo("##Filter Mode", &seletedFilterMode, FilterModeStrings, 2))
                     {
                         if (seletedFilterMode != (int32)properties.FilterMode)
@@ -203,30 +233,17 @@ namespace Vision
 
                 ImGui::Text("\n");
 
-                ImGui::Text("Color");
-                ImGui::SameLine();
+                ImGuiWidgets::DrawColor("Color", sprite.Color);
 
-                ImGui::ColorEdit4("##Color", &sprite.Color.r);
                 ImGui::Text("\n");
 
-                ImGui::Text("Top Right UV   ");
-                ImGui::SameLine();
+                ImGuiWidgets::DrawFloat2("Top Right UV", sprite.TopRightPoint, 120.0f, 1.0f);
+                ImGuiWidgets::DrawFloat2("Bottom Left UV", sprite.BottomLeftPoint, 120.0f, 0.0f);
 
-                ImGui::DragFloat2("##Top Right UV", glm::value_ptr(sprite.TopRightPoint), 0.1f);
-
-                ImGui::Text("Bottom Left UV");
-                ImGui::SameLine();
-
-                ImGui::DragFloat2("##Bottom Left UV", glm::value_ptr(sprite.BottomLeftPoint), 0.1f);
                 ImGui::Text("\n");
-
-                ImGui::Text("Flip X");
-                ImGui::SameLine();
-                ImGui::Checkbox("##Flip X", &sprite.FlipX);
-
-                ImGui::Text("Flip Y");
-                ImGui::SameLine();
-                ImGui::Checkbox("##Flip Y", &sprite.FlipY);
+                
+                ImGuiWidgets::DrawBool("FlipX", sprite.FlipX, 50.0f);
+                ImGuiWidgets::DrawBool("FlipY", sprite.FlipY, 50.0f);
             });
 
             SerializeComponent<SpriteRendererComponent>([&](Writer& w, void* component)
@@ -252,7 +269,13 @@ namespace Vision
             {
                 auto& sprite = ComponentCast<SpriteRendererComponent>(component);
 
+                // @Clean Up: Asset System
                 std::string texturePath = SceneSerializer::DeserializeString(r, "Texture Path");
+
+                if (!texturePath.empty())
+                {
+                    sprite.Texture = LoadTexture2D(texturePath);
+                }
 
                 uint32 wrapX = SceneSerializer::DeserializeUint32(r, "Texture Wrap X");
                 uint32 wrapY = SceneSerializer::DeserializeUint32(r, "Texture Wrap Y");

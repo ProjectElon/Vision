@@ -14,21 +14,43 @@
 
 namespace Vision
 {
-    std::string FileDialog::OpenFile(const char* filter)
+    std::string FileDialog::OpenFile(const std::string& filter, const std::vector<std::string>& extensions)
     {
+    	// the s at the end of the string literal tells it to treat \0 as a normal char
+    	// we need to do that because of the win32 filter format
+
+		using namespace std::literals::string_literals;
+
+    	uint32 count = extensions.size();
+    	std::string win32FilterFormat = filter + "\0"s;
+
+    	for (uint32 index = 0;
+    		 index < count;
+    		 index++)
+    	{
+    		win32FilterFormat += "*" + extensions[index];
+
+    		if (index != count - 1)
+    		{
+    			win32FilterFormat += ";";
+    		}
+    	}
+
+    	win32FilterFormat += "\0"s;
+
 		OPENFILENAMEA ofn;
-		
-		CHAR szFile[260] = { 0 };
+
+		CHAR szFile[1024] = { 0 };
 		ZeroMemory(&ofn, sizeof(OPENFILENAME));
-		
-		ofn.lStructSize = sizeof(OPENFILENAME);
-		ofn.hwndOwner = glfwGetWin32Window((GLFWwindow*)Application::Get().GetWindow().GetNativeHandle());
-		ofn.lpstrFile = szFile;
-		ofn.nMaxFile = sizeof(szFile);
-		ofn.lpstrFilter = filter;
+
+		ofn.lStructSize  = sizeof(OPENFILENAME);
+		ofn.hwndOwner    = glfwGetWin32Window((GLFWwindow*)Application::Get().GetWindow().GetNativeHandle());
+		ofn.lpstrFile    = szFile;
+		ofn.nMaxFile     = sizeof(szFile);
+		ofn.lpstrFilter  = win32FilterFormat.c_str();
 		ofn.nFilterIndex = 1;
-		ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
-		
+		ofn.Flags        = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+
 		if (GetOpenFileNameA(&ofn) == TRUE)
 		{
 			return ofn.lpstrFile;
@@ -37,24 +59,38 @@ namespace Vision
 		return std::string();
     }
 
-    std::string FileDialog::SaveFile(const char* filter)
+    std::string FileDialog::SaveFile(const std::string& filter, const std::string& extension)
     {
+    	// the s at the end of the string literal tells it to treat \0 as a normal char
+    	// we need to do that because of the win32 filter format
+
+		using namespace std::literals::string_literals;
+		std::string win32FilterFormat = filter + "\0"s + "*"s + extension + "\0"s;
+
 		OPENFILENAMEA ofn;
-		
-		CHAR szFile[260] = { 0 };
+
+		CHAR szFile[1024] = { 0 };
 		ZeroMemory(&ofn, sizeof(OPENFILENAME));
-		
-		ofn.lStructSize = sizeof(OPENFILENAME);
-		ofn.hwndOwner = glfwGetWin32Window((GLFWwindow*)Application::Get().GetWindow().GetNativeHandle());
-		ofn.lpstrFile = szFile;
-		ofn.nMaxFile = sizeof(szFile);
-		ofn.lpstrFilter = filter;
+
+		ofn.lStructSize  = sizeof(OPENFILENAME);
+		ofn.hwndOwner    = glfwGetWin32Window((GLFWwindow*)Application::Get().GetWindow().GetNativeHandle());
+		ofn.lpstrFile    = szFile;
+		ofn.nMaxFile     = sizeof(szFile);
+		ofn.lpstrFilter  = win32FilterFormat.c_str();
 		ofn.nFilterIndex = 1;
-		ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
-		
+		ofn.Flags        = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+
 		if (GetSaveFileNameA(&ofn) == TRUE)
 		{
-			return ofn.lpstrFile;
+			std::string result = ofn.lpstrFile;
+
+			// if the extension is not included in the file name add it for convince
+			if (result.find_last_of('.') == -1)
+			{
+				result += extension;
+			}
+
+			return result;
 		}
 
 		return std::string();

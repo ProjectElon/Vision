@@ -43,19 +43,25 @@ namespace Vision
 			ImGui::EndMenu();
 		}
 
-		// @CleanUp: Move Into a New Scene Diaglog Function and handle open state globally
-
 		if (m_Action == "New Scene")
 		{
-			ImGui::OpenPopup("New Scene");
+			ImGui::OpenPopup("Create Scene");
 		}
 
-		bool open = true;
+		OpenCreateSceneDialog();
+
+		ImGui::EndMainMenuBar();
+	}
+
+	void Menubar::OpenCreateSceneDialog()
+	{
 		static std::string filepath = "";
 		static int32 maxEntityCount = 1;
 
 		ImGuiWindowFlags flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDocking;
-		if (ImGui::BeginPopupModal("New Scene", &open, flags))
+
+		bool open = true;
+		if (ImGui::BeginPopupModal("Create Scene", &open, flags))
 		{
 			ImGui::Text("Max Entity Count");
 			ImGui::SameLine();
@@ -68,18 +74,7 @@ namespace Vision
 
 			if (ImGui::Button("..."))
 			{
-				// @Note: Add Ext to SaveFile if not provided
-				filepath = FileDialog::SaveFile("Vision Scene (*.vscene)\0*.vscene\0");
-				
-				if (!filepath.empty())
-				{
-					uint32 lastDot = filepath.find_last_of('.');
-
-					if (lastDot == -1)
-					{
-						filepath += ".vscene";
-					}
-				}
+				filepath = FileDialog::SaveFile("Vision Scene (*.vscene)", ".vscene");
 			}
 
 			if (!filepath.empty())
@@ -109,8 +104,6 @@ namespace Vision
 			filepath = "";
 			maxEntityCount = 1;
 		}
-
-		ImGui::EndMainMenuBar();
 	}
 
 	void Menubar::NewScene(const std::string& filepath, uint32 maxEntityCount)
@@ -121,7 +114,7 @@ namespace Vision
 		{
 			SceneSerializer::Serialize(scene->Path, *scene);
 			delete scene;
-		}		
+		}
 
 		// @Note: Clean Up File System
 		size_t lastSlash = filepath.find_last_of("/\\");
@@ -141,7 +134,7 @@ namespace Vision
 
 	void Menubar::OpenScene()
 	{
-		std::string filepath = FileDialog::OpenFile("Vision Scene (*.vscene)\0*.vscene\0");
+		std::string filepath = FileDialog::OpenFile("Vision Scene (*.vscene)", { ".vscene" });
 
 		if (!filepath.empty())
 		{
@@ -171,18 +164,10 @@ namespace Vision
 
 	void Menubar::SaveSceneAs(Scene& scene)
 	{
-		std::string filepath = FileDialog::SaveFile("Vision Scene (*.vscene)\0*.vscene\0");
+		std::string filepath = FileDialog::SaveFile("Vision Scene (*.vscene)", ".vscene");
 
 		if (!filepath.empty())
 		{
-			// @Note: Add Ext to SaveFile if not provided
-			uint32 lastDot = filepath.find_last_of('.');
-
-			if (lastDot == -1)
-			{
-				filepath += ".vscene";
-			}
-
 			SaveScene(scene);
 		}
 	}

@@ -1,10 +1,10 @@
 {
     "MaxEntityCount": 100,
     "PrimaryCamera": "",
-    "SelectedEntity": "Entity0",
+    "SelectedEntity": "Player",
     "Entities": [
         {
-            "Tag": "Entity0",
+            "Tag": "Player",
             "Components": [
                 {
                     "Name": "Transform",
@@ -18,7 +18,7 @@
                         "Rotation": [
                             0.0,
                             0.0,
-                            0.7853981852531433
+                            0.0
                         ],
                         "Scale": [
                             1.0,
@@ -28,37 +28,26 @@
                     }
                 },
                 {
-                    "Name": "Orthographic Camera",
-                    "ID": 1734294881175729993,
-                    "Data": {
-                        "Aspect Ratio": 1.0,
-                        "Size": 1.0,
-                        "Near": -1.0,
-                        "Far": 1.0,
-                        "Static": false
-                    }
-                },
-                {
                     "Name": "Sprite Renderer",
                     "ID": 13080639714729183211,
                     "Data": {
-                        "Texture Path": "",
-                        "Texture Wrap X": 1,
-                        "Texture Wrap Y": 1,
+                        "Texture Path": "C:\\dev\\cpp\\Vision\\EagleEye\\Assets\\Textures\\oven.png",
+                        "Texture Wrap X": 0,
+                        "Texture Wrap Y": 0,
                         "Texture Fliter Mode": 1,
                         "Color": [
-                            0.7540322542190552,
-                            0.42870381474494936,
-                            0.42870381474494936,
+                            0.9999899864196777,
+                            1.0,
+                            0.999990701675415,
                             1.0
                         ],
                         "Bottom Left Point": [
-                            0.800000011920929,
-                            0.30000001192092898
+                            0.0,
+                            0.0
                         ],
                         "Top Right Point": [
-                            1.5,
-                            1.399999976158142
+                            1.0,
+                            1.0
                         ],
                         "Flip X": false,
                         "Flip Y": false
