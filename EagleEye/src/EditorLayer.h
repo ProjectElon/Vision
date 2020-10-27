@@ -9,6 +9,7 @@
 #include "Widgets/ConsolePanel.h"
 #include "Widgets/SceneViewPanel.h"
 #include "Widgets/GameViewPanel.h"
+#include "Widgets/Dialog.h"
 
 namespace Vision
 {
@@ -27,6 +28,12 @@ namespace Vision
 
 		bool OnKeyPressed(KeyPressedEvent& e);
 
+		void NewScene(const std::string& filepath, uint32 maxEntityCount);
+		void OpenScene();
+		void SaveSceneAs(Scene* scene);
+		void SaveScene(Scene* scene);
+		void CloseScene(Scene* scene);
+
    	private:
 		void LoadSettings();
 		void SaveSettings();
@@ -40,19 +47,16 @@ namespace Vision
 		ConsolePanel		m_ConsolePanel;
 		SceneViewPanel		m_SceneViewPanel;
 		GameViewPanel		m_GameViewPanel;
+		Dialog				m_Dialog;
 
 		rapidjson::Document    m_Settings;
 		std::string			   m_LastScenePath;
 		
 		Vision::Scope<OrthographicCameraController> m_CameraController;
 
-		Vision::Ref<Shader> m_SpriteShader;
-
 		Vision::Ref<Texture2D> m_CheckboardTexture;
-		Vision::Ref<Texture2D> m_PlayerTexture;
-
-		SpriteRendererComponent m_CheckerboardSprite;
-
+		Vision::Ref<Shader> m_SpriteShader;
+		
 		Ref<FrameBuffer> m_SceneFrameBuffer;
 		Ref<FrameBuffer> m_GameFrameBuffer;
 	};

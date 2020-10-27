@@ -25,6 +25,11 @@
 #include "Vision/Platform/PlatformUtils.h"
 /*--------------------------------*/
 
+/*----------  IO  ----------*/
+#include "Vision/IO/TextSerializer.h"
+#include "Vision/IO/TextDeserializer.h"
+/*--------------------------------*/
+
 /*----------  Renderer  ----------*/
 #include "Vision/Renderer/GraphicsContext.h"
 #include "Vision/Renderer/RenderCommand.h"
@@ -48,6 +53,5 @@
 #include "Vision/Entity/Entity.h"
 #include "Vision/Entity/Components.h"
 #include "Vision/Entity/Scene.h"
-#include "Vision/Entity/SceneSerializer.h"
 #include "Vision/Entity/EditorState.h"
 /*--------------------------------*/

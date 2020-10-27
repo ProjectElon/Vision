@@ -227,7 +227,7 @@ namespace Vision
         static void SetActiveScene(Scene* scene);
         inline static Scene* GetActiveScene() { return s_ActiveScene; }
 
-        friend class SceneSerializer;
+        friend class TextSerializer;
 
     private:
         TagMap m_Tags;

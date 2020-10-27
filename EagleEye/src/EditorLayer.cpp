@@ -35,8 +35,10 @@ namespace Vision
 		m_SceneViewPanel.SetFrameBuffer(m_SceneFrameBuffer.get());
 		m_GameViewPanel.SetFrameBuffer(m_GameFrameBuffer.get());
 
+		// @Clean up: Should be store with the scene
 		float32 aspectRatio  = (float32)frameBufferProps.Width / (float32)frameBufferProps.Height;
-		m_CameraController = CreateScope<OrthographicCameraController>(aspectRatio, m_Settings["CameraZoomLevel"].GetFloat());
+		using Deserializer = TextDeserializer;
+		m_CameraController = CreateScope<OrthographicCameraController>(aspectRatio, Deserializer::DeserializeFloat(m_Settings, "CameraZoomLevel"));
 
 		m_SpriteShader = Shader::CreateFromFile("Assets/Shaders/Sprite.glsl");
 
@@ -48,8 +50,8 @@ namespace Vision
 
 		std::string texturePath = "Assets/Textures/";
 		m_CheckboardTexture = Texture2D::CreateFromFile(texturePath + "Checkerboard.png", tiled);
-		
-		std::string lastScenePath = m_Settings["Last Scene Path"].GetString();
+
+		std::string lastScenePath = Deserializer::DeserializeString(m_Settings, "Last Scene Path");
 		
 		if (!lastScenePath.empty())
 		{
@@ -65,8 +67,11 @@ namespace Vision
 			scene->Name = lastScenePath.substr(start, count);
 
 			Scene::SetActiveScene(scene);
-			SceneSerializer::Deserialize(lastScenePath, *scene);
+			TextDeserializer::DeserializeScene(lastScenePath, scene);
 		}
+
+		m_Menubar.SetEditorLayer(this);
+		m_Dialog.SetEditorLayer(this);
 	}
 
 	void EditorLayer::OnDetach()
@@ -77,7 +82,7 @@ namespace Vision
 		if (scene)
 		{
 			m_LastScenePath = scene->Path;
-			SceneSerializer::Serialize(scene->Path, *scene);
+			TextSerializer::SerializeScene(m_LastScenePath, scene);
 			delete scene;
 			Scene::SetActiveScene(nullptr);
 		}
@@ -165,19 +170,76 @@ namespace Vision
 		m_InspectorPanel.OnImGuiRender();
 		// m_ConsolePanel.OnImGuiRender();
 		m_SceneViewPanel.OnImGuiRender();
+		m_Dialog.OnImGuiRender();
 	}
 
 	bool EditorLayer::OnKeyPressed(KeyPressedEvent& e)
 	{
-		m_Menubar.OnKeyPressed(e);
-
 		if (e.GetRepeatCount() > 0)
 		{
 			return false;
 		}
 
+		bool control = Input::IsKeyDown(Key::LeftControl) || Input::IsKeyDown(Key::RightControl);
+		bool shift = Input::IsKeyDown(Key::LeftShift) || Input::IsKeyDown(Key::RightShift);
+
 		switch (e.GetKeyCode())
 		{
+			case Key::N:
+			{
+				if (control && shift)
+				{
+					Dialog::Open(DialogType::CreateScene);
+				}
+			}
+			break;
+
+			case Key::S:
+			{
+				if (control && shift)
+				{
+					Scene* scene = Scene::GetActiveScene();
+					
+					if (scene)
+					{
+						SaveSceneAs(scene);
+					}
+				}
+				else if (control)
+				{
+					Scene* scene = Scene::GetActiveScene();
+
+					if (scene)
+					{
+						SaveScene(scene);
+					}
+				}
+			}
+			break;
+
+			case Key::O:
+			{
+				if (control && shift)
+				{
+					OpenScene();
+				}
+			}
+			break;
+
+			case Key::E:
+			{
+				if (control)
+				{
+					Scene* scene = Scene::GetActiveScene();
+
+					if (scene)
+					{
+						CloseScene(scene);
+					}
+				}
+			}
+			break;
+
 			case Key::Delete:
 			{
 				Scene* scene = Scene::GetActiveScene();
@@ -219,11 +281,13 @@ namespace Vision
 
 		m_Settings.Parse(contents.c_str(), contents.length());
 
-		int32  windowX      = m_Settings["WindowX"].GetInt();
-		int32  windowY      = m_Settings["WindowY"].GetInt();
-		uint32 windowWidth  = m_Settings["WindowWidth"].GetUint();
-		uint32 windowHeight = m_Settings["WindowHeight"].GetUint();
-		bool   maximized    = m_Settings["Maximized"].GetBool();
+		using Deserializer = TextDeserializer;
+
+		int32  windowX      = Deserializer::DeserializeInt32(m_Settings, "WindowX");
+		int32  windowY      = Deserializer::DeserializeInt32(m_Settings, "WindowY");
+		uint32 windowWidth  = Deserializer::DeserializeUint32(m_Settings, "WindowWidth");
+		uint32 windowHeight = Deserializer::DeserializeUint32(m_Settings, "WindowHeight");
+		bool   maximized    = Deserializer::DeserializeBool(m_Settings, "Maximized");
 
 		m_Window->SetPosition(windowX, windowY);
 		m_Window->SetSize(windowWidth, windowHeight);
@@ -239,31 +303,22 @@ namespace Vision
 		using namespace Vision;
 
 		rapidjson::StringBuffer s;
-		rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(s);
+		Writer writer(s);
+
 		writer.StartObject();
 
 		const WindowData& windowData = m_Window->GetData();
 
-		writer.Key("WindowX");
-		writer.Int(windowData.WindowX);
+		TextSerializer::SerializeInt32(writer, "WindowX", windowData.WindowX);
+		TextSerializer::SerializeInt32(writer, "WindowY", windowData.WindowY);
+		TextSerializer::SerializeUint32(writer, "WindowWidth", windowData.Width);
+		TextSerializer::SerializeUint32(writer, "WindowHeight", windowData.Height);
+		TextSerializer::SerializeBool(writer, "Maximized", windowData.Maximized);
 
-		writer.Key("WindowY");
-		writer.Int(windowData.WindowY);
+		TextSerializer::SerializeString(writer, "Last Scene Path", m_LastScenePath);
 
-		writer.Key("WindowWidth");
-		writer.Uint(windowData.Width);
-
-		writer.Key("WindowHeight");
-		writer.Uint(windowData.Height);
-
-		writer.Key("Maximized");
-		writer.Bool(windowData.Maximized);
-
-		writer.Key("CameraZoomLevel");
-		writer.Double(m_CameraController->Camera.Size);
-
-		writer.Key("Last Scene Path");
-		writer.String(m_LastScenePath.c_str(), m_LastScenePath.length());
+		// @Clean Up: Should be save with the scene ...
+		TextSerializer::SerializeFloat(writer, "CameraZoomLevel", m_CameraController->Camera.Size);
 
 		writer.EndObject();
 
@@ -278,5 +333,83 @@ namespace Vision
 		{
 			VN_CORE_INFO("Can't OpenFile: Settings.json");
 		}
+	}
+
+	void EditorLayer::NewScene(const std::string& filepath, uint32 maxEntityCount)
+	{
+		Scene* scene = Scene::GetActiveScene();
+
+		if (scene)
+		{
+			TextSerializer::SerializeScene(scene->Path, scene);
+			delete scene;
+		}
+
+		// @Note: Clean Up File System
+		size_t lastSlash = filepath.find_last_of("/\\");
+		size_t lastDot = filepath.rfind('.');
+
+		size_t start = (lastSlash == std::string::npos) ? 0 : lastSlash + 1;
+		size_t count = (lastDot == std::string::npos) ? filepath.length() - start : lastDot - start;
+
+		Scene* newScene = new Scene();
+		newScene->Path = filepath;
+		newScene->Name = filepath.substr(start, count);
+		newScene->MaxEntityCount = maxEntityCount;
+
+		Scene::SetActiveScene(newScene);
+		SaveScene(newScene);
+	}
+
+	void EditorLayer::OpenScene()
+	{
+		std::string filepath = FileDialog::OpenFile("Vision Scene (*.vscene)", { ".vscene" });
+
+		if (!filepath.empty())
+		{
+			Scene* scene = Scene::GetActiveScene();
+
+			if (scene)
+			{
+				SaveScene(scene);
+				delete scene;
+			}
+
+			// @Note: Clean Up File System
+			size_t lastSlash = filepath.find_last_of("/\\");
+			size_t lastDot = filepath.rfind('.');
+
+			size_t start = (lastSlash == std::string::npos) ? 0 : lastSlash + 1;
+			size_t count = (lastDot == std::string::npos) ? filepath.length() - start : lastDot - start;
+
+			Scene* newScene = new Scene();
+			newScene->Path = filepath;
+			newScene->Name = filepath.substr(start, count);
+
+			Scene::SetActiveScene(newScene);
+			TextDeserializer::DeserializeScene(filepath, newScene);
+		}
+	}
+
+	void EditorLayer::SaveSceneAs(Scene* scene)
+	{
+		std::string filepath = FileDialog::SaveFile("Vision Scene (*.vscene)", ".vscene");
+
+		if (!filepath.empty())
+		{
+			SaveScene(scene);
+		}
+	}
+
+	void EditorLayer::SaveScene(Scene* scene)
+	{
+		TextSerializer::SerializeScene(scene->Path, scene);
+	}
+
+	void EditorLayer::CloseScene(Scene* scene)
+	{
+		SaveScene(scene);
+		delete scene;
+		Scene::SetActiveScene(nullptr);
 	}
 }

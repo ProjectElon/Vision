@@ -1,6 +1,7 @@
 #include "InspectorPanel.h"
 #include "Vision/Entity/EditorState.h"
-#include "Vision/Entity/SceneSerializer.h"
+#include "Vision/IO/TextSerializer.h"
+#include "Vision/IO/TextDeserializer.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -58,17 +59,17 @@ namespace Vision
             {
                 const auto& transform = ComponentCast<TransformComponent>(component);
 
-                SceneSerializer::SerializeVector3(w, "Position", transform.Position);
-                SceneSerializer::SerializeVector3(w, "Rotation", transform.Rotation);
-                SceneSerializer::SerializeVector3(w, "Scale", transform.Scale);
+                TextSerializer::SerializeVector3(w, "Position", transform.Position);
+                TextSerializer::SerializeVector3(w, "Rotation", transform.Rotation);
+                TextSerializer::SerializeVector3(w, "Scale", transform.Scale);
             });
 
             DeserializeComponent<TransformComponent>([&](const Reader& r, void* component)
             {
                 auto& transform = ComponentCast<TransformComponent>(component);
-                transform.Position = SceneSerializer::DeserializeVector3(r, "Position");
-                transform.Rotation = SceneSerializer::DeserializeVector3(r, "Rotation");
-                transform.Scale = SceneSerializer::DeserializeVector3(r, "Scale");
+                transform.Position = TextDeserializer::DeserializeVector3(r, "Position");
+                transform.Rotation = TextDeserializer::DeserializeVector3(r, "Rotation");
+                transform.Scale = TextDeserializer::DeserializeVector3(r, "Scale");
             });
         }
 
@@ -115,22 +116,22 @@ namespace Vision
             {
                 const auto& camera = ComponentCast<OrthographicCameraComponent>(component);
 
-                SceneSerializer::SerializeFloat(w, "Aspect Ratio", camera.AspectRatio);
-                SceneSerializer::SerializeFloat(w, "Size", camera.Size);
-                SceneSerializer::SerializeFloat(w, "Near", camera.Near);
-                SceneSerializer::SerializeFloat(w, "Far", camera.Far);
-                SceneSerializer::SerializeBool(w, "Static", camera.Static);
+                TextSerializer::SerializeFloat(w, "Aspect Ratio", camera.AspectRatio);
+                TextSerializer::SerializeFloat(w, "Size", camera.Size);
+                TextSerializer::SerializeFloat(w, "Near", camera.Near);
+                TextSerializer::SerializeFloat(w, "Far", camera.Far);
+                TextSerializer::SerializeBool(w, "Static", camera.Static);
             });
 
             DeserializeComponent<OrthographicCameraComponent>([&](const Reader& r, void* component)
             {
                 auto& camera = ComponentCast<OrthographicCameraComponent>(component);
 
-                camera.AspectRatio = SceneSerializer::DeserializeFloat(r, "Aspect Ratio");
-                camera.Size = SceneSerializer::DeserializeFloat(r, "Size");
-                camera.Near = SceneSerializer::DeserializeFloat(r, "Near");
-                camera.Far = SceneSerializer::DeserializeFloat(r, "Far");
-                camera.Static = SceneSerializer::DeserializeBool(r, "Static");
+                camera.AspectRatio = TextDeserializer::DeserializeFloat(r, "Aspect Ratio");
+                camera.Size = TextDeserializer::DeserializeFloat(r, "Size");
+                camera.Near = TextDeserializer::DeserializeFloat(r, "Near");
+                camera.Far = TextDeserializer::DeserializeFloat(r, "Far");
+                camera.Static = TextDeserializer::DeserializeBool(r, "Static");
 
                 camera.Projection = glm::ortho(-camera.AspectRatio * camera.Size,
                     camera.AspectRatio * camera.Size,
@@ -157,7 +158,7 @@ namespace Vision
 
                 ImGui::SetColumnWidth(0, halfWidth - 72.0f);
 
-                if (ImGui::ImageButton((void*)(intptr_t)textureData.RendererID, ImVec2(72.0f, 72.0f)))
+                if (ImGui::ImageButton((void*)(intptr_t)textureData.RendererID, ImVec2(72.0f, 72.0f), ImVec2(0, 1), ImVec2(1, 0)))
                 {
                     // @Clean Up: Asset System
                     std::string filepath = FileDialog::OpenFile("Texture", { ".jpeg", ".png", ".bmp", ".tga", ".psd" });
@@ -253,16 +254,16 @@ namespace Vision
                 const TextureData& data = sprite.Texture->GetData();
                 const TextureProps& props = sprite.Texture->GetProperties();
 
-                SceneSerializer::SerializeString(w, "Texture Path", data.Path);
-                SceneSerializer::SerializeUint32(w, "Texture Wrap X", (uint32)props.WrapX);
-                SceneSerializer::SerializeUint32(w, "Texture Wrap Y", (uint32)props.WrapY);
-                SceneSerializer::SerializeUint32(w, "Texture Fliter Mode", (uint32)props.FilterMode);
+                TextSerializer::SerializeString(w, "Texture Path", data.Path);
+                TextSerializer::SerializeUint32(w, "Texture Wrap X", (uint32)props.WrapX);
+                TextSerializer::SerializeUint32(w, "Texture Wrap Y", (uint32)props.WrapY);
+                TextSerializer::SerializeUint32(w, "Texture Fliter Mode", (uint32)props.FilterMode);
 
-                SceneSerializer::SerializeVector4(w, "Color", sprite.Color);
-                SceneSerializer::SerializeVector2(w, "Bottom Left Point", sprite.BottomLeftPoint);
-                SceneSerializer::SerializeVector2(w, "Top Right Point", sprite.TopRightPoint);
-                SceneSerializer::SerializeBool(w, "Flip X", sprite.FlipX);
-                SceneSerializer::SerializeBool(w, "Flip Y", sprite.FlipY);
+                TextSerializer::SerializeVector4(w, "Color", sprite.Color);
+                TextSerializer::SerializeVector2(w, "Bottom Left Point", sprite.BottomLeftPoint);
+                TextSerializer::SerializeVector2(w, "Top Right Point", sprite.TopRightPoint);
+                TextSerializer::SerializeBool(w, "Flip X", sprite.FlipX);
+                TextSerializer::SerializeBool(w, "Flip Y", sprite.FlipY);
             });
 
             DeserializeComponent<SpriteRendererComponent>([&](const Reader& r, void* component)
@@ -270,27 +271,27 @@ namespace Vision
                 auto& sprite = ComponentCast<SpriteRendererComponent>(component);
 
                 // @Clean Up: Asset System
-                std::string texturePath = SceneSerializer::DeserializeString(r, "Texture Path");
+                std::string texturePath = TextDeserializer::DeserializeString(r, "Texture Path");
 
                 if (!texturePath.empty())
                 {
                     sprite.Texture = LoadTexture2D(texturePath);
                 }
 
-                uint32 wrapX = SceneSerializer::DeserializeUint32(r, "Texture Wrap X");
-                uint32 wrapY = SceneSerializer::DeserializeUint32(r, "Texture Wrap Y");
-                uint32 filterMode = SceneSerializer::DeserializeUint32(r, "Texture Fliter Mode");
+                uint32 wrapX = TextDeserializer::DeserializeUint32(r, "Texture Wrap X");
+                uint32 wrapY = TextDeserializer::DeserializeUint32(r, "Texture Wrap Y");
+                uint32 filterMode = TextDeserializer::DeserializeUint32(r, "Texture Fliter Mode");
 
                 sprite.Texture->SetWrapMode((WrapMode)wrapX, (WrapMode)wrapY);
                 sprite.Texture->SetFilterMode((FilterMode)filterMode);
 
-                sprite.Color = SceneSerializer::DeserializeVector4(r, "Color");
+                sprite.Color = TextDeserializer::DeserializeVector4(r, "Color");
 
-                sprite.BottomLeftPoint = SceneSerializer::DeserializeVector2(r, "Bottom Left Point");
-                sprite.TopRightPoint = SceneSerializer::DeserializeVector2(r, "Top Right Point");
+                sprite.BottomLeftPoint = TextDeserializer::DeserializeVector2(r, "Bottom Left Point");
+                sprite.TopRightPoint = TextDeserializer::DeserializeVector2(r, "Top Right Point");
 
-                sprite.FlipX = SceneSerializer::DeserializeBool(r, "Flip X");
-                sprite.FlipY = SceneSerializer::DeserializeBool(r, "Flip Y");
+                sprite.FlipX = TextDeserializer::DeserializeBool(r, "Flip X");
+                sprite.FlipY = TextDeserializer::DeserializeBool(r, "Flip Y");
             });
         }
 	}
