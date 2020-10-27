@@ -21,8 +21,8 @@
                             0.0
                         ],
                         "Scale": [
-                            1.0,
-                            1.0,
+                            2.0,
+                            2.0,
                             1.0
                         ]
                     }
@@ -31,10 +31,10 @@
                     "Name": "Sprite Renderer",
                     "ID": 13080639714729183211,
                     "Data": {
-                        "Texture Path": "C:\\dev\\cpp\\Vision\\EagleEye\\Assets\\Textures\\oven.png",
+                        "Texture Path": "C:\\dev\\cpp\\Vision\\EagleEye\\Assets\\Textures\\wood.png",
                         "Texture Wrap X": 0,
                         "Texture Wrap Y": 0,
-                        "Texture Fliter Mode": 1,
+                        "Texture Fliter Mode": 0,
                         "Color": [
                             0.9999899864196777,
                             1.0,
@@ -46,8 +46,8 @@
                             0.0
                         ],
                         "Top Right Point": [
-                            1.0,
-                            1.0
+                            3.0,
+                            3.0
                         ],
                         "Flip X": false,
                         "Flip Y": false

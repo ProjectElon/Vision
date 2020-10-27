@@ -28,7 +28,14 @@ namespace Vision
     		 index < count;
     		 index++)
     	{
-    		win32FilterFormat += "*" + extensions[index];
+			if (extensions[index][0] == '.')
+			{
+				win32FilterFormat += "*" + extensions[index];
+			}
+			else
+			{
+				win32FilterFormat += "*." + extensions[index];
+			}
 
     		if (index != count - 1)
     		{
@@ -65,8 +72,17 @@ namespace Vision
     	// we need to do that because of the win32 filter format
 
 		using namespace std::literals::string_literals;
-		std::string win32FilterFormat = filter + "\0"s + "*"s + extension + "\0"s;
+		std::string win32FilterFormat;
 
+		if (extension[0] == '.')
+		{
+			win32FilterFormat = filter + "\0"s + "*"s + extension + "\0"s;
+		}
+		else
+		{
+			win32FilterFormat = filter + "\0"s + "*."s + extension + "\0"s;
+		}
+		
 		OPENFILENAMEA ofn;
 
 		CHAR szFile[1024] = { 0 };

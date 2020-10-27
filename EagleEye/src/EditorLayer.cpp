@@ -5,6 +5,10 @@
 #include <rapidjson/stringbuffer.h>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <Windows.h>
+#include <shlwapi.h>
+#pragma comment(lib, "Shlwapi.lib")
+
 namespace Vision
 {
 	EditorLayer::EditorLayer()
@@ -52,7 +56,7 @@ namespace Vision
 		m_CheckboardTexture = Texture2D::CreateFromFile(texturePath + "Checkerboard.png", tiled);
 
 		std::string lastScenePath = Deserializer::DeserializeString(m_Settings, "Last Scene Path");
-		
+
 		if (!lastScenePath.empty())
 		{
 			// @Note: Clean Up File System
@@ -101,19 +105,19 @@ namespace Vision
 		{
 			bool control = Input::IsKeyDown(Key::LeftControl) || Input::IsKeyDown(Key::RightControl);
 			bool shift = Input::IsKeyDown(Key::LeftShift) || Input::IsKeyDown(Key::RightShift);
-			
+
 			if (!control && !shift)
 			{
 				m_CameraController->OnUpdate(deltaTime);
 			}
 		}
-		
+
 		m_SceneFrameBuffer->Bind();
 
 		RenderCommand::Clear(RendererAPI::ColorBuffer);
 
 		Renderer2D::BeginScene(m_CameraController->GetCameraTransform(), m_CameraController->Camera, m_SpriteShader);
-		
+
 		Scene* scene = Scene::GetActiveScene();
 
 		if (scene)
@@ -139,7 +143,7 @@ namespace Vision
 	{
 		EventDispatcher dispatcher(e);
 		dispatcher.Dispatch<KeyPressedEvent>(VN_BIND_EVENT_FN(EditorLayer::OnKeyPressed));
-		
+
 		if (m_SceneViewPanel.IsIntractable())
 		{
 			e.Handled = false;
@@ -199,7 +203,7 @@ namespace Vision
 				if (control && shift)
 				{
 					Scene* scene = Scene::GetActiveScene();
-					
+
 					if (scene)
 					{
 						SaveSceneAs(scene);
@@ -323,7 +327,7 @@ namespace Vision
 		writer.EndObject();
 
 		std::ofstream ofs("Settings.json");
-		
+
 		if (ofs.is_open())
 		{
 			ofs << s.GetString();
@@ -345,16 +349,9 @@ namespace Vision
 			delete scene;
 		}
 
-		// @Note: Clean Up File System
-		size_t lastSlash = filepath.find_last_of("/\\");
-		size_t lastDot = filepath.rfind('.');
-
-		size_t start = (lastSlash == std::string::npos) ? 0 : lastSlash + 1;
-		size_t count = (lastDot == std::string::npos) ? filepath.length() - start : lastDot - start;
-
 		Scene* newScene = new Scene();
 		newScene->Path = filepath;
-		newScene->Name = filepath.substr(start, count);
+		newScene->Name = FileSystem::GetFileName(filepath, false);
 		newScene->MaxEntityCount = maxEntityCount;
 
 		Scene::SetActiveScene(newScene);
@@ -363,7 +360,7 @@ namespace Vision
 
 	void EditorLayer::OpenScene()
 	{
-		std::string filepath = FileDialog::OpenFile("Vision Scene (*.vscene)", { ".vscene" });
+		std::string filepath = FileDialog::OpenFile("Vision Scene (*.vscene)", { "vscene" });
 
 		if (!filepath.empty())
 		{
@@ -375,16 +372,9 @@ namespace Vision
 				delete scene;
 			}
 
-			// @Note: Clean Up File System
-			size_t lastSlash = filepath.find_last_of("/\\");
-			size_t lastDot = filepath.rfind('.');
-
-			size_t start = (lastSlash == std::string::npos) ? 0 : lastSlash + 1;
-			size_t count = (lastDot == std::string::npos) ? filepath.length() - start : lastDot - start;
-
 			Scene* newScene = new Scene();
 			newScene->Path = filepath;
-			newScene->Name = filepath.substr(start, count);
+			newScene->Name = FileSystem::GetFileName(filepath, false);
 
 			Scene::SetActiveScene(newScene);
 			TextDeserializer::DeserializeScene(filepath, newScene);
@@ -393,7 +383,7 @@ namespace Vision
 
 	void EditorLayer::SaveSceneAs(Scene* scene)
 	{
-		std::string filepath = FileDialog::SaveFile("Vision Scene (*.vscene)", ".vscene");
+		std::string filepath = FileDialog::SaveFile("Vision Scene (*.vscene)", "vscene");
 
 		if (!filepath.empty())
 		{
