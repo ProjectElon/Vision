@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Vision/Core/Log.h"
 #include "Vision/Renderer/OpenGL/OpenGLShader.h"
+#include "Vision/IO/FileSystem.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -13,14 +14,7 @@ namespace Vision
 		: m_RendererID(0)
 		, m_Filepath(filepath)
 	{
-		size_t lastSlash = filepath.find_last_of("/\\");
-		size_t lastDot = filepath.rfind('.');
-
-		size_t start = (lastSlash == std::string::npos) ? 0 : lastSlash + 1;
-		size_t count = (lastDot == std::string::npos) ? filepath.length() - start : lastDot - start;
-
-		m_Name = filepath.substr(start, count);
-
+		m_Name = FileSystem::GetFileName(filepath, false);
 		LoadShadersSource(filepath);
 		CompileAndLinkShaders();
 	}
@@ -34,7 +28,7 @@ namespace Vision
 	{
 		glUseProgram(m_RendererID);
 	}
-	
+
 	void OpenGLShader::UnBind() const
 	{
 		glUseProgram(0);
@@ -43,7 +37,7 @@ namespace Vision
 	void OpenGLShader::Reload()
 	{
 		UnloadShaders();
-		
+
 		LoadShadersSource(m_Filepath);
 
 		CompileAndLinkShaders();
@@ -114,7 +108,7 @@ namespace Vision
 
 		std::string line;
 		GLenum currentShaderType;
-		
+
 		while (std::getline(ifs, line))
 		{
 			line.erase(0, line.find_first_not_of(" \t\n\r"));
@@ -127,19 +121,19 @@ namespace Vision
 			else if (line.front() == '#' && line.find("#type") == 0)
 			{
 				std::string typeSignature = line.substr(5); // 5 => #type
-				
+
 				typeSignature.erase(0, typeSignature.find_first_not_of(" \t\n"));
 				typeSignature.erase(typeSignature.find_last_not_of(" \t\n") + 1);
 
 				currentShaderType = GetShaderTypeFromString(typeSignature);
 			}
-			else 
+			else
 			{
 				m_Shaders[currentShaderType].Source += line + '\n';
 			}
 		}
 	}
-	
+
 	void OpenGLShader::CompileAndLinkShaders()
 	{
 		m_RendererID = glCreateProgram();
@@ -204,7 +198,7 @@ namespace Vision
 		}
 
 		VN_CORE_ASSERT(false, "[SHADER]({0}) Type {1} is not supported", m_Name, type);
-		
+
 		return GL_NONE;
 	}
 
@@ -215,7 +209,7 @@ namespace Vision
 		if (it == m_UniformLocations.end())
 		{
 			int32_t uniformLocation = glGetUniformLocation(m_RendererID, name.c_str());
-			
+
 			if (uniformLocation == -1)
 			{
 				VN_CORE_WARN("[SHADER]({0}) Uniform {1} doesn't exist", m_Name, name);

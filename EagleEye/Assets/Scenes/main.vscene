@@ -21,8 +21,8 @@
                             0.0
                         ],
                         "Scale": [
-                            2.0,
-                            2.0,
+                            1.0,
+                            1.0,
                             1.0
                         ]
                     }
@@ -31,14 +31,14 @@
                     "Name": "Sprite Renderer",
                     "ID": 13080639714729183211,
                     "Data": {
-                        "Texture Path": "C:\\dev\\cpp\\Vision\\EagleEye\\Assets\\Textures\\wood.png",
+                        "Texture Path": "C:\\dev\\cpp\\Vision\\EagleEye\\Assets\\Textures\\stone_dirt.png",
                         "Texture Wrap X": 0,
                         "Texture Wrap Y": 0,
                         "Texture Fliter Mode": 0,
                         "Color": [
-                            0.9999899864196777,
                             1.0,
-                            0.999990701675415,
+                            0.999991774559021,
+                            0.9999899864196777,
                             1.0
                         ],
                         "Bottom Left Point": [
@@ -46,8 +46,8 @@
                             0.0
                         ],
                         "Top Right Point": [
-                            3.0,
-                            3.0
+                            1.0,
+                            1.0
                         ],
                         "Flip X": false,
                         "Flip Y": false

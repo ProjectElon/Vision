@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Vision/Renderer/OpenGL/OpenGLTexture2D.h"
+#include "Vision/IO/FileSystem.h"
 #include "Vision/Core/Base.h"
 
 #include <glad/glad.h>
@@ -29,14 +30,8 @@ namespace Vision
 
 	OpenGLTexture2D::OpenGLTexture2D(const std::string& filepath, const TextureProps& props)
 	{
-		size_t lastSlash = filepath.find_last_of("/\\");
-		size_t lastDot = filepath.rfind('.');
-
-		size_t start = (lastSlash == std::string::npos) ? 0 : lastSlash + 1;
-		size_t count = (lastDot == std::string::npos) ? filepath.length() - start : lastDot - start;
-
-		m_Data.Name = filepath.substr(start, count);
-		m_Data.Path = filepath;
+		m_Data.Name  = FileSystem::GetFileName(filepath, false);
+		m_Data.Path  = filepath;
 		m_Properties = props;
 
 		int width, height;

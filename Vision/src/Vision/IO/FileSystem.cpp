@@ -4,6 +4,20 @@
 
 namespace Vision
 {
+    std::string FileSystem::GetPath(const std::string& filepath)
+    {
+        uint32 dotIndex = filepath.rfind(".");
+
+        if (dotIndex == -1)
+        {
+            return filepath;
+        }
+
+        uint32 lastSlash = filepath.find_last_of("/\\");
+        
+        return filepath.substr(0, lastSlash);
+    }
+
     std::string FileSystem::GetFileName(const std::string& filepath, bool includeExtension)
     {
         uint32 dotIndex = filepath.rfind(".");
@@ -53,7 +67,6 @@ namespace Vision
         }
 
         // @Note: Double Check if this support mobile platforms
-
         // unix
         if (path[0] == '/')
         {
@@ -62,5 +75,10 @@ namespace Vision
 
         // windows
         return path.length() > 2 && isalpha(path[0]) && path[1] == ':' && (path[2] == '\\' || path[2] == '/');
+    }
+
+    bool FileSystem::IsRelativePath(const std::string& path)
+    {
+        return !IsAbsolutePath(path);
     }
 }

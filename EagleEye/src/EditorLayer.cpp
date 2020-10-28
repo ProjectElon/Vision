@@ -5,10 +5,6 @@
 #include <rapidjson/stringbuffer.h>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <Windows.h>
-#include <shlwapi.h>
-#pragma comment(lib, "Shlwapi.lib")
-
 namespace Vision
 {
 	EditorLayer::EditorLayer()
@@ -16,7 +12,6 @@ namespace Vision
 	{
 		m_Window = &Application::Get().GetWindow();
 		m_Window->SetVSync(true);
-
 		LoadSettings();
 	}
 
@@ -30,52 +25,53 @@ namespace Vision
 		using namespace Vision;
 
 		FrameBufferProps frameBufferProps;
-		frameBufferProps.Width  = 800;
+		frameBufferProps.Width = 800;
 		frameBufferProps.Height = 600;
 
 		m_SceneFrameBuffer = FrameBuffer::Create(frameBufferProps);
-		m_GameFrameBuffer  = FrameBuffer::Create(frameBufferProps);
+		m_GameFrameBuffer = FrameBuffer::Create(frameBufferProps);
 
 		m_SceneViewPanel.SetFrameBuffer(m_SceneFrameBuffer.get());
 		m_GameViewPanel.SetFrameBuffer(m_GameFrameBuffer.get());
 
-		// @Clean up: Should be store with the scene
-		float32 aspectRatio  = (float32)frameBufferProps.Width / (float32)frameBufferProps.Height;
-		using Deserializer = TextDeserializer;
-		m_CameraController = CreateScope<OrthographicCameraController>(aspectRatio, Deserializer::DeserializeFloat(m_Settings, "CameraZoomLevel"));
+		// @Clean up: Should be storeed with the scene
+		float32 aspectRatio = (float32)frameBufferProps.Width / (float32)frameBufferProps.Height;
+		using TDS = TextDeserializer;
+		m_CameraController = CreateScope<OrthographicCameraController>(aspectRatio, TDS::DeserializeFloat(m_Settings, "CameraZoomLevel"));
 
 		m_SpriteShader = Shader::CreateFromFile("Assets/Shaders/Sprite.glsl");
 
+		// Texture Properties
 		TextureProps tiled;
-
-		tiled.WrapX  = WrapMode::Repeat;
-		tiled.WrapY  = WrapMode::Repeat;
+		tiled.WrapX = WrapMode::Repeat;
+		tiled.WrapY = WrapMode::Repeat;
 		tiled.FilterMode = FilterMode::Point;
 
-		std::string texturePath = "Assets/Textures/";
-		m_CheckboardTexture = Texture2D::CreateFromFile(texturePath + "Checkerboard.png", tiled);
+		m_CheckboardTexture = Texture2D::CreateFromFile("Assets/Textures/Checkerboard.png", tiled);
 
-		std::string lastScenePath = Deserializer::DeserializeString(m_Settings, "Last Scene Path");
+		std::string lastScenePath = TDS::DeserializeString(m_Settings, "Last Scene Path");
 
 		if (!lastScenePath.empty())
 		{
-			// @Note: Clean Up File System
-			size_t lastSlash = lastScenePath.find_last_of("/\\");
-			size_t lastDot = lastScenePath.rfind('.');
-
-			size_t start = (lastSlash == std::string::npos) ? 0 : lastSlash + 1;
-			size_t count = (lastDot == std::string::npos) ? lastScenePath.length() - start : lastDot - start;
-
 			Scene* scene = new Scene();
 			scene->Path = lastScenePath;
-			scene->Name = lastScenePath.substr(start, count);
+			scene->Name = FileSystem::GetFileName(lastScenePath, false);
 
 			Scene::SetActiveScene(scene);
-			TextDeserializer::DeserializeScene(lastScenePath, scene);
+			TDS::DeserializeScene(lastScenePath, scene);
 		}
 
 		m_Menubar.SetEditorLayer(this);
 		m_Dialog.SetEditorLayer(this);
+
+		std::vector<std::string> result = FileSystem::ScanDirectory("Assets", {}, true);
+		
+		for (const auto& cur : result)
+		{
+			VN_CORE_TRACE(cur);
+		}
+
+
 	}
 
 	void EditorLayer::OnDetach()
@@ -104,7 +100,7 @@ namespace Vision
 		if (m_SceneViewPanel.IsIntractable())
 		{
 			bool control = Input::IsKeyDown(Key::LeftControl) || Input::IsKeyDown(Key::RightControl);
-			bool shift = Input::IsKeyDown(Key::LeftShift) || Input::IsKeyDown(Key::RightShift);
+			bool shift   = Input::IsKeyDown(Key::LeftShift)   || Input::IsKeyDown(Key::RightShift);
 
 			if (!control && !shift)
 			{
@@ -285,13 +281,13 @@ namespace Vision
 
 		m_Settings.Parse(contents.c_str(), contents.length());
 
-		using Deserializer = TextDeserializer;
+		using TDS = TextDeserializer;
 
-		int32  windowX      = Deserializer::DeserializeInt32(m_Settings, "WindowX");
-		int32  windowY      = Deserializer::DeserializeInt32(m_Settings, "WindowY");
-		uint32 windowWidth  = Deserializer::DeserializeUint32(m_Settings, "WindowWidth");
-		uint32 windowHeight = Deserializer::DeserializeUint32(m_Settings, "WindowHeight");
-		bool   maximized    = Deserializer::DeserializeBool(m_Settings, "Maximized");
+		int32  windowX      = TDS::DeserializeInt32(m_Settings, "WindowX");
+		int32  windowY      = TDS::DeserializeInt32(m_Settings, "WindowY");
+		uint32 windowWidth  = TDS::DeserializeUint32(m_Settings, "WindowWidth");
+		uint32 windowHeight = TDS::DeserializeUint32(m_Settings, "WindowHeight");
+		bool   maximized    = TDS::DeserializeBool(m_Settings, "Maximized");
 
 		m_Window->SetPosition(windowX, windowY);
 		m_Window->SetSize(windowWidth, windowHeight);
@@ -313,16 +309,18 @@ namespace Vision
 
 		const WindowData& windowData = m_Window->GetData();
 
-		TextSerializer::SerializeInt32(writer, "WindowX", windowData.WindowX);
-		TextSerializer::SerializeInt32(writer, "WindowY", windowData.WindowY);
-		TextSerializer::SerializeUint32(writer, "WindowWidth", windowData.Width);
-		TextSerializer::SerializeUint32(writer, "WindowHeight", windowData.Height);
-		TextSerializer::SerializeBool(writer, "Maximized", windowData.Maximized);
+		using TS = TextSerializer;
 
-		TextSerializer::SerializeString(writer, "Last Scene Path", m_LastScenePath);
+		TS::SerializeInt32(writer, "WindowX", windowData.WindowX);
+		TS::SerializeInt32(writer, "WindowY", windowData.WindowY);
+		TS::SerializeUint32(writer, "WindowWidth", windowData.Width);
+		TS::SerializeUint32(writer, "WindowHeight", windowData.Height);
+		TS::SerializeBool(writer, "Maximized", windowData.Maximized);
+
+		TS::SerializeString(writer, "Last Scene Path", m_LastScenePath);
 
 		// @Clean Up: Should be save with the scene ...
-		TextSerializer::SerializeFloat(writer, "CameraZoomLevel", m_CameraController->Camera.Size);
+		TS::SerializeFloat(writer, "CameraZoomLevel", m_CameraController->Camera.Size);
 
 		writer.EndObject();
 
