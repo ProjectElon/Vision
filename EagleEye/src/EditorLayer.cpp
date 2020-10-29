@@ -64,14 +64,21 @@ namespace Vision
 		m_Menubar.SetEditorLayer(this);
 		m_Dialog.SetEditorLayer(this);
 
-		std::vector<std::string> result = FileSystem::ScanDirectory("Assets", {}, true);
+		auto resultA = FileSystem::ScanDirectory("Assets/Shaders");
 		
-		for (const auto& cur : result)
+		for (const auto& filepath : resultA)
 		{
-			VN_CORE_TRACE(cur);
+			VN_CORE_TRACE(filepath);
 		}
 
+		VN_CORE_INFO("-------");
 
+		auto resultB = FileSystem::ScanDirectoryRecursive("Assets");
+
+		for (const auto& filepath : resultB)
+		{
+			VN_CORE_TRACE(filepath);
+		}
 	}
 
 	void EditorLayer::OnDetach()

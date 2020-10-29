@@ -23,8 +23,9 @@ namespace Vision
         static std::string GetCurrentWorkingDirectory();
         static bool SetCurrentWorkingDirectory(const std::string& path);
 
-        static std::vector<std::string> ScanDirectory(const std::string& path, const std::vector<std::string>& extensions = {}, bool resursive = false);
-        
+        static std::vector<std::string> ScanDirectory(const std::string& path, const std::vector<std::string>& extensions = {});
+        static std::vector<std::string> ScanDirectoryRecursive(const std::string& parentPath, const std::vector<std::string>& extensions = {});
+
         static bool CreateDirectory(const std::string& path);
         static bool CreateDirectoryRecursive(const std::string& path);
 

@@ -41,24 +41,7 @@ namespace Vision
 
     bool FileSystem::CreateDirectory(const std::string& path)
     {
-        bool success = CreateDirectoryA(path.c_str(), 0);
-
-        if (!success)
-        {
-            DWORD errorCode = GetLastError();
-
-            if (errorCode == ERROR_ALREADY_EXISTS)
-            {
-                VN_CORE_INFO("Directory: {0} Already Exists", path);
-            }
-
-            if (errorCode == ERROR_PATH_NOT_FOUND)
-            {
-                VN_CORE_INFO("Failed to create directory: {0} one or more intermediate directories do not exist", path);
-            }
-        }
-
-        return success;
+        return CreateDirectoryA(path.c_str(), 0);
     }
 
     bool FileSystem::CreateDirectoryRecursive(const std::string& path)
@@ -83,14 +66,10 @@ namespace Vision
         return CreateDirectory(path);
     }
 
-    std::vector<std::string> FileSystem::ScanDirectory(const std::string& path, const std::vector<std::string>& extensions, bool recursive)
+    std::vector<std::string> FileSystem::ScanDirectory(const std::string& path, const std::vector<std::string>& extensions)
     {
-        // @Note: CleanUp Please
-
-        std::wstring wPath(path.begin(), path.end());
-
-        WIN32_FIND_DATAW info;
-        HANDLE handle = FindFirstFileW((wPath + L"/*").c_str(), &info);
+        WIN32_FIND_DATAA info;
+        HANDLE handle = FindFirstFileA((path + "/*").c_str(), &info);
 
         if (handle == INVALID_HANDLE_VALUE)
         {
@@ -99,57 +78,88 @@ namespace Vision
 
         std::vector<std::string> result;
 
-        struct Directory
+        while (FindNextFileA(handle, &info))
         {
-            std::wstring Path;
-            HANDLE Handle;
-        };
+            bool isDirectory = info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY;
 
-        std::stack<Directory> directories;
-        directories.push({ wPath, handle });
-
-        while (!directories.empty())
-        {
-            const Directory& currentDirectory = directories.top();
-
-            std::wstring wCurrentPath = currentDirectory.Path;
-            std::wstring wName = info.cFileName;
-
-            if (!wName.empty())
+            if (isDirectory)
             {
-                // @Note: Should We Include Hidden Files
-                // info.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN
-
-                if (info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-                {
-                    if (recursive && wName != L"." && wName != L"..")
-                    {
-                        std::wstring wNextPath = wCurrentPath + L"/" + wName;
-                        directories.push({ wNextPath, FindFirstFileW((wNextPath + L"/*").c_str(), &info) });
-                    }
-                }
-                else
-                {
-                    std::string name(wName.begin(), wName.end());
-                    std::string extension = FileSystem::GetFileExtension(name, false);
-
-                    if (extensions.empty() || std::find(extensions.begin(), extensions.end(), extension) != extensions.end())
-                    {
-                        std::wstring wFilePath = wCurrentPath + L"/" + wName;
-                        std::string filePath(wFilePath.begin(), wFilePath.end());
-
-                        result.push_back(filePath);
-                    }
-                }
+                continue;
             }
 
-            if (!FindNextFileW(currentDirectory.Handle, &info))
+            std::string extension = FileSystem::GetFileExtension(info.cFileName, false);
+
+            if (extensions.empty() || std::find(extensions.begin(), extensions.end(), extension) != extensions.end())
             {
-                directories.pop();
+                std::string filepath = path + "/" + info.cFileName;
+                result.push_back(filepath);
             }
         }
 
         FindClose(handle);
+
+        return result;
+    }
+
+    struct DirectoryInfo
+    {
+        HANDLE           Handle;
+        WIN32_FIND_DATAA Info;
+        std::string      Path;
+    };
+
+    std::vector<std::string> FileSystem::ScanDirectoryRecursive(const std::string& path, const std::vector<std::string>& extensions)
+    {
+        DirectoryInfo parentDirectory;
+        parentDirectory.Handle = FindFirstFileA((path + "/*").c_str(), &parentDirectory.Info);
+        parentDirectory.Path = path;
+
+        if (parentDirectory.Handle == INVALID_HANDLE_VALUE)
+        {
+            return std::vector<std::string>();
+        }
+
+        std::stack<DirectoryInfo> directories;        
+        directories.push(parentDirectory);
+
+        std::vector<std::string> result;
+
+        while (!directories.empty())
+        {
+            DirectoryInfo& currentDirectory = directories.top();
+
+            if (!FindNextFileA(currentDirectory.Handle, &currentDirectory.Info))
+            {
+                directories.pop();
+                continue;
+            }
+
+            std::string name = currentDirectory.Info.cFileName;
+            bool isDirectory = (currentDirectory.Info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
+
+            if (isDirectory)
+            {
+                if (name != "." && name != "..")
+                {
+                    DirectoryInfo nextDirectory;
+                    nextDirectory.Path = currentDirectory.Path + "/" + name;
+                    nextDirectory.Handle = FindFirstFileA((nextDirectory.Path + "/*").c_str(), &nextDirectory.Info);
+                    directories.push(nextDirectory);
+                }
+            }
+            else
+            {
+                std::string extension = FileSystem::GetFileExtension(name, false);
+
+                if (extensions.empty() || std::find(extensions.begin(), extensions.end(), extension) != extensions.end())
+                {
+                    std::string currentFilePath = currentDirectory.Path + "/" + name;
+                    result.push_back(currentFilePath);
+                }
+            }
+        }
+
+        FindClose(parentDirectory.Handle);
 
         return result;
     }
