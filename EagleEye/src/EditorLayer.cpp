@@ -64,20 +64,18 @@ namespace Vision
 		m_Menubar.SetEditorLayer(this);
 		m_Dialog.SetEditorLayer(this);
 
-		auto resultA = FileSystem::ScanDirectory("Assets/Shaders");
-		
-		for (const auto& filepath : resultA)
+		FileStream file = File::Open("test.txt", FileMode::Read);
+
+		if (file)
 		{
-			VN_CORE_TRACE(filepath);
-		}
+			std::string line;
 
-		VN_CORE_INFO("-------");
+			while (File::ReadLine(file, line))
+			{
+				printf("line: %d %s\n", line.length(), line.c_str());
+			}
 
-		auto resultB = FileSystem::ScanDirectoryRecursive("Assets");
-
-		for (const auto& filepath : resultB)
-		{
-			VN_CORE_TRACE(filepath);
+			File::Close(file);
 		}
 	}
 

@@ -28,6 +28,7 @@
 /*----------  IO  ----------*/
 #include "Vision/IO/TextSerializer.h"
 #include "Vision/IO/TextDeserializer.h"
+#include "Vision/IO/File.h"
 #include "Vision/IO/FileSystem.h"
 /*--------------------------------*/
 

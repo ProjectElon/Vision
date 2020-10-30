@@ -21,22 +21,21 @@ namespace Vision
 
     std::string FileSystem::GetExecutableAbsolutePath()
     {
-        char fileName[MAX_PATH];
-        GetModuleFileNameA(NULL, fileName, MAX_PATH);
-        return std::string(fileName);
+        char path[MAX_PATH];
+        GetModuleFileNameA(0, path, ARRAYSIZE(path));
+        return path;
     }
 
     std::string FileSystem::GetCurrentWorkingDirectory()
     {
-        TCHAR path[MAX_PATH];
-        DWORD length = GetCurrentDirectory(MAX_PATH, path);
-        return std::string(path, path + length);
+        char path[MAX_PATH];
+        GetCurrentDirectoryA(ARRAYSIZE(path), path);
+        return path;
     }
 
     bool FileSystem::SetCurrentWorkingDirectory(const std::string& path)
     {
-        std::wstring wpath(path.begin(), path.end());
-        return SetCurrentDirectory(wpath.c_str());
+        return SetCurrentDirectoryA(path.c_str());
     }
 
     bool FileSystem::CreateDirectory(const std::string& path)
@@ -76,6 +75,14 @@ namespace Vision
             return std::vector<std::string>();
         }
 
+        // @Note: so we can make the . in the extensions optional
+        bool includeDot = true;
+
+        if (!extensions.empty() && extensions.front()[0] != '.')
+        {
+            includeDot = false;
+        }
+
         std::vector<std::string> result;
 
         while (FindNextFileA(handle, &info))
@@ -87,11 +94,13 @@ namespace Vision
                 continue;
             }
 
-            std::string extension = FileSystem::GetFileExtension(info.cFileName, false);
+            std::string name = info.cFileName;
+
+            std::string extension = FileSystem::GetFileExtension(name, includeDot);
 
             if (extensions.empty() || std::find(extensions.begin(), extensions.end(), extension) != extensions.end())
             {
-                std::string filepath = path + "/" + info.cFileName;
+                std::string filepath = path + "/" + name;
                 result.push_back(filepath);
             }
         }
@@ -104,14 +113,15 @@ namespace Vision
     struct DirectoryInfo
     {
         HANDLE           Handle;
-        WIN32_FIND_DATAA Info;
         std::string      Path;
     };
 
     std::vector<std::string> FileSystem::ScanDirectoryRecursive(const std::string& path, const std::vector<std::string>& extensions)
     {
+        WIN32_FIND_DATAA info;
+
         DirectoryInfo parentDirectory;
-        parentDirectory.Handle = FindFirstFileA((path + "/*").c_str(), &parentDirectory.Info);
+        parentDirectory.Handle = FindFirstFileA((path + "/*").c_str(), &info);
         parentDirectory.Path = path;
 
         if (parentDirectory.Handle == INVALID_HANDLE_VALUE)
@@ -119,23 +129,31 @@ namespace Vision
             return std::vector<std::string>();
         }
 
-        std::stack<DirectoryInfo> directories;        
+        // @Note: so we can make the . in the extensions optional
+        bool includeDot = true;
+
+        if (!extensions.empty() && extensions.front()[0] != '.')
+        {
+            includeDot = false;
+        }
+
+        std::stack<DirectoryInfo> directories;
         directories.push(parentDirectory);
 
         std::vector<std::string> result;
 
         while (!directories.empty())
         {
-            DirectoryInfo& currentDirectory = directories.top();
+            const DirectoryInfo& currentDirectory = directories.top();
 
-            if (!FindNextFileA(currentDirectory.Handle, &currentDirectory.Info))
+            if (!FindNextFileA(currentDirectory.Handle, &info))
             {
                 directories.pop();
                 continue;
             }
 
-            std::string name = currentDirectory.Info.cFileName;
-            bool isDirectory = (currentDirectory.Info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
+            std::string name = info.cFileName;
+            bool isDirectory = (info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
 
             if (isDirectory)
             {
@@ -143,13 +161,14 @@ namespace Vision
                 {
                     DirectoryInfo nextDirectory;
                     nextDirectory.Path = currentDirectory.Path + "/" + name;
-                    nextDirectory.Handle = FindFirstFileA((nextDirectory.Path + "/*").c_str(), &nextDirectory.Info);
+                    nextDirectory.Handle = FindFirstFileA((nextDirectory.Path + "/*").c_str(), &info);
+
                     directories.push(nextDirectory);
                 }
             }
             else
             {
-                std::string extension = FileSystem::GetFileExtension(name, false);
+                std::string extension = FileSystem::GetFileExtension(name, includeDot);
 
                 if (extensions.empty() || std::find(extensions.begin(), extensions.end(), extension) != extensions.end())
                 {
