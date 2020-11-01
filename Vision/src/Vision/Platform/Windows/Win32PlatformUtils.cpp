@@ -60,7 +60,9 @@ namespace Vision
 
 		if (GetOpenFileNameA(&ofn) == TRUE)
 		{
-			return ofn.lpstrFile;
+			std::string result = ofn.lpstrFile;
+			std::replace(result.begin(), result.end(), '\\', '/');
+			return result;
 		}
 
 		return std::string();
@@ -99,6 +101,7 @@ namespace Vision
 		if (GetSaveFileNameA(&ofn) == TRUE)
 		{
 			std::string result = ofn.lpstrFile;
+			std::replace(result.begin(), result.end(), '\\', '/');
 
 			// if the extension is not included in the file name add it for convince
 			if (result.find_last_of('.') == -1)

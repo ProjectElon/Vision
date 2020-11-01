@@ -26,6 +26,7 @@ namespace Vision
 		void Close();
 
 		inline Window& GetWindow() const { return (*m_Window); }
+		inline bool IsRunning() const { return m_Running; }
 
 		inline static Application& Get() { return *s_Instance; }
 				

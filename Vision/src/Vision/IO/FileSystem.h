@@ -17,7 +17,7 @@ namespace Vision
         // Platform Specific
         static bool FileExists(const std::string& filepath);
         static bool DirectoryExists(const std::string& path);
-
+        
         static std::string GetExecutableAbsolutePath();
 
         static std::string GetCurrentWorkingDirectory();

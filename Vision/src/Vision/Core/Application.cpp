@@ -63,6 +63,11 @@ namespace Vision
 			}
 
 			m_Window->OnUpdate();
+
+#ifdef VN_PLATFORM_WINDOWS and defined(VN_EDITOR)
+			// win32 file watchers
+			MsgWaitForMultipleObjectsEx(0, NULL, 0, QS_ALLINPUT, MWMO_ALERTABLE);
+#endif
 		}
 	}
 

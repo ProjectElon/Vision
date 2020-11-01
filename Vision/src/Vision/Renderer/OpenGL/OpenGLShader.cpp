@@ -98,7 +98,7 @@ namespace Vision
 
 	void OpenGLShader::LoadShadersSource(const std::string& filepath)
 	{
-		std::ifstream ifs(filepath, std::ios::in | std::ios::binary);
+		std::ifstream ifs(filepath, std::ios::in);
 
 		if (!ifs.is_open())
 		{
@@ -132,6 +132,8 @@ namespace Vision
 				m_Shaders[currentShaderType].Source += line + '\n';
 			}
 		}
+
+		ifs.close();
 	}
 
 	void OpenGLShader::CompileAndLinkShaders()

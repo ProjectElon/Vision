@@ -83,7 +83,7 @@ namespace Vision
                 }
             }
             else
-            { 
+            {
                 if (chunkCount == 1)
                 {
                     return false;
@@ -97,7 +97,7 @@ namespace Vision
             ++chunkCount;
         }
 
-        while (line.back() == '\0' || line.back() == '\n')
+        while (!line.empty() && (line.back() == '\0' || line.back() == '\n'))
         {
             line.pop_back();
         }
@@ -105,21 +105,27 @@ namespace Vision
         return true;
     }
 
-    uint32 File::GetPosition(const FileStream& fileStream)
-    {
-        return ftell((FILE*)fileStream.Handle);
-    }
-
     void File::Seek(const FileStream& fileStream, uint32 position)
     {
         fseek((FILE*)fileStream.Handle, position, SEEK_SET);
     }
 
-    void File::Close(const FileStream& fileStream)
+    uint32 File::GetPosition(const FileStream& fileStream)
+    {
+        return ftell((FILE*)fileStream.Handle);
+    }
+
+    void File::Reset(const FileStream& fileStream)
+    {
+        rewind((FILE*)fileStream.Handle);
+    }
+
+    void File::Close(FileStream& fileStream)
     {
         if (fileStream.Handle)
         {
             fclose((FILE*)fileStream.Handle);
+            fileStream.Handle = nullptr;
         }
     }
 }

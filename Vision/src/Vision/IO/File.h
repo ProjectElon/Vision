@@ -20,6 +20,11 @@ namespace Vision
         void*  Handle = nullptr;
         uint32 SizeInBytes = 0;
 
+        bool IsOpen() const
+        {
+            return Handle != nullptr;
+        }
+
         operator bool()
         {
             return Handle != nullptr;
@@ -40,9 +45,10 @@ namespace Vision
         // @Note: Is there is a way to set a good value for chuckSize ?
         static bool ReadLine(const FileStream& fileStream, std::string& line, uint32 chunkSize = 1024);
 
-        static uint32 GetPosition(const FileStream& fileStream);
-
         static void Seek(const FileStream& fileStream, uint32 position);
-        static void Close(const FileStream& fileStream);
+        static uint32 GetPosition(const FileStream& fileStream);
+        static void Reset(const FileStream& fileStream);
+
+        static void Close(FileStream& fileStream);
     };
 }

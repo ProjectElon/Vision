@@ -3,7 +3,7 @@
 #include "Vision/Core/Base.h"
 #ifdef VN_PLATFORM_WINDOWS
 #include "Vision/IO/FileSystem.h"
-#include <windows.h>
+#include <fileapi.h>
 
 namespace Vision
 {
@@ -23,14 +23,19 @@ namespace Vision
     {
         char path[MAX_PATH];
         GetModuleFileNameA(0, path, ARRAYSIZE(path));
-        return path;
+
+        std::string result = path;
+        std::replace(result.begin(), result.end(), '\\', '/');
+        return result;
     }
 
     std::string FileSystem::GetCurrentWorkingDirectory()
     {
         char path[MAX_PATH];
         GetCurrentDirectoryA(ARRAYSIZE(path), path);
-        return path;
+        std::string result = path;
+        std::replace(result.begin(), result.end(), '\\', '/');
+        return result;
     }
 
     bool FileSystem::SetCurrentWorkingDirectory(const std::string& path)
@@ -101,6 +106,7 @@ namespace Vision
             if (extensions.empty() || std::find(extensions.begin(), extensions.end(), extension) != extensions.end())
             {
                 std::string filepath = path + "/" + name;
+                std::replace(filepath.begin(), filepath.end(), '\\', '/');
                 result.push_back(filepath);
             }
         }
@@ -112,8 +118,8 @@ namespace Vision
 
     struct DirectoryInfo
     {
-        HANDLE           Handle;
-        std::string      Path;
+        HANDLE      Handle;
+        std::string Path;
     };
 
     std::vector<std::string> FileSystem::ScanDirectoryRecursive(const std::string& path, const std::vector<std::string>& extensions)
@@ -160,6 +166,7 @@ namespace Vision
                 if (name != "." && name != "..")
                 {
                     DirectoryInfo nextDirectory;
+
                     nextDirectory.Path = currentDirectory.Path + "/" + name;
                     nextDirectory.Handle = FindFirstFileA((nextDirectory.Path + "/*").c_str(), &info);
 
@@ -173,6 +180,8 @@ namespace Vision
                 if (extensions.empty() || std::find(extensions.begin(), extensions.end(), extension) != extensions.end())
                 {
                     std::string currentFilePath = currentDirectory.Path + "/" + name;
+
+                    std::replace(currentFilePath.begin(), currentFilePath.end(), '\\', '/');
                     result.push_back(currentFilePath);
                 }
             }

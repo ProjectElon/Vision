@@ -30,6 +30,7 @@
 #include "Vision/IO/TextDeserializer.h"
 #include "Vision/IO/File.h"
 #include "Vision/IO/FileSystem.h"
+#include "Vision/IO/FileWatcher.h"
 /*--------------------------------*/
 
 /*----------  Renderer  ----------*/

@@ -5,6 +5,10 @@
 #include <rapidjson/stringbuffer.h>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <windows.h>
+#include <thread>
+#include <algorithm>
+
 namespace Vision
 {
 	EditorLayer::EditorLayer()
@@ -64,19 +68,8 @@ namespace Vision
 		m_Menubar.SetEditorLayer(this);
 		m_Dialog.SetEditorLayer(this);
 
-		FileStream file = File::Open("test.txt", FileMode::Read);
-
-		if (file)
-		{
-			std::string line;
-
-			while (File::ReadLine(file, line))
-			{
-				printf("line: %d %s\n", line.length(), line.c_str());
-			}
-
-			File::Close(file);
-		}
+		m_FileWatcher = CreateScope<FileWatcher>(std::bind(&EditorLayer::OnFileChanged, this, std::placeholders::_1, std::placeholders::_2));
+		m_FileWatcher->Watch("Assets");
 	}
 
 	void EditorLayer::OnDetach()
@@ -90,6 +83,44 @@ namespace Vision
 			TextSerializer::SerializeScene(m_LastScenePath, scene);
 			delete scene;
 			Scene::SetActiveScene(nullptr);
+		}
+	}
+
+	void EditorLayer::OnFileChanged(std::string filepath, FileWatcherAction action)
+	{
+		std::string extension = FileSystem::GetFileExtension(filepath);
+
+		switch (action)
+		{
+			case Vision::FileWatcherAction::FileAdded:
+			{
+				VN_CORE_INFO("Added: {0}", filepath);
+			}
+			break;
+
+			case Vision::FileWatcherAction::FileRemoved:
+			{
+				VN_CORE_INFO("Removed: {0}", filepath);
+			}
+			break;
+
+			case Vision::FileWatcherAction::FileModified:
+			{
+				if (extension == ".glsl")
+				{
+					m_SpriteShader->Reload();
+				}
+			}
+			break;
+
+			case Vision::FileWatcherAction::FileRenamed:
+			{
+				uint32 dashIndex = filepath.find('-');
+				std::string oldPath = filepath.substr(0, dashIndex);
+				std::string newPath = filepath.substr(dashIndex + 1);
+				VN_CORE_INFO("Renamed: {0} to {1}", oldPath, newPath);
+			}
+			break;
 		}
 	}
 
@@ -258,11 +289,13 @@ namespace Vision
 					}
 				}
 			}
+			break;
 
 			case Key::R:
 			{
-				m_SpriteShader->Reload();
+				m_FileWatcher->UnWatch("Assets");
 			}
+			break;
 		}
 
 		return false;
