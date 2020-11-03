@@ -75,7 +75,7 @@ namespace Vision
 
     struct SpriteRendererComponent
     {
-        Ref<Texture2D> Texture = Texture2D::GetDefault();
+        Ref<Texture2D> Texture;
 
         glm::vec4 Color = { 1.0f, 1.0f, 1.0f, 1.0f };
 

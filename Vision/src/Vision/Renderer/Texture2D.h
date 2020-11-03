@@ -54,8 +54,6 @@ namespace Vision
         inline const TextureData& GetData() const { return m_Data; }
         inline const TextureProps& GetProperties() const { return m_Properties; }
 
-        static const Ref<Texture2D>& GetDefault(); // Temprary
-
     protected:
         TextureData  m_Data;
         TextureProps m_Properties;

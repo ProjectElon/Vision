@@ -27,7 +27,7 @@ namespace Vision
 
     static void CALLBACK WatchCallback(DWORD dwErrorCode, DWORD dwNumberOfBytesTransfered, LPOVERLAPPED lpOverlapped)
     {
-        static bool ignoreSecondModifedAction = false; // Hack Thanks Windows
+        static bool ignoreFirstModifedAction = true; // @Hack: Thanks Windows
         static std::string oldName;
 
         if (dwNumberOfBytesTransfered == 0)
@@ -58,14 +58,14 @@ namespace Vision
                 {
                     data.CallbackFn(path, FileWatcherAction::FileRemoved);
                 }
-                if (notify->Action == FILE_ACTION_MODIFIED && !ignoreSecondModifedAction)
+                if (notify->Action == FILE_ACTION_MODIFIED && ignoreFirstModifedAction)
+                {
+                    ignoreFirstModifedAction = false;
+                }
+                else if (notify->Action == FILE_ACTION_MODIFIED && !ignoreFirstModifedAction)
                 {
                     data.CallbackFn(path, FileWatcherAction::FileModified);
-                    ignoreSecondModifedAction = true;
-                }
-                else if (notify->Action == FILE_ACTION_MODIFIED && ignoreSecondModifedAction)
-                {
-                    ignoreSecondModifedAction = false;
+                    ignoreFirstModifedAction = true;
                 }
                 else if (notify->Action == FILE_ACTION_RENAMED_OLD_NAME)
                 {

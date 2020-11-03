@@ -24,7 +24,7 @@ namespace Vision
             textures.emplace(filepath, texture);
             return texture;
         }
-        
+
         return textureIter->second;
     }
 
@@ -147,10 +147,19 @@ namespace Vision
             InspectComponent<SpriteRendererComponent>("Sprite Renderer", [&](void* component)
             {
                 auto& sprite = ComponentCast<SpriteRendererComponent>(component);
+                
+                if (!sprite.Texture)
+                {
+                    // @Hack: Clean up asset System
+                    sprite.Texture = LoadTexture2D("Assets/Textures/lava.png");
+                }
 
                 const TextureData& textureData = sprite.Texture->GetData();
 
-                ImGui::Text(textureData.Name.c_str());
+                if (!textureData.Name.empty())
+                {
+                    ImGui::Text(textureData.Name.c_str());
+                }
 
                 float halfWidth = ImGui::GetContentRegionAvail().x / 2.0f;
 
@@ -242,7 +251,7 @@ namespace Vision
                 ImGuiWidgets::DrawFloat2("Bottom Left UV", sprite.BottomLeftPoint, 120.0f, 0.0f);
 
                 ImGui::Text("\n");
-                
+
                 ImGuiWidgets::DrawBool("FlipX", sprite.FlipX, 50.0f);
                 ImGuiWidgets::DrawBool("FlipY", sprite.FlipY, 50.0f);
             });
@@ -302,7 +311,6 @@ namespace Vision
         Scene* scene = Scene::GetActiveScene();
 
 		ImGui::Begin("Inspector");
-
 
         if (scene)
         {
@@ -402,13 +410,14 @@ namespace Vision
             entityStorageIter++;
 
             const ComponentInfo& info = editorState.ComponentMeta[componentID];
+            const std::string& tag = scene.GetComponent<TagComponent>(entity).Tag;
 
             if (!info.InspectFn)
             {
                 continue;
             }
 
-            ComponentState& state = m_ComponentState[{ entity, componentID }];
+            ComponentState& state = m_ComponentState[{ tag, componentID }];
             const char* name = info.Name.c_str();
 
             const ImGuiTreeNodeFlags flags =
@@ -427,7 +436,6 @@ namespace Vision
             state.Open = ImGui::TreeNodeEx((void*)(intptr_t)componentID, flags, name);
             ImGui::PopStyleVar();
 
-            // @Note: don't show for tag for now until we have more component setttings
             if (info.Removable)
             {
                 ImGui::SameLine(contentRegionAvail.x - lineHeight * 0.5f);
@@ -442,7 +450,7 @@ namespace Vision
             {
                 if (ImGui::Selectable("Remove Component"))
                 {
-                    m_ComponentState[std::make_pair(entity, componentID)] = ComponentState();
+                    m_ComponentState[std::make_pair(tag, componentID)] = ComponentState();
                     scene.RemoveComponent(entity, componentID);
                 }
 
