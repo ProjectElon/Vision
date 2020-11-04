@@ -5,8 +5,6 @@
 #include <rapidjson/stringbuffer.h>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <windows.h>
-#include <thread>
 #include <algorithm>
 
 namespace Vision
@@ -52,7 +50,6 @@ namespace Vision
 		tiled.FilterMode = FilterMode::Point;
 
 		m_CheckboardTexture = Texture2D::CreateFromFile("Assets/Textures/Checkerboard.png", tiled);
-
 		std::string lastScenePath = TDS::DeserializeString(m_Settings, "Last Scene Path");
 
 		if (!lastScenePath.empty())
@@ -68,12 +65,22 @@ namespace Vision
 		m_Menubar.SetEditorLayer(this);
 		m_Dialog.SetEditorLayer(this);
 
-		m_FileWatcher = CreateScope<FileWatcher>(std::bind(&EditorLayer::OnFileChanged, this, std::placeholders::_1, std::placeholders::_2));
+		m_FileWatcher = CreateScope<FileWatcher>(BindWatcherFn(EditorLayer::OnFileChanged));
 		m_FileWatcher->Watch("Assets");
+
+		m_PlayerTexture = Texture2D::CreateFromFile("Assets/Textures/character_femaleAdventurer_sheetHD.png");
+
+		const uint32 cellCount = 45;
+		const uint32 cellWidth = 192;
+		const uint32 cellHeight = 256;
+
+		m_PlayerAtlas = CreateTextureAtlas(m_PlayerTexture.get(), cellCount, cellWidth, cellHeight);
 	}
 
 	void EditorLayer::OnDetach()
 	{
+		FreeTextureAtlas(&m_PlayerAtlas);
+
 		Scene* scene = Scene::GetActiveScene();
 		m_LastScenePath = "";
 
@@ -86,7 +93,7 @@ namespace Vision
 		}
 	}
 
-	void EditorLayer::OnFileChanged(std::string filepath, FileWatcherAction action)
+	void EditorLayer::OnFileChanged(FileWatcherAction action, std::string filepath, std::string oldpath)
 	{
 		std::string extension = FileSystem::GetFileExtension(filepath);
 
@@ -115,10 +122,7 @@ namespace Vision
 
 			case Vision::FileWatcherAction::FileRenamed:
 			{
-				uint32 dashIndex = filepath.find('-');
-				std::string oldPath = filepath.substr(0, dashIndex);
-				std::string newPath = filepath.substr(dashIndex + 1);
-				VN_CORE_INFO("Renamed: {0} to {1}", oldPath, newPath);
+				VN_CORE_INFO("Renameing: {0} to {1}", oldpath, filepath);
 			}
 			break;
 		}
@@ -164,6 +168,16 @@ namespace Vision
 			{
 				Renderer2D::DrawSprite(transform.Position, transform.Rotation.z, transform.Scale, sprite);
 			});
+
+			Entity player = scene->QueryEntity("Player");
+
+			if (player != entity::null)
+			{
+				auto& sprite = scene->GetComponent<SpriteRendererComponent>(player);
+				sprite.Texture = m_PlayerTexture;
+				sprite.BottomLeftPoint = m_PlayerAtlas.Rects[m_TextureIndex].BottomLeft;
+				sprite.TopRightPoint = m_PlayerAtlas.Rects[m_TextureIndex].TopRight;
+			}
 		}
 
 		Renderer2D::EndScene();
@@ -294,6 +308,19 @@ namespace Vision
 			case Key::R:
 			{
 				m_FileWatcher->UnWatch("Assets");
+			}
+			break;
+
+			case Key::Right:
+			{
+				m_TextureIndex = (m_TextureIndex + 1) % 45;
+			}
+			break;
+
+			case Key::Left:
+			{
+				m_TextureIndex--;
+				if (m_TextureIndex == -1) m_TextureIndex = 44;
 			}
 			break;
 		}

@@ -21,14 +21,15 @@ namespace Vision
         bool                   Recursive;
         FileWatcherCallbackFn  CallbackFn;
     };
+
     static std::unordered_map<std::string, WatchData> s_History;
 
-    static void RefreshWatcher(WatchData& data, bool subscriping = true);
+    static void RefreshWatcherDirectory(WatchData& data, bool subscriping = true);
 
     static void CALLBACK WatchCallback(DWORD dwErrorCode, DWORD dwNumberOfBytesTransfered, LPOVERLAPPED lpOverlapped)
     {
         static bool ignoreFirstModifedAction = true; // @Hack: Thanks Windows
-        static std::string oldName;
+        static std::string oldPath;
 
         if (dwNumberOfBytesTransfered == 0)
         {
@@ -52,11 +53,11 @@ namespace Vision
 
                 if (notify->Action == FILE_ACTION_ADDED)
                 {
-                    data.CallbackFn(path, FileWatcherAction::FileAdded);
+                    data.CallbackFn(FileWatcherAction::FileAdded, path, path);
                 }
                 else if (notify->Action == FILE_ACTION_REMOVED)
                 {
-                    data.CallbackFn(path, FileWatcherAction::FileRemoved);
+                    data.CallbackFn(FileWatcherAction::FileRemoved, path, path);
                 }
                 if (notify->Action == FILE_ACTION_MODIFIED && ignoreFirstModifedAction)
                 {
@@ -64,22 +65,21 @@ namespace Vision
                 }
                 else if (notify->Action == FILE_ACTION_MODIFIED && !ignoreFirstModifedAction)
                 {
-                    data.CallbackFn(path, FileWatcherAction::FileModified);
+                    data.CallbackFn(FileWatcherAction::FileModified, path, path);
                     ignoreFirstModifedAction = true;
                 }
                 else if (notify->Action == FILE_ACTION_RENAMED_OLD_NAME)
                 {
-                    oldName = path;
+                    oldPath = path;
                 }
                 else if (notify->Action == FILE_ACTION_RENAMED_NEW_NAME)
                 {
-                    std::string result = oldName + "-" + path;
-                    data.CallbackFn(result, FileWatcherAction::FileRenamed);
+                    data.CallbackFn(FileWatcherAction::FileRenamed, path, oldPath);
                 }
             }
             while (notify->NextEntryOffset != 0);
 
-            RefreshWatcher(data);
+            RefreshWatcherDirectory(data);
         }
     }
 
@@ -101,7 +101,7 @@ namespace Vision
         return result;
     }
 
-    void RefreshWatcher(WatchData& data, bool subscribing)
+    void RefreshWatcherDirectory(WatchData& data, bool subscribing)
     {
         ReadDirectoryChangesW(
         data.DirectoryHandle,
@@ -157,7 +157,7 @@ namespace Vision
             data.CallbackFn = m_CallbackFn;
             data.Recursive = recursive;
 
-            RefreshWatcher(data);
+            RefreshWatcherDirectory(data);
 
             VN_CORE_INFO("Watching Directory: {0}", watchPath);
             return true;
@@ -179,7 +179,7 @@ namespace Vision
             WatchData& data = watcherIter->second;
 
             CancelIo(data.DirectoryHandle);
-            RefreshWatcher(data, false);
+            RefreshWatcherDirectory(data, false);
             CloseHandle(data.Overlapped.hEvent);
             CloseHandle(data.DirectoryHandle);
 

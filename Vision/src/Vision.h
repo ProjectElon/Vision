@@ -42,6 +42,7 @@
 #include "Vision/Renderer/IndexBuffer.h"
 #include "Vision/Renderer/VertexLayout.h"
 #include "Vision/Renderer/Texture2D.h"
+#include "Vision/Renderer/TextureAtlas.h"
 #include "Vision/Renderer/Shader.h"
 #include "Vision/Renderer/RendererAPI.h"
 #include "Vision/Renderer/OrthographicCameraController.h"

@@ -4,6 +4,8 @@
 
 namespace Vision
 {
+    #define BindWatcherFn(fn) std::bind(&fn, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
+
     enum class FileWatcherAction
     {
         FileAdded,
@@ -13,7 +15,7 @@ namespace Vision
     };
 
     using FileWatcherCallbackFn =
-    std::function<void(std::string path, FileWatcherAction action)>;
+    std::function<void(FileWatcherAction action, std::string path, std::string oldPath)>;
 
     class FileWatcher
     {

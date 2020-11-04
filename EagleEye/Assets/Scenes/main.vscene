@@ -1,7 +1,7 @@
 {
     "MaxEntityCount": 100,
     "PrimaryCamera": "",
-    "SelectedEntity": "Entity1",
+    "SelectedEntity": "Player",
     "Entities": [
         {
             "Tag": "Player",
@@ -31,10 +31,10 @@
                     "Name": "Sprite Renderer",
                     "ID": 13080639714729183211,
                     "Data": {
-                        "Texture Path": "C:/dev/cpp/Vision/EagleEye/Assets/Textures/brick_grey.png",
+                        "Texture Path": "Assets/Textures/character_femaleAdventurer_sheetHD.png",
                         "Texture Wrap X": 0,
                         "Texture Wrap Y": 0,
-                        "Texture Fliter Mode": 1,
+                        "Texture Fliter Mode": 0,
                         "Color": [
                             0.9999899864196777,
                             0.9999985694885254,
@@ -42,11 +42,11 @@
                             1.0
                         ],
                         "Bottom Left Point": [
-                            0.0,
-                            0.0
+                            0.4444444477558136,
+                            0.800000011920929
                         ],
                         "Top Right Point": [
-                            1.0,
+                            0.5555555820465088,
                             1.0
                         ],
                         "Flip X": false,

@@ -28,7 +28,7 @@ namespace Vision
 
 		bool OnKeyPressed(KeyPressedEvent& e);
 
-		void OnFileChanged(std::string fileName, FileWatcherAction action);
+		void OnFileChanged(FileWatcherAction action, std::string filepath, std::string oldpath);
 
 		void NewScene(const std::string& filepath, uint32 maxEntityCount);
 		void OpenScene();
@@ -53,14 +53,18 @@ namespace Vision
 
 		rapidjson::Document    m_Settings;
 		std::string			   m_LastScenePath;
-		
+
 		Scope<OrthographicCameraController> m_CameraController;
-		
+
 		Scope<FileWatcher> m_FileWatcher;
 
+		TextureAtlas m_PlayerAtlas;
+		uint32 m_TextureIndex = 0;
+
 		Ref<Texture2D> m_CheckboardTexture;
+		Ref<Texture2D> m_PlayerTexture;
 		Ref<Shader> m_SpriteShader;
-		
+
 		Ref<FrameBuffer> m_SceneFrameBuffer;
 		Ref<FrameBuffer> m_GameFrameBuffer;
 	};
