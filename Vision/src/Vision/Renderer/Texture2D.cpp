@@ -8,27 +8,31 @@
 
 namespace Vision
 {
-	Ref<Texture2D> Texture2D::Create(uint32_t width, uint32_t height, const TextureProps& props)
+	Texture2D* Texture2D::Create(uint32 width, uint32 height, const TextureProps& props)
 	{
 		switch (Renderer::GetAPI())
 		{
 			case Renderer::API::OpenGL:
 			{
-				return CreateRef<OpenGLTexture2D>(width, height, props);
+				return new OpenGLTexture2D(width, height, props);
 			}
 			break;
 		}
+
+		return nullptr;
 	}
 
-	Ref<Texture2D> Texture2D::CreateFromFile(const std::string& path, const TextureProps& props)
+	Texture2D* Texture2D::CreateFromFile(const std::string& path, const TextureProps& props)
 	{
 		switch (Renderer::GetAPI())
 		{
 			case Renderer::API::OpenGL:
 			{
-				return CreateRef<OpenGLTexture2D>(path, props);
+				return new OpenGLTexture2D(path, props);
 			}
 			break;
 		}
+
+		return nullptr;
 	}
 }

@@ -1,8 +1,6 @@
 #pragma once
 
 #include "Vision/Core/Base.h"
-#include "Vision/Renderer/Texture2D.h"
-
 #include <glm/glm.hpp>
 
 namespace Vision
@@ -73,14 +71,16 @@ namespace Vision
         bool Static = false;
     };
 
+    class Texture2D;
+
     struct SpriteRendererComponent
     {
-        Ref<Texture2D> Texture;
+        Texture2D* Texture = nullptr;
 
         glm::vec4 Color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-        glm::vec2 BottomLeftPoint = { 0.0f, 0.0f };
-        glm::vec2 TopRightPoint   = { 1.0f, 1.0f };
+        glm::vec2 BottomLeftUV = { 0.0f, 0.0f };
+        glm::vec2 TopRightUV   = { 1.0f, 1.0f };
 
         bool FlipX = false;
         bool FlipY = false;

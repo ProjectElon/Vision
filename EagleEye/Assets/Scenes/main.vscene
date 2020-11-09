@@ -1,7 +1,7 @@
 {
     "MaxEntityCount": 100,
     "PrimaryCamera": "",
-    "SelectedEntity": "Player",
+    "SelectedEntity": "Entity1",
     "Entities": [
         {
             "Tag": "Player",
@@ -42,11 +42,11 @@
                             1.0
                         ],
                         "Bottom Left Point": [
-                            0.4444444477558136,
+                            0.0,
                             0.800000011920929
                         ],
                         "Top Right Point": [
-                            0.5555555820465088,
+                            0.1111111119389534,
                             1.0
                         ],
                         "Flip X": false,

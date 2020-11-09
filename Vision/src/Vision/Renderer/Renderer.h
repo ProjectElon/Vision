@@ -16,12 +16,12 @@ namespace Vision
 	public:
 		inline static void SetAPI(API api) { s_API = api; }
 		inline static API GetAPI() { return s_API; }
-		
+
 		inline static RendererAPI& GetRendererAPI()
-		{ 
+		{
 			return *s_RendererAPI;
 		}
-		
+
 		static void Init();
 		static void Shutdown();
 

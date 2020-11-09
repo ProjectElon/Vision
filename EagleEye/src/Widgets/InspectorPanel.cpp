@@ -1,7 +1,9 @@
 #include "InspectorPanel.h"
+
 #include "Vision/Entity/EditorState.h"
 #include "Vision/IO/TextSerializer.h"
 #include "Vision/IO/TextDeserializer.h"
+#include "Vision/IO/Assets.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -10,24 +12,6 @@
 
 namespace Vision
 {
-    // @Clean Up: Asset System
-    static std::unordered_map<std::string, Ref<Texture2D>> textures;
-
-    // @Clean Up: Asset System
-    static Ref<Texture2D> LoadTexture2D(const std::string& filepath)
-    {
-        auto textureIter = textures.find(filepath);
-
-        if (textureIter == textures.end())
-        {
-            Ref<Texture2D> texture = Texture2D::CreateFromFile(filepath);
-            textures.emplace(filepath, texture);
-            return texture;
-        }
-
-        return textureIter->second;
-    }
-
 	InspectorPanel::InspectorPanel()
 	{
         EditorState& editorState = Scene::EditorState;
@@ -147,19 +131,16 @@ namespace Vision
             InspectComponent<SpriteRendererComponent>("Sprite Renderer", [&](void* component)
             {
                 auto& sprite = ComponentCast<SpriteRendererComponent>(component);
-                
+
                 if (!sprite.Texture)
                 {
-                    // @Hack: Clean up asset System
-                    sprite.Texture = LoadTexture2D("Assets/Textures/lava.png");
+                    sprite.Texture = (Texture2D*) AssetManager::QueryAssetType("Texture", "Assets/Textures/dirt.png");
                 }
 
                 const TextureData& textureData = sprite.Texture->GetData();
+                std::string textureName = FileSystem::GetFileName(textureData.Path);
 
-                if (!textureData.Name.empty())
-                {
-                    ImGui::Text(textureData.Name.c_str());
-                }
+                ImGui::Text(textureName.c_str());
 
                 float halfWidth = ImGui::GetContentRegionAvail().x / 2.0f;
 
@@ -169,12 +150,12 @@ namespace Vision
 
                 if (ImGui::ImageButton((void*)(intptr_t)textureData.RendererID, ImVec2(72.0f, 72.0f), ImVec2(0, 1), ImVec2(1, 0)))
                 {
-                    // @Clean Up: Asset System
-                    std::string filepath = FileDialog::OpenFile("Texture", { ".jpeg", ".png", ".bmp", ".tga", ".psd" });
+                    // @Harlequin: Get Extensions from Texture AssetInfo
+                    std::string texturepath = FileDialog::OpenFile("Texture", { "png", "jpeg", "psd", "bmp", "tga" });
 
-                    if (!filepath.empty())
+                    if (!texturepath.empty())
                     {
-                        sprite.Texture = LoadTexture2D(filepath);
+                        sprite.Texture = (Texture2D*)AssetManager::QueryAssetType("Texture", texturepath);
                     }
                 }
 
@@ -247,8 +228,8 @@ namespace Vision
 
                 ImGui::Text("\n");
 
-                ImGuiWidgets::DrawFloat2("Top Right UV", sprite.TopRightPoint, 120.0f, 1.0f);
-                ImGuiWidgets::DrawFloat2("Bottom Left UV", sprite.BottomLeftPoint, 120.0f, 0.0f);
+                ImGuiWidgets::DrawFloat2("Top Right UV", sprite.TopRightUV, 120.0f, 1.0f);
+                ImGuiWidgets::DrawFloat2("Bottom Left UV", sprite.BottomLeftUV, 120.0f, 0.0f);
 
                 ImGui::Text("\n");
 
@@ -269,8 +250,8 @@ namespace Vision
                 TextSerializer::SerializeUint32(w, "Texture Fliter Mode", (uint32)props.FilterMode);
 
                 TextSerializer::SerializeVector4(w, "Color", sprite.Color);
-                TextSerializer::SerializeVector2(w, "Bottom Left Point", sprite.BottomLeftPoint);
-                TextSerializer::SerializeVector2(w, "Top Right Point", sprite.TopRightPoint);
+                TextSerializer::SerializeVector2(w, "Bottom Left Point", sprite.BottomLeftUV);
+                TextSerializer::SerializeVector2(w, "Top Right Point", sprite.TopRightUV);
                 TextSerializer::SerializeBool(w, "Flip X", sprite.FlipX);
                 TextSerializer::SerializeBool(w, "Flip Y", sprite.FlipY);
             });
@@ -279,25 +260,27 @@ namespace Vision
             {
                 auto& sprite = ComponentCast<SpriteRendererComponent>(component);
 
-                // @Clean Up: Asset System
-                std::string texturePath = TextDeserializer::DeserializeString(r, "Texture Path");
+                std::string texturepath = TextDeserializer::DeserializeString(r, "Texture Path");
 
-                if (!texturePath.empty())
+                if (!texturepath.empty())
                 {
-                    sprite.Texture = LoadTexture2D(texturePath);
+                    sprite.Texture = (Texture2D*)AssetManager::QueryAssetType("Texture", texturepath)->Memory;
                 }
 
                 uint32 wrapX = TextDeserializer::DeserializeUint32(r, "Texture Wrap X");
                 uint32 wrapY = TextDeserializer::DeserializeUint32(r, "Texture Wrap Y");
                 uint32 filterMode = TextDeserializer::DeserializeUint32(r, "Texture Fliter Mode");
 
-                sprite.Texture->SetWrapMode((WrapMode)wrapX, (WrapMode)wrapY);
-                sprite.Texture->SetFilterMode((FilterMode)filterMode);
+                if (sprite.Texture)
+                {
+                    sprite.Texture->SetWrapMode((WrapMode)wrapX, (WrapMode)wrapY);
+                    sprite.Texture->SetFilterMode((FilterMode)filterMode);
+                }
 
                 sprite.Color = TextDeserializer::DeserializeVector4(r, "Color");
 
-                sprite.BottomLeftPoint = TextDeserializer::DeserializeVector2(r, "Bottom Left Point");
-                sprite.TopRightPoint = TextDeserializer::DeserializeVector2(r, "Top Right Point");
+                sprite.BottomLeftUV = TextDeserializer::DeserializeVector2(r, "Bottom Left Point");
+                sprite.TopRightUV = TextDeserializer::DeserializeVector2(r, "Top Right Point");
 
                 sprite.FlipX = TextDeserializer::DeserializeBool(r, "Flip X");
                 sprite.FlipY = TextDeserializer::DeserializeBool(r, "Flip Y");

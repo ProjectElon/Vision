@@ -58,12 +58,12 @@ namespace Vision
 
 		Scope<FileWatcher> m_FileWatcher;
 
-		TextureAtlas m_PlayerAtlas;
+		TextureAtlasGrid m_PlayerAtlas;
 		uint32 m_TextureIndex = 0;
 
-		Ref<Texture2D> m_CheckboardTexture;
-		Ref<Texture2D> m_PlayerTexture;
-		Ref<Shader> m_SpriteShader;
+		Asset* m_CheckboardTexture;
+		Asset* m_PlayerTexture;
+		Asset* m_SpriteShader;
 
 		Ref<FrameBuffer> m_SceneFrameBuffer;
 		Ref<FrameBuffer> m_GameFrameBuffer;

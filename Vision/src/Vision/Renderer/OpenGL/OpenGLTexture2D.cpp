@@ -30,12 +30,13 @@ namespace Vision
 
 	OpenGLTexture2D::OpenGLTexture2D(const std::string& filepath, const TextureProps& props)
 	{
-		m_Data.Name  = FileSystem::GetFileName(filepath, false);
+		m_Data.Name  = FileSystem::GetFileName(filepath);
 		m_Data.Path  = filepath;
 		m_Properties = props;
 
-		int width, height;
-		int channelCount;
+		int32 width;
+		int32 height;
+		int32 channelCount;
 
 		stbi_set_flip_vertically_on_load(true);
 		stbi_uc* data = stbi_load(filepath.c_str(), &width, &height, &channelCount, 0);
@@ -75,12 +76,6 @@ namespace Vision
 			glTextureSubImage2D(m_Data.RendererID, 0, 0, 0, m_Data.Width, m_Data.Height, m_TextureFormat, GL_UNSIGNED_BYTE, data);
 
 			stbi_image_free(data);
-
- 			VN_CORE_INFO("[TEXTURE]({0}) ... Loaded Successfully", m_Data.Name);
-		}
-		else
-		{
-			VN_CORE_ERROR("[TEXTURE]({0}) Failed To Load", m_Data.Name);
 		}
 	}
 
@@ -104,25 +99,25 @@ namespace Vision
 		glTextureParameteri(m_Data.RendererID, GL_TEXTURE_MAG_FILTER, s_FilterModeMap[(int)filterMode]);
 	}
 
-	void OpenGLTexture2D::Bind(uint32_t slot)
+	void OpenGLTexture2D::Bind(uint32 slot) const
 	{
 		glBindTextureUnit(slot, m_Data.RendererID);
 	}
 
-	void OpenGLTexture2D::SetData(void* data, uint32_t sizeInBytes)
+	void OpenGLTexture2D::SetData(void* data, uint32 sizeInBytes)
 	{
 		uint32_t bytesPerPixel = (m_TextureFormat == GL_RGBA) ? 4 : 3;
 		VN_CORE_ASSERT(bytesPerPixel * m_Data.Width * m_Data.Height == sizeInBytes, "data must have the same size as the texture");
 		glTextureSubImage2D(m_Data.RendererID, 0, 0, 0, m_Data.Width, m_Data.Height, m_TextureFormat, GL_UNSIGNED_BYTE, data);
 	}
 
-	const uint32_t OpenGLTexture2D::s_WrapModeMap[2] =
+	const uint32 OpenGLTexture2D::s_WrapModeMap[] =
 	{
 		GL_REPEAT,
 		GL_CLAMP_TO_EDGE
 	};
 
-	const uint32_t OpenGLTexture2D::s_FilterModeMap[2] =
+	const uint32 OpenGLTexture2D::s_FilterModeMap[] =
 	{
 		GL_NEAREST,
 		GL_LINEAR

@@ -17,7 +17,7 @@ namespace Vision
 
     using Writer = rapidjson::PrettyWriter<rapidjson::StringBuffer>;
     using Reader = rapidjson::Value;
-    
+
     using ComponentAddFn         = std::function<void(Entity)>;
     using ComponentInspectFn     = std::function<void(void*)>;
     using ComponentSerializeFn   = std::function<void(Writer&, void*)>;
@@ -25,8 +25,8 @@ namespace Vision
 
     struct ComponentInfo
     {
-        std::string        Name;
-        bool               Removable;
+        std::string Name;
+        bool        Removable;
 
         ComponentAddFn         AddFn;
         ComponentInspectFn     InspectFn;
@@ -38,7 +38,7 @@ namespace Vision
 
     struct EditorState
     {
-        std::string SelectedEntityTag;
+        std::string      SelectedEntityTag;
         ComponentMetaMap ComponentMeta;
     };
 
@@ -64,7 +64,7 @@ namespace Vision
         const ComponentID& componentID = typeInfo.hash_code();
 
         ComponentInfo& info = Scene::EditorState.ComponentMeta[componentID];
-        info.SerializeFn = serializeFn;
+        info.SerializeFn    = serializeFn;
     }
 
     template<typename Component>
@@ -74,13 +74,17 @@ namespace Vision
         const ComponentID& componentID = typeInfo.hash_code();
 
         ComponentInfo& info = Scene::EditorState.ComponentMeta[componentID];
-        info.DeserializeFn = deserializeFn;
+        info.DeserializeFn  = deserializeFn;
     }
 
     template<typename Component>
     void AddComponentInInspectorFn(Entity entity)
     {
-        Scene& scene = *Scene::GetActiveScene();
-        scene.AddComponent<Component>(entity);
+        Scene* scene = Scene::GetActiveScene();
+
+        if (scene)
+        {
+            scene->AddComponent<Component>(entity);
+        }
     }
 }

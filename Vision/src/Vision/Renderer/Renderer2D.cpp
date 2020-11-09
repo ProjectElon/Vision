@@ -80,15 +80,14 @@ namespace Vision
 
 	void Renderer2D::BeginScene(const glm::mat4& cameraTransform,
 								const OrthographicCameraComponent& camera,
-								const Ref<Shader>& quadShader)
+								Shader* quadShader)
 	{
-		
 		s_SceneData.CameraPosition = cameraTransform[3];
 		s_SceneData.ViewProjection = glm::inverse(cameraTransform) * camera.Projection;
-
 		quadShader->Bind();
 		quadShader->SetIntArray("u_Textures", s_QuadData.Samplers, s_QuadData.MaxTextureSlots);
 		quadShader->SetMatrix4("u_ViewProj", s_SceneData.ViewProjection);
+		
 		// quadShader->SetFloat3("u_CameraPosition", cameraTransformComponent.Transform[3]);
 	}
 
@@ -110,7 +109,7 @@ namespace Vision
 	}
 
 	void Renderer2D::DrawTexture(const glm::mat3& transform,
-								 const Ref<Texture2D>& texture,
+								 const Texture2D* texture,
 								 const glm::vec4& color,
 								 float tilingFactor)
 	{
@@ -137,7 +136,7 @@ namespace Vision
 	void Renderer2D::DrawTexture(const glm::vec2& position,
 								 float32 rotationAngle,
 								 const glm::vec2& scale,
-								 const Ref<Texture2D>& texture,
+								 const Texture2D* texture,
 								 const glm::vec4& color,
 								 float tilingFactor)
 	{
@@ -162,10 +161,10 @@ namespace Vision
 		glm::vec2 v2 = transform * glm::vec3(0.5f, 0.5f, 1.0f);
 		glm::vec2 v3 = transform * glm::vec3(-0.5f, 0.5f, 1.0f);
 
-		glm::vec2 uv0 = sprite.BottomLeftPoint;
-		glm::vec2 uv1 = glm::vec2(sprite.TopRightPoint.x, sprite.BottomLeftPoint.y);
-		glm::vec2 uv2 = sprite.TopRightPoint;
-		glm::vec2 uv3 = glm::vec2(sprite.BottomLeftPoint.x, sprite.TopRightPoint.y);
+		glm::vec2 uv0 = sprite.BottomLeftUV;
+		glm::vec2 uv1 = glm::vec2(sprite.TopRightUV.x, sprite.BottomLeftUV.y);
+		glm::vec2 uv2 = sprite.TopRightUV;
+		glm::vec2 uv3 = glm::vec2(sprite.BottomLeftUV.x, sprite.TopRightUV.y);
 
 		if (sprite.FlipX)
 		{
@@ -201,10 +200,10 @@ namespace Vision
 		glm::vec3 v2 = transform * glm::vec4(0.5f, 0.5f, 1.0f, 1.0f);
 		glm::vec3 v3 = transform * glm::vec4(-0.5f, 0.5f, 1.0f, 1.0f);
 
-		glm::vec2 uv0 = sprite.BottomLeftPoint;
-		glm::vec2 uv1 = glm::vec2(sprite.TopRightPoint.x, sprite.BottomLeftPoint.y);
-		glm::vec2 uv2 = sprite.TopRightPoint;
-		glm::vec2 uv3 = glm::vec2(sprite.BottomLeftPoint.x, sprite.TopRightPoint.y);
+		glm::vec2 uv0 = sprite.BottomLeftUV;
+		glm::vec2 uv1 = glm::vec2(sprite.TopRightUV.x, sprite.BottomLeftUV.y);
+		glm::vec2 uv2 = sprite.TopRightUV;
+		glm::vec2 uv3 = glm::vec2(sprite.BottomLeftUV.x, sprite.TopRightUV.y);
 
 		if (sprite.FlipX)
 		{
@@ -242,7 +241,7 @@ namespace Vision
 		FlushQuadBatch();
 	}
 	
-	uint32 Renderer2D::AssginTextureSlot(const Ref<Texture2D>& texture)
+	uint32 Renderer2D::AssginTextureSlot(const Texture2D* texture)
 	{
 		int32 textureIndex = -1;
 		const TextureData& textureData = texture->GetData();
@@ -320,5 +319,5 @@ namespace Vision
 	
 	SceneData Renderer2D::s_SceneData;
 	QuadData  Renderer2D::s_QuadData;
-	Ref<Texture2D> Renderer2D::s_WhitePixel;
+	Texture2D* Renderer2D::s_WhitePixel;
 }

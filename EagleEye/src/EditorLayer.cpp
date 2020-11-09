@@ -36,20 +36,15 @@ namespace Vision
 		m_SceneViewPanel.SetFrameBuffer(m_SceneFrameBuffer.get());
 		m_GameViewPanel.SetFrameBuffer(m_GameFrameBuffer.get());
 
-		// @Clean up: Should be storeed with the scene
+		// @Clean up: Scene camera properties Should be storeed with the scene
 		float32 aspectRatio = (float32)frameBufferProps.Width / (float32)frameBufferProps.Height;
 		using TDS = TextDeserializer;
 		m_CameraController = CreateScope<OrthographicCameraController>(aspectRatio, TDS::DeserializeFloat(m_Settings, "CameraZoomLevel"));
 
-		m_SpriteShader = Shader::CreateFromFile("Assets/Shaders/Sprite.glsl");
+		m_SpriteShader = AssetManager::QueryAsset("C:/dev/cpp/Vision/EagleEye/Assets/Shaders/Sprite.glsl");
 
-		// Texture Properties
-		TextureProps tiled;
-		tiled.WrapX = WrapMode::Repeat;
-		tiled.WrapY = WrapMode::Repeat;
-		tiled.FilterMode = FilterMode::Point;
-
-		m_CheckboardTexture = Texture2D::CreateFromFile("Assets/Textures/Checkerboard.png", tiled);
+		m_CheckboardTexture = AssetManager::QueryAsset("Assets/Textures/Checkerboard.png");
+		
 		std::string lastScenePath = TDS::DeserializeString(m_Settings, "Last Scene Path");
 
 		if (!lastScenePath.empty())
@@ -68,13 +63,12 @@ namespace Vision
 		m_FileWatcher = CreateScope<FileWatcher>(BindWatcherFn(EditorLayer::OnFileChanged));
 		m_FileWatcher->Watch("Assets");
 
-		m_PlayerTexture = Texture2D::CreateFromFile("Assets/Textures/character_femaleAdventurer_sheetHD.png");
+		m_PlayerTexture = AssetManager::QueryAsset("Assets/Textures/character_femaleAdventurer_sheetHD.png");
 
-		const uint32 cellCount = 45;
-		const uint32 cellWidth = 192;
-		const uint32 cellHeight = 256;
-
-		m_PlayerAtlas = CreateTextureAtlas(m_PlayerTexture.get(), cellCount, cellWidth, cellHeight);
+		CreateTextureAtlasGrid(&m_PlayerAtlas,
+							   (Texture2D*)m_PlayerTexture->Memory,
+							   192,
+							   256);
 	}
 
 	void EditorLayer::OnDetach()
@@ -95,7 +89,7 @@ namespace Vision
 
 	void EditorLayer::OnFileChanged(FileWatcherAction action, std::string filepath, std::string oldpath)
 	{
-		std::string extension = FileSystem::GetFileExtension(filepath);
+		std::string extension = FileSystem::GetFileExtension(filepath, false);
 
 		switch (action)
 		{
@@ -113,10 +107,11 @@ namespace Vision
 
 			case Vision::FileWatcherAction::FileModified:
 			{
-				if (extension == ".glsl")
-				{
-					m_SpriteShader->Reload();
-				}
+				//@Robustness: Implement Reload don't free and allocate the memory itself
+				//@Harlequin:  This won't work without having an absolute path to assets what should we do
+				
+				AssetManager::ReleaseAsset(filepath);
+				AssetManager::QueryAsset(filepath);	
 			}
 			break;
 
@@ -152,7 +147,7 @@ namespace Vision
 
 		RenderCommand::Clear(RendererAPI::ColorBuffer);
 
-		Renderer2D::BeginScene(m_CameraController->GetCameraTransform(), m_CameraController->Camera, m_SpriteShader);
+		Renderer2D::BeginScene(m_CameraController->GetCameraTransform(), m_CameraController->Camera, (Shader*)m_SpriteShader->Memory);
 
 		Scene* scene = Scene::GetActiveScene();
 
@@ -160,7 +155,7 @@ namespace Vision
 		{
 			Renderer2D::DrawTexture(glm::vec3(0.0f, 0.0f, 0.0f), 0.0f,
 									glm::vec2(100.0f, 100.0f),
-									m_CheckboardTexture,
+									(Texture2D*)m_CheckboardTexture->Memory,
 									glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
 									100.0f);
 
@@ -174,9 +169,9 @@ namespace Vision
 			if (player != entity::null)
 			{
 				auto& sprite = scene->GetComponent<SpriteRendererComponent>(player);
-				sprite.Texture = m_PlayerTexture;
-				sprite.BottomLeftPoint = m_PlayerAtlas.Rects[m_TextureIndex].BottomLeft;
-				sprite.TopRightPoint = m_PlayerAtlas.Rects[m_TextureIndex].TopRight;
+				sprite.Texture = (Texture2D*)m_PlayerTexture->Memory;
+				sprite.BottomLeftUV = m_PlayerAtlas.Rects[m_TextureIndex].BottomLeft;
+				sprite.TopRightUV = m_PlayerAtlas.Rects[m_TextureIndex].TopRight;
 			}
 		}
 

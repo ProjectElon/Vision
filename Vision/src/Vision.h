@@ -31,6 +31,7 @@
 #include "Vision/IO/File.h"
 #include "Vision/IO/FileSystem.h"
 #include "Vision/IO/FileWatcher.h"
+#include "Vision/IO/Assets.h"
 /*--------------------------------*/
 
 /*----------  Renderer  ----------*/

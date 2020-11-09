@@ -8,14 +8,14 @@ namespace Vision
 {
     enum class WrapMode
     {
-        Repeat = 0,
-        ClampToEdge = 1
+        Repeat,
+        ClampToEdge
     };
 
     enum class FilterMode
     {
-        Point = 0,
-        Bilinear = 1
+        Point,
+        Bilinear
     };
 
     struct TextureData
@@ -41,15 +41,15 @@ namespace Vision
     public:
         virtual ~Texture2D() {}
 
-        virtual void SetData(void* data, uint32_t sizeInBytes) = 0;
+        virtual void SetData(void* data, uint32 sizeInBytes) = 0;
 
-        virtual void Bind(uint32_t slot) = 0;
+        virtual void Bind(uint32 slot) const = 0;
 
         virtual void SetWrapMode(WrapMode wrapModeX, WrapMode wrapModeY) = 0;
         virtual void SetFilterMode(FilterMode filterMode) = 0;
 
-        static Ref<Texture2D> Create(uint32_t width, uint32_t height, const TextureProps& props = TextureProps());
-        static Ref<Texture2D> CreateFromFile(const std::string& path, const TextureProps& props = TextureProps());
+        static Texture2D* Create(uint32 width, uint32 height, const TextureProps& props = TextureProps());
+        static Texture2D* CreateFromFile(const std::string& path, const TextureProps& props = TextureProps());
 
         inline const TextureData& GetData() const { return m_Data; }
         inline const TextureProps& GetProperties() const { return m_Properties; }

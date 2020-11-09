@@ -53,7 +53,7 @@ void main()
         {
             color = texture(u_Textures[i], fragmentInput.TextureCoord)
             * fragmentInput.Color;
-            // color *= vec4(1.0f, 1.0f, 1.0f, 0.9f);
+            // color *= vec4(1.0f, 1.0f, 1.0f, 1.0f);
             break;
         }
     }

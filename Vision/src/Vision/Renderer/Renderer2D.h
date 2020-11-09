@@ -50,7 +50,7 @@ namespace Vision
 
 		static void BeginScene(const glm::mat4& cameraTransform,
 							   const OrthographicCameraComponent& camera,
-							   const Ref<Shader>& quadShader);
+							   Shader* quadShader);
 
 		static void EndScene();
 
@@ -65,11 +65,11 @@ namespace Vision
 		static void DrawTexture(const glm::vec2& position,
 								float32 rotationAngle,
 								const glm::vec2& scale,
-								const Ref<Texture2D>& texture,
+								const Texture2D* texture,
 								const glm::vec4& color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), float tilingFactor = 1.0f);
 
 		static void DrawTexture(const glm::mat3& transform,
-								const Ref<Texture2D>& texture,
+								const Texture2D* texture,
 								const glm::vec4& color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), float tilingFactor = 1.0f);
 
 		static void DrawSprite(const glm::vec2& position,
@@ -83,7 +83,7 @@ namespace Vision
 	private:
 		static void InitQuadSetup();
 
-		static uint32 AssginTextureSlot(const Ref<Texture2D>& texture);
+		static uint32 AssginTextureSlot(const Texture2D* texture);
 
 		inline static glm::mat3 CreateQuadTransform(const glm::vec2& position,
 										  		    float32 rotationAngle,
@@ -94,8 +94,8 @@ namespace Vision
 		static void FlushQuadBatch();
 
 	private:
-		static SceneData      s_SceneData;
-		static QuadData       s_QuadData;
-		static Ref<Texture2D> s_WhitePixel;
+		static SceneData  s_SceneData;
+		static QuadData   s_QuadData;
+		static Texture2D* s_WhitePixel;
 	};
 }

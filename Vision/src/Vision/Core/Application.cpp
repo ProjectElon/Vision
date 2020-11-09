@@ -5,13 +5,14 @@
 #include "Vision/Platform/Input.h"
 #include "Vision/Renderer/Renderer.h"
 #include "Vision/Renderer/RenderCommand.h"
+#include "Vision/IO/Assets.h"
 
 namespace Vision
 {
 	Application::Application()
 	{
 		VN_CORE_ASSERT(!s_Instance, "Application already exists");
-		
+
 		s_Instance = this;
 
 		Renderer::SetAPI(Renderer::API::OpenGL);
@@ -19,8 +20,9 @@ namespace Vision
 		m_Window = Window::Create();
 		m_Window->SetEventCallback(VN_BIND_EVENT_FN(Application::OnEvent));
 		const WindowData& windowData = m_Window->GetData();
-		
+
 		Renderer::Init();
+		AssetManager::Init();
 		Input::Init();
 
 		m_ImGuiLayer = new ImGuiLayer();
@@ -34,6 +36,7 @@ namespace Vision
 	Application::~Application()
 	{
 		Input::Shutdown();
+		AssetManager::Shutdown();
 		Renderer::Shutdown();
 	}
 
@@ -64,9 +67,12 @@ namespace Vision
 
 			m_Window->OnUpdate();
 
-#ifdef VN_PLATFORM_WINDOWS and defined(VN_EDITOR)
-			// win32 file watchers
+//@Note: 
+#ifdef VN_PLATFORM_WINDOWS
+#ifdef VN_EDITOR
+			// @Note: win32 file watchers
 			MsgWaitForMultipleObjectsEx(0, NULL, 0, QS_ALLINPUT, MWMO_ALERTABLE);
+#endif
 #endif
 		}
 	}
@@ -87,7 +93,7 @@ namespace Vision
 			if (e.Handled)
 			{
 				break;
-			}	
+			}
 		}
 	}
 
@@ -96,7 +102,7 @@ namespace Vision
 		m_LayerStack.PushLayer(layer);
 		layer->OnAttach();
 	}
-	
+
 	void Application::PushOverlay(Layer* overlay)
 	{
 		m_LayerStack.PushOverlay(overlay);

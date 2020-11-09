@@ -140,7 +140,7 @@ namespace Vision
 	{
 		m_RendererID = glCreateProgram();
 
-		int success;
+		int32 success;
 		char logInfo[512];
 
 		for (auto& shader : m_Shaders)
@@ -200,8 +200,6 @@ namespace Vision
 		}
 
 		VN_CORE_ASSERT(false, "[SHADER]({0}) Type {1} is not supported", m_Name, type);
-
-		return GL_NONE;
 	}
 
 	int32_t OpenGLShader::GetUniformLocation(const std::string& name)
@@ -210,7 +208,7 @@ namespace Vision
 
 		if (it == m_UniformLocations.end())
 		{
-			int32_t uniformLocation = glGetUniformLocation(m_RendererID, name.c_str());
+			int32 uniformLocation = glGetUniformLocation(m_RendererID, name.c_str());
 
 			if (uniformLocation == -1)
 			{

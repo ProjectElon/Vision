@@ -8,13 +8,13 @@
 
 namespace Vision
 {
-	Ref<Shader> Shader::CreateFromFile(const std::string& filepath)
+	Shader* Shader::CreateFromFile(const std::string& filepath)
 	{
 		switch (Renderer::GetAPI())
 		{
 			case Renderer::API::OpenGL:
 			{
-				return CreateRef<OpenGLShader>(filepath);
+				return new OpenGLShader(filepath);
 			}
 			break;
 		}

@@ -231,7 +231,6 @@ namespace Vision
 
     private:
         TagMap m_Tags;
-
         EntityStorage* m_Entities = nullptr;
         ComponentMap   m_Components;
 
@@ -240,7 +239,7 @@ namespace Vision
 #ifdef VN_EDITOR
     public:
         static EditorState EditorState;
-        friend class InspectorPanel;
+        friend class       InspectorPanel;
 #endif
     };
 }

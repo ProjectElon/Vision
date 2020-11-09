@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Vision/Entity/Components.h"
+#include "Vision/Renderer/Texture2D.h"
 
 namespace Vision
 {
