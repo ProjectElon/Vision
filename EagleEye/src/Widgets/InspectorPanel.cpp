@@ -75,7 +75,7 @@ namespace Vision
 
                 ImGuiWidgets::DrawBool("Static", camera.Static, 70.0f);
 
-                ImGui::Text("");
+                ImGui::Text("\n");
 
                 bool changed = false;
 
@@ -132,12 +132,9 @@ namespace Vision
             {
                 auto& sprite = ComponentCast<SpriteRendererComponent>(component);
 
-                if (!sprite.Texture)
-                {
-                    sprite.Texture = (Texture2D*) AssetManager::QueryAssetType("Texture", "Assets/Textures/dirt.png");
-                }
+                Texture2D* texture = AssetManager::GetTexture(sprite.Texture);
 
-                const TextureData& textureData = sprite.Texture->GetData();
+                const TextureData& textureData = texture->GetData();
                 std::string textureName = FileSystem::GetFileName(textureData.Path);
 
                 ImGui::Text(textureName.c_str());
@@ -150,12 +147,13 @@ namespace Vision
 
                 if (ImGui::ImageButton((void*)(intptr_t)textureData.RendererID, ImVec2(72.0f, 72.0f), ImVec2(0, 1), ImVec2(1, 0)))
                 {
-                    // @Harlequin: Get Extensions from Texture AssetInfo
                     std::string texturepath = FileDialog::OpenFile("Texture", { "png", "jpeg", "psd", "bmp", "tga" });
 
                     if (!texturepath.empty())
                     {
-                        sprite.Texture = (Texture2D*)AssetManager::QueryAssetType("Texture", texturepath);
+                        AssetManager::ReleaseAsset(sprite.Texture);
+                        sprite.Texture = AssetManager::RequestAsset(texturepath);
+                        texture = AssetManager::GetTexture(sprite.Texture);
                     }
                 }
 
@@ -165,7 +163,7 @@ namespace Vision
                 // @Note: Should we edit a texture properties in a texture editor
                 // or we should edit it per spite via a sampler ???
                 {
-                    const TextureProps& properties = sprite.Texture->GetProperties();
+                    const TextureProps& properties = texture->GetProperties();
 
                     static const char* WrapModeStrings[] =
                     {
@@ -191,7 +189,7 @@ namespace Vision
                     {
                         if (seletedWrapXMode != (int32)properties.WrapX)
                         {
-                            sprite.Texture->SetWrapMode((WrapMode)seletedWrapXMode, (WrapMode)seletedWrapYMode);
+                            texture->SetWrapMode((WrapMode)seletedWrapXMode, (WrapMode)seletedWrapYMode);
                         }
                     }
 
@@ -203,7 +201,7 @@ namespace Vision
                     {
                         if (seletedWrapYMode != (int32)properties.WrapY)
                         {
-                            sprite.Texture->SetWrapMode((WrapMode)seletedWrapXMode, (WrapMode)seletedWrapYMode);
+                            texture->SetWrapMode((WrapMode)seletedWrapXMode, (WrapMode)seletedWrapYMode);
                         }
                     }
 
@@ -215,7 +213,7 @@ namespace Vision
                     {
                         if (seletedFilterMode != (int32)properties.FilterMode)
                         {
-                            sprite.Texture->SetFilterMode((FilterMode)seletedFilterMode);
+                            texture->SetFilterMode((FilterMode)seletedFilterMode);
                         }
                     }
                 }
@@ -241,8 +239,9 @@ namespace Vision
             {
                 const auto& sprite = ComponentCast<SpriteRendererComponent>(component);
 
-                const TextureData& data = sprite.Texture->GetData();
-                const TextureProps& props = sprite.Texture->GetProperties();
+                Texture2D* texture = AssetManager::GetTexture(sprite.Texture);
+                const TextureData& data = texture->GetData();
+                const TextureProps& props = texture->GetProperties();
 
                 TextSerializer::SerializeString(w, "Texture Path", data.Path);
                 TextSerializer::SerializeUint32(w, "Texture Wrap X", (uint32)props.WrapX);
@@ -261,21 +260,15 @@ namespace Vision
                 auto& sprite = ComponentCast<SpriteRendererComponent>(component);
 
                 std::string texturepath = TextDeserializer::DeserializeString(r, "Texture Path");
-
-                if (!texturepath.empty())
-                {
-                    sprite.Texture = (Texture2D*)AssetManager::QueryAssetType("Texture", texturepath)->Memory;
-                }
+                sprite.Texture = AssetManager::RequestAsset(texturepath);
+                Texture2D* texture = AssetManager::GetTexture(sprite.Texture);
 
                 uint32 wrapX = TextDeserializer::DeserializeUint32(r, "Texture Wrap X");
                 uint32 wrapY = TextDeserializer::DeserializeUint32(r, "Texture Wrap Y");
                 uint32 filterMode = TextDeserializer::DeserializeUint32(r, "Texture Fliter Mode");
 
-                if (sprite.Texture)
-                {
-                    sprite.Texture->SetWrapMode((WrapMode)wrapX, (WrapMode)wrapY);
-                    sprite.Texture->SetFilterMode((FilterMode)filterMode);
-                }
+                texture->SetWrapMode((WrapMode)wrapX, (WrapMode)wrapY);
+                texture->SetFilterMode((FilterMode)filterMode);
 
                 sprite.Color = TextDeserializer::DeserializeVector4(r, "Color");
 

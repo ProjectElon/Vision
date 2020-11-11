@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Vision/Core/Base.h"
+#include "Vision/IO/Assets.h"
+
 #include <glm/glm.hpp>
 
 namespace Vision
@@ -71,11 +73,10 @@ namespace Vision
         bool Static = false;
     };
 
-    class Texture2D;
-
     struct SpriteRendererComponent
     {
-        Texture2D* Texture = nullptr;
+        //@Harlequin: move a default texture to a local directory
+        AssetID Texture = AssetManager::RequestAsset("Assets/Textures/wood.png");
 
         glm::vec4 Color = { 1.0f, 1.0f, 1.0f, 1.0f };
 

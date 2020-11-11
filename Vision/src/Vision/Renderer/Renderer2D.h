@@ -50,7 +50,7 @@ namespace Vision
 
 		static void BeginScene(const glm::mat4& cameraTransform,
 							   const OrthographicCameraComponent& camera,
-							   Shader* quadShader);
+							   uint32 quadShaderAssetID);
 
 		static void EndScene();
 

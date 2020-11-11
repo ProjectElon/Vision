@@ -18,6 +18,7 @@ vertexOuput;
 uniform mat4 u_ViewProj;
 // uniform vec3 u_CameraPosition;
 
+
 void main()
 {
     vertexOuput.Color = a_Color;
@@ -53,7 +54,6 @@ void main()
         {
             color = texture(u_Textures[i], fragmentInput.TextureCoord)
             * fragmentInput.Color;
-            // color *= vec4(1.0f, 1.0f, 1.0f, 1.0f);
             break;
         }
     }

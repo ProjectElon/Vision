@@ -1,7 +1,7 @@
 {
     "MaxEntityCount": 100,
     "PrimaryCamera": "",
-    "SelectedEntity": "Entity1",
+    "SelectedEntity": "Entity2",
     "Entities": [
         {
             "Tag": "Player",
@@ -83,7 +83,7 @@
                     "Name": "Sprite Renderer",
                     "ID": 13080639714729183211,
                     "Data": {
-                        "Texture Path": "Assets/Textures/lava.png",
+                        "Texture Path": "Assets/Textures/dirt.png",
                         "Texture Wrap X": 0,
                         "Texture Wrap Y": 0,
                         "Texture Fliter Mode": 0,
@@ -135,7 +135,111 @@
                     "Name": "Sprite Renderer",
                     "ID": 13080639714729183211,
                     "Data": {
-                        "Texture Path": "C:/dev/cpp/Vision/EagleEye/Assets/Textures/cotton_blue.png",
+                        "Texture Path": "Assets/Textures/cotton_blue.png",
+                        "Texture Wrap X": 0,
+                        "Texture Wrap Y": 0,
+                        "Texture Fliter Mode": 0,
+                        "Color": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            1.0
+                        ],
+                        "Bottom Left Point": [
+                            0.0,
+                            0.0
+                        ],
+                        "Top Right Point": [
+                            1.0,
+                            1.0
+                        ],
+                        "Flip X": false,
+                        "Flip Y": false
+                    }
+                }
+            ]
+        },
+        {
+            "Tag": "Entity2",
+            "Components": [
+                {
+                    "Name": "Transform",
+                    "ID": 1066925509535886804,
+                    "Data": {
+                        "Position": [
+                            2.299999952316284,
+                            -0.8999999761581421,
+                            0.0
+                        ],
+                        "Rotation": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "Scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    }
+                },
+                {
+                    "Name": "Sprite Renderer",
+                    "ID": 13080639714729183211,
+                    "Data": {
+                        "Texture Path": "Assets/Textures/stone.png",
+                        "Texture Wrap X": 0,
+                        "Texture Wrap Y": 0,
+                        "Texture Fliter Mode": 0,
+                        "Color": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            1.0
+                        ],
+                        "Bottom Left Point": [
+                            0.0,
+                            0.0
+                        ],
+                        "Top Right Point": [
+                            1.0,
+                            1.0
+                        ],
+                        "Flip X": false,
+                        "Flip Y": false
+                    }
+                }
+            ]
+        },
+        {
+            "Tag": "Entity3",
+            "Components": [
+                {
+                    "Name": "Transform",
+                    "ID": 1066925509535886804,
+                    "Data": {
+                        "Position": [
+                            -1.399999976158142,
+                            1.100000023841858,
+                            0.0
+                        ],
+                        "Rotation": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "Scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    }
+                },
+                {
+                    "Name": "Sprite Renderer",
+                    "ID": 13080639714729183211,
+                    "Data": {
+                        "Texture Path": "Assets/Textures/gravel_dirt.png",
                         "Texture Wrap X": 0,
                         "Texture Wrap Y": 0,
                         "Texture Fliter Mode": 0,

@@ -41,10 +41,9 @@ namespace Vision
 		using TDS = TextDeserializer;
 		m_CameraController = CreateScope<OrthographicCameraController>(aspectRatio, TDS::DeserializeFloat(m_Settings, "CameraZoomLevel"));
 
-		m_SpriteShader = AssetManager::QueryAsset("C:/dev/cpp/Vision/EagleEye/Assets/Shaders/Sprite.glsl");
+		m_SpriteShader = AssetManager::RequestAsset("Assets/Shaders/Sprite.glsl");
+		m_CheckboardTexture = AssetManager::RequestAsset("Assets/Textures/Checkerboard.png");
 
-		m_CheckboardTexture = AssetManager::QueryAsset("Assets/Textures/Checkerboard.png");
-		
 		std::string lastScenePath = TDS::DeserializeString(m_Settings, "Last Scene Path");
 
 		if (!lastScenePath.empty())
@@ -63,10 +62,10 @@ namespace Vision
 		m_FileWatcher = CreateScope<FileWatcher>(BindWatcherFn(EditorLayer::OnFileChanged));
 		m_FileWatcher->Watch("Assets");
 
-		m_PlayerTexture = AssetManager::QueryAsset("Assets/Textures/character_femaleAdventurer_sheetHD.png");
+		m_PlayerTexture = AssetManager::RequestAsset("Assets/Textures/character_femaleAdventurer_sheetHD.png");
 
 		CreateTextureAtlasGrid(&m_PlayerAtlas,
-							   (Texture2D*)m_PlayerTexture->Memory,
+							   AssetManager::GetTexture(m_PlayerTexture),
 							   192,
 							   256);
 	}
@@ -95,23 +94,25 @@ namespace Vision
 		{
 			case Vision::FileWatcherAction::FileAdded:
 			{
-				VN_CORE_INFO("Added: {0}", filepath);
+				// VN_CORE_INFO("Added: {0}", filepath);
 			}
 			break;
 
 			case Vision::FileWatcherAction::FileRemoved:
 			{
-				VN_CORE_INFO("Removed: {0}", filepath);
+				// VN_CORE_INFO("Removed: {0}", filepath);
 			}
 			break;
 
 			case Vision::FileWatcherAction::FileModified:
 			{
-				//@Robustness: Implement Reload don't free and allocate the memory itself
-				//@Harlequin:  This won't work without having an absolute path to assets what should we do
+				std::string cwd = FileSystem::GetCurrentWorkingDirectory();
+				std::string relativePath = filepath.substr(cwd.length() + 1);
 				
-				AssetManager::ReleaseAsset(filepath);
-				AssetManager::QueryAsset(filepath);	
+				if (FileSystem::FileExists(relativePath))
+				{
+					AssetManager::ReloadAsset(relativePath);
+				}
 			}
 			break;
 
@@ -147,7 +148,7 @@ namespace Vision
 
 		RenderCommand::Clear(RendererAPI::ColorBuffer);
 
-		Renderer2D::BeginScene(m_CameraController->GetCameraTransform(), m_CameraController->Camera, (Shader*)m_SpriteShader->Memory);
+		Renderer2D::BeginScene(m_CameraController->GetCameraTransform(), m_CameraController->Camera, m_SpriteShader);
 
 		Scene* scene = Scene::GetActiveScene();
 
@@ -155,7 +156,7 @@ namespace Vision
 		{
 			Renderer2D::DrawTexture(glm::vec3(0.0f, 0.0f, 0.0f), 0.0f,
 									glm::vec2(100.0f, 100.0f),
-									(Texture2D*)m_CheckboardTexture->Memory,
+									AssetManager::GetTexture(m_CheckboardTexture),
 									glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
 									100.0f);
 
@@ -169,7 +170,7 @@ namespace Vision
 			if (player != entity::null)
 			{
 				auto& sprite = scene->GetComponent<SpriteRendererComponent>(player);
-				sprite.Texture = (Texture2D*)m_PlayerTexture->Memory;
+				sprite.Texture = m_PlayerTexture;
 				sprite.BottomLeftUV = m_PlayerAtlas.Rects[m_TextureIndex].BottomLeft;
 				sprite.TopRightUV = m_PlayerAtlas.Rects[m_TextureIndex].TopRight;
 			}
@@ -208,6 +209,11 @@ namespace Vision
 			glm::vec2 viewportSize = m_SceneViewPanel.GetViewportSize();
 			m_CameraController->Resize((uint32)viewportSize.x, (uint32)viewportSize.y);
 		}
+
+		ImGui::Begin("Stats");
+		double totalMemoryUnsedInMbs = AssetManager::AssetsStorage.TotalMemoryUsed / 1024.0;
+		ImGui::TextColored({ 0.2f, 0.3f, 0.9f, 1.0f }, "Total Asset Memory Used: %.3lf MBs", totalMemoryUnsedInMbs);
+		ImGui::End();
 
 		m_Menubar.OnImGuiRender();
 		m_SceneHierarchyPanel.OnImGuiRender();

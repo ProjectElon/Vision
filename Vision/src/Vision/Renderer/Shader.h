@@ -17,8 +17,6 @@ namespace Vision
 		virtual void Bind() const = 0;
 		virtual void UnBind() const = 0;
 
-		virtual void Reload() = 0;
-
 		virtual void SetInt(const std::string& name, int32 value) = 0;
 		virtual void SetIntArray(const std::string& name, int32* values, uint32_t count) = 0;
 

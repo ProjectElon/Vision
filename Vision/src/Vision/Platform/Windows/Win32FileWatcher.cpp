@@ -17,7 +17,7 @@ namespace Vision
         OVERLAPPED             Overlapped;
         std::string            DirectoryPath;
         HANDLE                 DirectoryHandle;
-        uint8                  Buffer[32 * 1024];
+        uint8                  Buffer[64 * 1024];
         bool                   Recursive;
         FileWatcherCallbackFn  CallbackFn;
     };
@@ -104,18 +104,19 @@ namespace Vision
     void RefreshWatcherDirectory(WatchData& data, bool subscribing)
     {
         ReadDirectoryChangesW(
-        data.DirectoryHandle,
-        data.Buffer,
-        sizeof(data.Buffer),
-        data.Recursive,
-        FILE_NOTIFY_CHANGE_LAST_WRITE |
-        FILE_NOTIFY_CHANGE_CREATION |
-        FILE_NOTIFY_CHANGE_SECURITY |
-        FILE_NOTIFY_CHANGE_DIR_NAME |
-        FILE_NOTIFY_CHANGE_FILE_NAME,
-        0,
-        &data.Overlapped,
-        (subscribing) ? WatchCallback : 0);
+            data.DirectoryHandle,
+            data.Buffer,
+            sizeof(data.Buffer),
+            data.Recursive,
+            FILE_NOTIFY_CHANGE_LAST_WRITE |
+            FILE_NOTIFY_CHANGE_LAST_ACCESS |
+            FILE_NOTIFY_CHANGE_CREATION |
+            FILE_NOTIFY_CHANGE_SECURITY |
+            FILE_NOTIFY_CHANGE_DIR_NAME |
+            FILE_NOTIFY_CHANGE_FILE_NAME,
+            0,
+            &data.Overlapped,
+            (subscribing) ? WatchCallback : 0);
     }
 
     FileWatcher::~FileWatcher()

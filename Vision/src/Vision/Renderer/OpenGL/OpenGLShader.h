@@ -24,8 +24,6 @@ namespace Vision
 		void Bind() const override;
 		void UnBind() const override;
 
-		void Reload() override;
-
 		inline const std::string& GetName() const { return m_Name; }
 
 		void SetInt(const std::string& name, int32 value) override;

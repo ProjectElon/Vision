@@ -61,9 +61,9 @@ namespace Vision
 		TextureAtlasGrid m_PlayerAtlas;
 		uint32 m_TextureIndex = 0;
 
-		Asset* m_CheckboardTexture;
-		Asset* m_PlayerTexture;
-		Asset* m_SpriteShader;
+		AssetID m_CheckboardTexture;
+		AssetID m_PlayerTexture;
+		AssetID m_SpriteShader;
 
 		Ref<FrameBuffer> m_SceneFrameBuffer;
 		Ref<FrameBuffer> m_GameFrameBuffer;

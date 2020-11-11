@@ -34,15 +34,6 @@ namespace Vision
 		glUseProgram(0);
 	}
 
-	void OpenGLShader::Reload()
-	{
-		UnloadShaders();
-
-		LoadShadersSource(m_Filepath);
-
-		CompileAndLinkShaders();
-	}
-
 	void OpenGLShader::SetInt(const std::string& name, int32_t value)
 	{
 		glUniform1i(GetUniformLocation(name), value);

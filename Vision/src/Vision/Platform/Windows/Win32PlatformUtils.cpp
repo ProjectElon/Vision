@@ -11,6 +11,7 @@
 
 #include "Vision/Platform/PlatformUtils.h"
 #include "Vision/Core/Application.h"
+#include "Vision/IO/FileSystem.h"
 
 namespace Vision
 {
@@ -60,7 +61,11 @@ namespace Vision
 
 		if (GetOpenFileNameA(&ofn) == TRUE)
 		{
-			std::string result = ofn.lpstrFile;
+			std::string path = ofn.lpstrFile;
+
+			std::string cwd = FileSystem::GetCurrentWorkingDirectory();
+			std::string result = path.substr(cwd.length() + 1);
+
 			std::replace(result.begin(), result.end(), '\\', '/');
 			return result;
 		}
@@ -100,14 +105,17 @@ namespace Vision
 
 		if (GetSaveFileNameA(&ofn) == TRUE)
 		{
-			std::string result = ofn.lpstrFile;
-			std::replace(result.begin(), result.end(), '\\', '/');
+			std::string path = ofn.lpstrFile;
+			std::replace(path.begin(), path.end(), '\\', '/');
 
 			// if the extension is not included in the file name add it for convince
-			if (result.find_last_of('.') == -1)
+			if (path.find_last_of('.') == -1)
 			{
-				result += extension;
+				path += extension;
 			}
+
+			std::string cwd = FileSystem::GetCurrentWorkingDirectory();
+			std::string result = path.substr(cwd.length() + 1);
 
 			return result;
 		}
