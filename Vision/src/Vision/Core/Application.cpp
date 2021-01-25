@@ -4,25 +4,26 @@
 #include "Vision/Core/Log.h"
 #include "Vision/Platform/Input.h"
 #include "Vision/Renderer/Renderer.h"
-#include "Vision/Renderer/RenderCommand.h"
+#include "Vision/Renderer/Renderer2D.h"
 #include "Vision/IO/Assets.h"
 
 namespace Vision
 {
 	Application::Application()
 	{
-		VN_CORE_ASSERT(!s_Instance, "Application already exists");
+		VnCoreAssert(!s_Instance, "Application already exists");
 
 		s_Instance = this;
 
-		Renderer::SetAPI(Renderer::API::OpenGL);
+		OpenWindow(&m_Window,
+				   "Vision",
+					1280,
+					720,
+					VnBindEventFn(Application::OnEvent));
 
-		m_Window = Window::Create();
-		m_Window->SetEventCallback(VN_BIND_EVENT_FN(Application::OnEvent));
-		const WindowData& windowData = m_Window->GetData();
-
-		Renderer::Init();
-		AssetManager::Init();
+		Renderer::Init(&m_Window);
+		Renderer2D::Init();
+		Assets::Init();
 		Input::Init();
 
 		m_ImGuiLayer = new ImGuiLayer();
@@ -30,13 +31,14 @@ namespace Vision
 
 		m_FrameTimer.Start();
 
-		Renderer::OnWindowResize(windowData.Width, windowData.Height);
+		Renderer::SetViewport(0, 0, m_Window.Width, m_Window.Height);
 	}
 
 	Application::~Application()
 	{
 		Input::Shutdown();
-		AssetManager::Shutdown();
+		Assets::Shutdown();
+		Renderer2D::Shutdown();
 		Renderer::Shutdown();
 	}
 
@@ -65,14 +67,18 @@ namespace Vision
 				m_ImGuiLayer->End();
 			}
 
-			m_Window->OnUpdate();
+			PollEvents();
+			Renderer::SwapBuffers();
 
-//@Note: 
 #ifdef VN_PLATFORM_WINDOWS
-#ifdef VN_EDITOR
-			// @Note: win32 file watchers
-			MsgWaitForMultipleObjectsEx(0, NULL, 0, QS_ALLINPUT, MWMO_ALERTABLE);
-#endif
+	#ifdef VN_EDITOR
+				// @(Note): win32 file watchers
+				MsgWaitForMultipleObjectsEx(0,
+											NULL,
+											0,
+											QS_ALLINPUT,
+											MWMO_ALERTABLE);
+	#endif
 #endif
 		}
 	}
@@ -81,10 +87,10 @@ namespace Vision
 	{
 		EventDispatcher dispatcher(e);
 
-		dispatcher.Dispatch<WindowResizeEvent>(VN_BIND_EVENT_FN(Application::OnWindowResize));
-		dispatcher.Dispatch<WindowMinimizedEvent>(VN_BIND_EVENT_FN(Application::OnWindowMinimized));
-		dispatcher.Dispatch<WindowRestoredEvent>(VN_BIND_EVENT_FN(Application::OnWindowRestored));
-		dispatcher.Dispatch<WindowCloseEvent>(VN_BIND_EVENT_FN(Application::OnWindowClose));
+		dispatcher.Dispatch<WindowResizeEvent>(VnBindEventFn(Application::OnWindowResize));
+		dispatcher.Dispatch<WindowMinimizedEvent>(VnBindEventFn(Application::OnWindowMinimized));
+		dispatcher.Dispatch<WindowRestoredEvent>(VnBindEventFn(Application::OnWindowRestored));
+		dispatcher.Dispatch<WindowCloseEvent>(VnBindEventFn(Application::OnWindowClose));
 
 		for (auto it = m_LayerStack.rbegin(); it != m_LayerStack.rend(); ++it)
 		{
@@ -116,7 +122,10 @@ namespace Vision
 
 	bool Application::OnWindowResize(WindowResizeEvent& e)
 	{
-		Renderer::OnWindowResize(e.GetWidth(), e.GetHeight());
+		Renderer::SetViewport(0,
+							  0,
+							  e.GetWidth(),
+							  e.GetHeight());
 		return false;
 	}
 

@@ -76,7 +76,6 @@ includedir["GLFW"]      = "ThirdParty/GLFW/include"
 includedir["Glad"]      = "ThirdParty/Glad/include"
 includedir["ImGui"]     = "ThirdParty/imgui"
 includedir["glm"]       = "ThirdParty/glm"
-includedir["rapidjson"] = "ThirdParty/rapidjson/include"
 includedir["stb_image"] = "ThirdParty/stb"
 
 group ("Dependencies")
@@ -112,7 +111,6 @@ project ("Vision")
 		"%{includedir.Glad}",
 		"%{includedir.ImGui}",
 		"%{includedir.glm}",
-		"%{includedir.rapidjson}",
 		"%{includedir.stb_image}"
 	}
 

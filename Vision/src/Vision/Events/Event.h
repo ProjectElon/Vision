@@ -30,10 +30,10 @@ namespace Vision
 
 	enum EventCategory : uint8_t
 	{
-		EventCategoryApplication = VN_BIT(0),
-		EventCategoryInput		 = VN_BIT(1),
-		EventCategoryKeyboard    = VN_BIT(2),
-		EventCategoryMouse       = VN_BIT(3)
+		EventCategoryApplication = VnBitUInt32(0),
+		EventCategoryInput		 = VnBitUInt32(1),
+		EventCategoryKeyboard    = VnBitUInt32(2),
+		EventCategoryMouse       = VnBitUInt32(3)
 	};
 
 	class Event

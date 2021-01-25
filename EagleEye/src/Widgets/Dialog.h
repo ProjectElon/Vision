@@ -3,7 +3,6 @@
 namespace Vision
 {
     class EditorLayer;
-    class Scene;
 
     enum class DialogType
     {
@@ -14,15 +13,15 @@ namespace Vision
     class Dialog
     {
     public:
-        void SetEditorLayer(EditorLayer* editorLayer);
+        void SetEditor(EditorLayer* editor);
         void OnImGuiRender();
 
         static void Open(DialogType type);
-    
+
     private:
         void CreateSceneDialog();
 
         static DialogType s_Type;
-        EditorLayer* m_EditorLayer;
+        EditorLayer* m_Editor;
     };
 }

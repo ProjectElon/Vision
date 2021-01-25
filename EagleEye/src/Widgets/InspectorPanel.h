@@ -1,10 +1,12 @@
 #pragma once
 
-#include <Vision.h>
+#include <Vision.h> // @(Harlequin): Remove
 
 namespace Vision
 {
 	using ComponentStateMap = std::map<std::pair<std::string, ComponentID>, ComponentState>;
+
+	struct Scene;
 
 	class InspectorPanel
 	{
@@ -13,10 +15,12 @@ namespace Vision
 
 		void OnImGuiRender();
 
+		void SetActiveScene(AssetID scene);
+
 	private:
+		AssetID m_ActiveScene = 0;
 		ComponentStateMap m_ComponentState;
 
-    private:
-        void DrawComponents(Scene& scene, Entity entity, const EntityStorage& storage);
+        void DrawComponents(Scene* scene, Entity entity, const EntityStorage& storage);
 	};
 }

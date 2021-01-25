@@ -2,38 +2,45 @@
 #include "Vision/Renderer/Renderer.h"
 #include "Vision/Renderer/Renderer2D.h"
 
-#ifdef VN_PLATFORM_DESKTOP
-	#include "Vision/Renderer/OpenGL/OpenGLRendererAPI.h"
-#endif
-
 namespace Vision
 {
-	Renderer::API Renderer::s_API = API::None;
-	Scope<RendererAPI> Renderer::s_RendererAPI;
-	
-	void Renderer::Init()
-	{
-		switch (GetAPI())
-		{
-			case Renderer::API::OpenGL:
-			{
-				s_RendererAPI = CreateScope<OpenGLRendererAPI>();
-			}
-			break;
-		}
+    uint32 Renderer::GetDataTypeSize(DataType dataType)
+    {
+        switch (dataType)
+        {
+            case DataType::Bool:    return 1;         break;
+            case DataType::Int8:    return 1;         break;
+            case DataType::UInt8:   return 1;         break;
+            case DataType::Int16:   return 2;         break;
+            case DataType::UInt16:  return 2;         break;
+            case DataType::Int32:     return 4;         break;
+            case DataType::UInt32:    return 4;         break;
+            case DataType::Float:   return 1 * 4;     break;
+            case DataType::Float2:  return 2 * 4;     break;
+            case DataType::Float3:  return 3 * 4;     break;
+            case DataType::Float4:  return 4 * 4;     break;
+            case DataType::Matrix3: return 3 * 3 * 4; break;
+            case DataType::Matrix4: return 4 * 4 * 4; break;
+        }
+    }
 
-		Renderer2D::Init();
-	}
-
-	void Renderer::Shutdown()
-	{
-		Renderer2D::Shutdown();
-		s_RendererAPI.release();
-	}
-
-	void Renderer::OnWindowResize(uint32_t width, uint32_t height)
-	{
-		s_RendererAPI->SetViewport(0, 0, width, height);
-	}
-
+    uint32 Renderer::GetDataTypeComponentCount(DataType dataType)
+    {
+        switch (dataType)
+        {
+            case DataType::Bool:    return 1;     break;
+            case DataType::Int8:    return 1;     break;
+            case DataType::UInt8:   return 1;     break;
+            case DataType::Int16:   return 1;     break;
+            case DataType::UInt16:  return 1;     break;
+            case DataType::Int32:     return 1;     break;
+            case DataType::UInt32:    return 1;     break;
+            case DataType::Float:   return 1;     break;
+            case DataType::Float2:  return 2;     break;
+            case DataType::Float3:  return 3;     break;
+            case DataType::Float4:  return 4;     break;
+            case DataType::Matrix3: return 3 * 3; break;
+            case DataType::Matrix4: return 4 * 4; break;
+        }
+    }
 }

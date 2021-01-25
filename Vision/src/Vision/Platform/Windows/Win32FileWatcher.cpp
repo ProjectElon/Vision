@@ -22,7 +22,7 @@ namespace Vision
         FileWatcherCallbackFn  CallbackFn;
     };
 
-    static std::unordered_map<std::string, WatchData> s_History;
+    static std::unordered_map<std::string, WatchData> InternalHistory;
 
     static void RefreshWatcherDirectory(WatchData& data, bool subscriping = true);
 
@@ -83,11 +83,14 @@ namespace Vision
         }
     }
 
+    //@(Note): Move to file io
     std::string GetAbsultePathFromRelative(const std::string& path)
     {
         std::string result = path;
 
-        if (FileSystem::FileExists(path))
+        bool isFile = FileSystem::FileExists(path);
+
+        if (isFile)
         {
             result = FileSystem::GetPath(path);
         }
@@ -103,39 +106,42 @@ namespace Vision
 
     void RefreshWatcherDirectory(WatchData& data, bool subscribing)
     {
-        ReadDirectoryChangesW(
-            data.DirectoryHandle,
-            data.Buffer,
-            sizeof(data.Buffer),
-            data.Recursive,
-            FILE_NOTIFY_CHANGE_LAST_WRITE |
-            FILE_NOTIFY_CHANGE_LAST_ACCESS |
-            FILE_NOTIFY_CHANGE_CREATION |
-            FILE_NOTIFY_CHANGE_SECURITY |
-            FILE_NOTIFY_CHANGE_DIR_NAME |
-            FILE_NOTIFY_CHANGE_FILE_NAME,
-            0,
-            &data.Overlapped,
-            (subscribing) ? WatchCallback : 0);
+        ReadDirectoryChangesW(data.DirectoryHandle,
+                              data.Buffer,
+                              sizeof(data.Buffer),
+                              data.Recursive,
+                              FILE_NOTIFY_CHANGE_LAST_WRITE |
+                              FILE_NOTIFY_CHANGE_LAST_ACCESS |
+                              FILE_NOTIFY_CHANGE_CREATION |
+                              FILE_NOTIFY_CHANGE_SECURITY |
+                              FILE_NOTIFY_CHANGE_DIR_NAME |
+                              FILE_NOTIFY_CHANGE_FILE_NAME,
+                              0,
+                              &data.Overlapped,
+                              (subscribing) ? WatchCallback : 0);
     }
 
+    /*
     FileWatcher::~FileWatcher()
     {
-        for (auto& [filepath, data] : s_History)
+        for (auto& [filepath, data] : InternalHistory)
         {
             CloseHandle(data.Overlapped.hEvent);
             CloseHandle(data.DirectoryHandle);
         }
     }
+    */
 
-    bool FileWatcher::Watch(const std::string& path, bool recursive)
+    bool WatchDirectory(const std::string& path,
+                        FileWatcherCallbackFn callback,
+                        bool recursive)
     {
         std::string watchPath = GetAbsultePathFromRelative(path);
-        auto watcherIter = s_History.find(watchPath);
+        auto watcherIter = InternalHistory.find(watchPath);
 
-        if (watcherIter != s_History.end())
+        if (watcherIter != InternalHistory.end())
         {
-            VN_CORE_INFO("Already Watching Directory: {0}", watchPath);
+            VnCoreInfo("Already Watching Directory: {0}", watchPath);
             return false;
         }
 
@@ -150,47 +156,48 @@ namespace Vision
 
         if (handle != INVALID_HANDLE_VALUE)
         {
-            WatchData& data = s_History[watchPath];
+            WatchData& data = InternalHistory[watchPath];
             data.DirectoryPath = watchPath;
             data.DirectoryHandle = handle;
             data.Overlapped = { 0 };
             data.Overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-            data.CallbackFn = m_CallbackFn;
+            data.CallbackFn = callback;
             data.Recursive = recursive;
 
             RefreshWatcherDirectory(data);
 
-            VN_CORE_INFO("Watching Directory: {0}", watchPath);
+            VnCoreInfo("Watching Directory: {0}", watchPath);
             return true;
         }
 
-        VN_CORE_INFO("Can't Watch Directory: {0}", watchPath);
+        VnCoreInfo("Can't Watch Directory: {0}", watchPath);
 
         return false;
     }
 
-    bool FileWatcher::UnWatch(const std::string& path)
+    bool UnWatchDirectory(const std::string& path)
     {
         std::string watchPath = GetAbsultePathFromRelative(path);
 
-        auto watcherIter = s_History.find(watchPath);
+        auto watcherIter = InternalHistory.find(watchPath);
 
-        if (watcherIter != s_History.end())
+        if (watcherIter != InternalHistory.end())
         {
             WatchData& data = watcherIter->second;
 
             CancelIo(data.DirectoryHandle);
             RefreshWatcherDirectory(data, false);
+
             CloseHandle(data.Overlapped.hEvent);
             CloseHandle(data.DirectoryHandle);
 
-            s_History.extract(watcherIter);
+            InternalHistory.extract(watcherIter);
 
-            VN_CORE_INFO("UnWatching Directory: {0}", watchPath);
+            VnCoreInfo("UnWatching Directory: {0}", watchPath);
             return true;
         }
 
-        VN_CORE_INFO("Can't UnWatch Directory: {0}", watchPath);
+        VnCoreInfo("Can't UnWatch Directory: {0}", watchPath);
         return false;
     }
 }

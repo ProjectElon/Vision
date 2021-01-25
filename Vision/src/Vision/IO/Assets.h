@@ -37,6 +37,7 @@ namespace Vision
         std::string Path;
     };
 
+    using AssetID         = uint32;
     using AssetRigistry   = std::unordered_map<std::string, AssetID>;
     using AssetLoaderFn   = std::function<AssetLoadingData(const std::string& assetpath)>;
     using AssetUnloaderFn = std::function<void(Asset* asset)>;
@@ -53,7 +54,7 @@ namespace Vision
     using AssetInfoList = std::vector<AssetInfo>;
     using AssetList = std::vector<Asset>;
 
-    struct AssetManagerStorage
+    struct AssetsStorage
     {
         uint64 TotalMemoryUsed = 0;
 
@@ -63,14 +64,14 @@ namespace Vision
         AssetList Assets;
     };
 
-    class Shader;
-    class Texture2D;
+    struct Shader;
+    struct Texture;
+    struct Scene;
 
-    class AssetManager
+    class Assets
     {
     public:
-        //ReadOnly
-        static AssetManagerStorage AssetsStorage;
+        static AssetsStorage AssetsStorage; // @ReadOnly
 
         static void Init();
         static void Shutdown();
@@ -88,22 +89,17 @@ namespace Vision
 
         static AssetID RequestAsset(const std::string& assetpath);
 
+        static AssetID GetAssetID(const std::string& assetpath);
         static const Asset& GetAsset(AssetID assetID);
 
-        static Texture2D* GetTexture(AssetID assetID);
-        static Shader* GetShader(AssetID assetID);
+        static Texture* GetTexture(AssetID textureAssetID);
+        static Shader* GetShader(AssetID shaderAssetID);
+        static Scene* GetScene(AssetID sceneAssetID);
 
         static void ReleaseAsset(AssetID assetID);
         static void ReleaseAsset(const std::string& assetpath);
 
         static void ReloadAsset(const std::string& assetpath);
-
-        // Harlequin: Move to texture and shaders files
-        static AssetLoadingData LoadTexture(const std::string& texturepath);
-        static void UnloadTexture(Asset* texture);
-
-        static AssetLoadingData LoadShader(const std::string& shaderpath);
-        static void UnloadShader(Asset* shader);
 
     private:
         static uint32 GetAssetInfoIndex(const std::string& assetType);

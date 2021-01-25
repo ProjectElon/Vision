@@ -4,44 +4,74 @@
 
 namespace Vision
 {
-    void CreateTextureAtlasVaryingRects(TextureAtlas* atlas,
-                                        Texture2D* texture,
-                                        uint32 rectCount,
-                                        TextureRect* rects)
+    static void AllocateTextureAtlas(TextureAtlas* atlas,
+                                     AssetID textureID,
+                                     uint32 rectCount)
     {
-        AllocateTextureAtlas(atlas, texture, rectCount);
+        VnCoreAssert(atlas->UVRects == nullptr && rectCount > 0, "invalid texture atlas allocation");
 
-        const TextureData& data = texture->GetData();
+        atlas->TextureID = textureID;
+        atlas->RectCount = rectCount;
 
-        uint32 textureWidth  = data.Width;
-        uint32 textureHeight = data.Height;
+        atlas->UVRects = new UVRect[rectCount];
+    }
+
+    static void ConvertTextureRectToUVRect(const TextureRect* textureRect,
+                                           uint32 textureWidth,
+                                           uint32 textureHeight,
+                                           UVRect* uvRect)
+    {
+        using namespace glm;
+
+        vec2 topLeft       = { textureRect->X, textureHeight - textureRect->Y };
+        vec2 bottomRight   = { textureRect->X + textureRect->Width, textureHeight - (textureRect->Y + textureRect->Height) };
+
+        vec2 topLeftUV     = { topLeft.x / textureWidth, topLeft.y / textureHeight };
+        vec2 bottomRightUV = { bottomRight.x / textureWidth, bottomRight.y / textureHeight };
+
+        uvRect->BottomLeft = { topLeftUV.x, bottomRightUV.y };
+        uvRect->TopRight   = { bottomRightUV.x, topLeftUV.y };
+    }
+
+    void CreateTextureAtlasVaryingRects(TextureAtlas* atlas,
+                                        AssetID textureID,
+                                        uint32 rectCount,
+                                        TextureRect* textureRects)
+    {
+        AllocateTextureAtlas(atlas,
+                             textureID,
+                             rectCount);
+
+        Texture* texture = Assets::GetTexture(textureID);
 
         for (uint32 rectIndex = 0;
              rectIndex < rectCount;
              ++rectIndex)
         {
-            atlas->Rects[rectIndex] = ConvertTextureRectToUVRect(rects[rectIndex], textureWidth, textureHeight);
+            ConvertTextureRectToUVRect(&textureRects[rectIndex],
+                                       texture->Width,
+                                       texture->Height,
+                                       &atlas->UVRects[rectIndex]);
         }
     }
 
     void CreateTextureAtlasGrid(TextureAtlasGrid* atlas,
-                                Texture2D* texture,
+                                AssetID textureID,
                                 uint32 cellWidth,
                                 uint32 cellHeight)
     {
-        const TextureData& textureData = texture->GetData();
-
-        uint32 textureWidth  = textureData.Width;
-        uint32 textureHeight = textureData.Height;
+        Texture* texture = Assets::GetTexture(textureID);
 
         atlas->CellWidth = cellWidth;
         atlas->CellHeight = cellHeight;
-        atlas->Rows = textureHeight / atlas->CellHeight;
-        atlas->Cols = textureWidth / atlas->CellWidth;
+        atlas->Rows = texture->Height / atlas->CellHeight;
+        atlas->Cols = texture->Width / atlas->CellWidth;
 
         uint32 rectCount = atlas->Rows * atlas->Cols;
 
-        AllocateTextureAtlas(atlas, texture, rectCount);
+        AllocateTextureAtlas(atlas,
+                             textureID,
+                             rectCount);
 
         for (uint32 row = 0;
              row < atlas->Rows;
@@ -51,14 +81,19 @@ namespace Vision
                  col < atlas->Cols;
                  ++col)
             {
-                TextureRect currentRect = {
+                TextureRect currentTextureRect =
+                {
                     col * cellWidth,
                     row * cellHeight,
                     cellWidth,
                     cellHeight
                 };
-                uint32 rectIndex = row * atlas->Cols + col;
-                atlas->Rects[rectIndex] = ConvertTextureRectToUVRect(currentRect, textureWidth, textureHeight);
+
+                uint32 cuurentTextureRectIndex = row * atlas->Cols + col;
+                ConvertTextureRectToUVRect(&currentTextureRect,
+                                           texture->Width,
+                                           texture->Height,
+                                           &atlas->UVRects[cuurentTextureRectIndex]);
             }
         }
     }
@@ -67,46 +102,23 @@ namespace Vision
                       uint32 row,
                       uint32 col)
     {
-        VN_CORE_ASSERT(row >= 0 && row < atlas->Rows && col >= 0 && col > atlas->Cols, "out of bounds");
-
+        VnCoreAssert(row >= 0 && row < atlas->Rows && col >= 0 && col > atlas->Cols, "out of bounds");
         uint32 rectIndex = row * atlas->Cols  + col;
-        return atlas->Rects[rectIndex];
+        return atlas->UVRects[rectIndex];
     }
 
-    void FreeTextureAtlas(TextureAtlas* atlas)
+    void DestroyTextureAtlas(TextureAtlas* atlas)
     {
-        VN_CORE_ASSERT(atlas->Rects != nullptr, "can't free a nullptr");
+        VnCoreAssert(atlas->UVRects != nullptr, "can't free a nullptr");
 
-        delete[] atlas->Rects;
+        delete[] atlas->UVRects;
 
-        atlas->Texture   = nullptr;
-        atlas->Rects     = nullptr;
+        atlas->UVRects     = nullptr;
         atlas->RectCount = 0;
     }
 
-    static void AllocateTextureAtlas(TextureAtlas* atlas, Texture2D* texture, uint32 rectCount)
+    void DestroyTextureAtlasGird(TextureAtlasGrid* atlas)
     {
-        VN_CORE_ASSERT(atlas->Rects == nullptr && texture != nullptr && rectCount > 0, "invalid texture atlas allocation");
-
-        atlas->Texture   = texture;
-        atlas->RectCount = rectCount;
-        atlas->Rects     = new UVRect[rectCount];
-    }
-
-    static UVRect ConvertTextureRectToUVRect(const TextureRect& rect, uint32 textureWidth, uint32 textureHeight)
-    {
-        using namespace glm;
-
-        vec2 topLeft       = { rect.X, textureHeight - rect.Y };
-        vec2 bottomRight   = { rect.X + rect.Width, textureHeight - (rect.Y + rect.Height) };
-
-        vec2 topLeftUV     = { topLeft.x / textureWidth, topLeft.y / textureHeight };
-        vec2 bottomRightUV = { bottomRight.x / textureWidth, bottomRight.y / textureHeight };
-
-        UVRect uv;
-        uv.BottomLeft = { topLeftUV.x, bottomRightUV.y };
-        uv.TopRight   = { bottomRightUV.x, topLeftUV.y };
-
-        return uv;
+        DestroyTextureAtlas((TextureAtlas*)atlas);
     }
 }

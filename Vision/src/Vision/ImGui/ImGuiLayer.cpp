@@ -21,7 +21,6 @@ namespace Vision
 	ImGuiLayer::ImGuiLayer()
 		: Layer("ImGui")
 	{
-		m_Window = &Application::Get().GetWindow();
 	}	
 
 	void ImGuiLayer::OnAttach()
@@ -51,9 +50,9 @@ namespace Vision
 			style.Colors[ImGuiCol_WindowBg].w = 1.0f;
 		}
 
-		GLFWwindow* window = (GLFWwindow*)m_Window->GetNativeHandle();
+		const Window& window = Application::Get().GetWindow();
 
-		ImGui_ImplGlfw_InitForOpenGL(window, true);
+		ImGui_ImplGlfw_InitForOpenGL((GLFWwindow*)window.Handle, true);
 		ImGui_ImplOpenGL3_Init("#version 450");
 	}
 
@@ -135,9 +134,8 @@ namespace Vision
 
 		ImGuiIO& io = ImGui::GetIO();
 
-		const WindowData& windowData = m_Window->GetData();
-
-		io.DisplaySize = ImVec2((float)windowData.Width, (float)windowData.Height);
+		const Window& window = Application::Get().GetWindow();
+		io.DisplaySize = ImVec2((float)window.Width, (float)window.Height);
 
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

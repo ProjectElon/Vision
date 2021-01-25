@@ -1,11 +1,18 @@
 #pragma once
 
 #include <cstdint>
+#include <cassert>
 #include <memory>
 
 #include "Vision/Core/Log.h"
 
-#define ArrayCount(array) (sizeof(array) / sizeof(array[0]))
+/*
+-------------------------
+	Utilites
+--------------------------
+*/
+
+#define VnArrayCount(Array) (sizeof(Array) / sizeof(Array[0]))
 
 /*
 -------------------------
@@ -13,18 +20,16 @@
 -------------------------
 */
 
-typedef char          int8;
-typedef unsigned char uint8;
-typedef int16_t		  int16;
-typedef uint16_t	  uint16;
-typedef int32_t		  int32;
-typedef uint32_t	  uint32;
-typedef int64_t		  int64;
-typedef uint64_t	  uint64;
-typedef float		  float32;
-typedef double		  float64;
-
-using AssetID = uint32;
+typedef int8_t   int8;
+typedef uint8_t	 uint8;
+typedef int16_t  int16;
+typedef uint16_t uint16;
+typedef int32_t	 int32;
+typedef uint32_t uint32;
+typedef int64_t	 int64;
+typedef uint64_t uint64;
+typedef float	 float32;
+typedef double	 float64;
 
 /*
 --------------------------
@@ -90,16 +95,17 @@ namespace Vision
 /* Note : __debugbreak() works only on windows with msvc */
 
 #ifdef VN_DEBUG
-
-	#define VN_CORE_ASSERT(x, ...) { if (!(x)) { VN_CORE_ERROR("Assertion Failed : {0}", __VA_ARGS__); __debugbreak(); } }
-	#define VN_ASSERT(x, ...)      { if (!(x)) { VN_ERROR("Assertion Failed : {0}", __VA_ARGS__);      __debugbreak(); } }
-
+	
+	#define VnCoreAssert(x, ...) { if (!(x)) { VnCoreError(__VA_ARGS__); __debugbreak(); } }
+	#define VnAssert(x, ...)     { if (!(x)) { VnError(__VA_ARGS__);     __debugbreak(); } }
+		
 #else
 
-	#define VN_CORE_ASSERT(x, ...)
-	#define VN_ASSERT(x, ...)
+	#define VnCoreAssert(x, ...)
+	#define VnAssert(x, ...) 
 
 #endif
 
-#define VN_BIT(x) (1 << (x))
-#define VN_BIND_EVENT_FN(fn) std::bind(&fn, this, std::placeholders::_1)
+#define VnBitUInt32(x) (1 << (x))
+#define VnBitUInt64(x) (1LL << (x))
+#define VnBindEventFn(fn) std::bind(&fn, this, std::placeholders::_1)

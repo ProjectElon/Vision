@@ -7,9 +7,9 @@
 
 namespace Vision
 {
-	void Dialog::SetEditorLayer(EditorLayer* editorLayer)
+	void Dialog::SetEditor(EditorLayer* editor)
 	{
-		m_EditorLayer = editorLayer;
+		m_Editor = editor;
 	}
 
     void Dialog::Open(DialogType type)
@@ -60,7 +60,7 @@ namespace Vision
 			{
 				if (ImGui::Button("Create"))
 				{
-					m_EditorLayer->NewScene(filepath, maxEntityCount);
+					m_Editor->NewScene(filepath, maxEntityCount);
 					ImGui::CloseCurrentPopup();
 					open = false;
 				}

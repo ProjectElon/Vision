@@ -4,26 +4,19 @@
 
 namespace Vision
 {
-    struct FrameBufferProps
+    struct FrameBuffer
     {
-        uint32 Width;
-        uint32 Height;
+        uint32 Width; //@ReadOnly
+        uint32 Height; //@ReadOnly
+        uint32 RendererID; //@ReadOnly
+        uint32 ColorAttachmentID; //@ReadOnly
     };
 
-    class FrameBuffer
-    {
-    public:
-        FrameBuffer() = default;
+    void CreateFrameBuffer(FrameBuffer* frameBuffer, uint32 width, uint32 height);
+    void DestroyFrameBuffer(FrameBuffer* frameBuffer);
 
-        virtual ~FrameBuffer() {}
+    void ResizeFrameBuffer(FrameBuffer* frameBuffer, uint32 width, uint32 height);
 
-        virtual void Resize(uint32 width, uint32 height) = 0;
-
-        virtual void Bind() = 0;
-        virtual void UnBind() = 0;
-
-        virtual uint32 GetColorAttachmentRendererId() = 0;
-        
-        static Ref<FrameBuffer> Create(const FrameBufferProps& frameBufferPros);
-    };
+    void BindFrameBuffer(FrameBuffer* frameBuffer);
+    void UnBindFrameBuffer(FrameBuffer* frameBuffer);
 }

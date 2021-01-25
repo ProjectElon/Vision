@@ -4,7 +4,7 @@
 
 namespace Vision
 {
-	class FrameBuffer;
+	struct FrameBuffer;
 
 	class SceneViewPanel
 	{

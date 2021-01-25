@@ -9,9 +9,9 @@
 
 namespace Vision
 {
-	void Menubar::SetEditorLayer(EditorLayer* editorLayer)
+	void Menubar::SetEditor(EditorLayer* editor)
 	{
-		m_EditorLayer = editorLayer;
+		m_Editor = editor;
 	}
 
 	void Menubar::OnImGuiRender()
@@ -27,25 +27,24 @@ namespace Vision
 
 			if (ImGui::MenuItem("Open Scene...", "Ctrl+Shift+O"))
 			{
-				m_EditorLayer->OpenScene();
+				m_Editor->OpenScene();
 			}
 
-			Scene* scene = Scene::GetActiveScene();
-			bool enabled = scene != nullptr;
+			bool enabled = m_Editor->m_ActiveScene != 0;
 
 			if (ImGui::MenuItem("Save Scene", "Ctrl+S", false, enabled))
 			{
-				m_EditorLayer->SaveScene(scene);
+				m_Editor->SaveActiveScene();
 			}
 
 			if (ImGui::MenuItem("Save Scene As...", "Ctrl+Shift+S", false, enabled))
 			{
-				m_EditorLayer->SaveSceneAs(scene);
+				m_Editor->SaveActiveSceneAs();
 			}
 
 			if (ImGui::MenuItem("Close Scene", "Ctrl+E", false, enabled))
 			{
-				m_EditorLayer->CloseScene(scene);
+				m_Editor->CloseActiveScene();
 			}
 
 			ImGui::EndMenu();

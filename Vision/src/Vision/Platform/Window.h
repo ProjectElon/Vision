@@ -15,61 +15,53 @@ namespace Vision
 		Fullscreen
 	};
 
-	struct VideoMode
+	struct Window
 	{
-		uint32 Width;
-		uint32 Height;
-		uint32 RefreshRate;
+		void* Handle;
+
+		std::string Title = "Untitled";
+
+		uint32 Width  = 1280;
+		uint32 Height = 720;
+
+		int32 WindowX = 0;
+		int32 WindowY = 0;
+
+		//@(Harlequin): WindowFlags for Mode and Maximized
+		WindowMode Mode = WindowMode::Windowed;
+
+		bool Maximized = true;
+
+		EventCallbackFn EventCallback = nullptr;
 	};
 
-	struct WindowData
-	{
-		std::string 	Title;
-		uint32      	Width;
-		uint32      	Height;
-		int32 	    	WindowX;
-		int32	    	WindowY;
-		WindowMode      Mode;
-		bool            VSync;
-		bool			Maximized;
-		EventCallbackFn EventCallback;
-		
-		WindowData()
-			: Title("Untitled")
-			, Width(1280)
-			, Height(720)
-			, WindowX(0)
-			, WindowY(0)
-			, VSync(false)
-			, Maximized(false)
-			, Mode(WindowMode::Windowed)
-		{
-		}
-	};
+	void OpenWindow(Window* window,
+					const std::string& title,
+					uint32 width,
+					uint32 height,
+					EventCallbackFn eventCallback,
+					WindowMode mode = WindowMode::Windowed,
+					int32 windowX = 0,
+					int32 windowY = 0);
 
-	class Window
-	{
-	public:
-		virtual ~Window() {}
-		
-		virtual void OnUpdate() = 0;
-		
-		virtual void SetEventCallback(const EventCallbackFn& eventCallback) = 0;
-		
-		virtual void SetTitle(const char* title) = 0;
-		virtual void SetSize(uint32 width, uint32 height) = 0;
-		virtual void SetMode(WindowMode windowMode) = 0;
-		virtual void SetVSync(bool enabled) = 0;
-		virtual void SetPosition(int32 windowX, int32 windowY) = 0;
+	void CloseWindow(Window* window);
 
-		virtual void Maximize() = 0;
-		virtual void Restore() = 0;
+	void PollEvents();
 
-		virtual const WindowData& GetData() const = 0;
-		
-		virtual void* GetNativeHandle() const = 0;
-		virtual std::vector<VideoMode> GetMonitorVideoModes() const = 0;
+	void SetWindowTitle(Window* window,
+						const std::string& title);
 
-		static Scope<Window> Create(const WindowData& data = WindowData());
-	};
+	void SetWindowSize(Window* window,
+					   uint32 width,
+					   uint32 height);
+
+	void SetWindowPosition(Window* window,
+						   int32 windowX,
+						   int32 windowY);
+
+	void MaximizeWindow(Window* window);
+	void MinimizeWindow(Window* window);
+	void RestoreWindow(Window* window);
+
+	void SetWindowMode(Window* window, WindowMode mode);
 }

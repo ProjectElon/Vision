@@ -1,10 +1,8 @@
 #pragma once
 
 #include "Vision/Renderer/Shader.h"
-#include "Vision/Renderer/VertexBuffer.h"
-#include "Vision/Renderer/IndexBuffer.h"
-#include "Vision/Renderer/Texture2D.h"
-#include "Vision/Entity/Scene.h"
+#include "Vision/Renderer/Buffers.h"
+#include "Vision/Renderer/Texture.h"
 
 #define MAX_TEXTURE_SLOTS 128
 
@@ -26,8 +24,10 @@ namespace Vision
 
 	struct QuadData
 	{
-		Ref<VertexBuffer> VertexBuffer;
-		Ref<IndexBuffer>  IndexBuffer;
+		Texture WhitePixel;
+
+		VertexBuffer VertexBuffer;
+		IndexBuffer  IndexBuffer;
 
 		QuadVertex* VertexBase    = nullptr;
 		QuadVertex* CurrentVertex = nullptr;
@@ -49,43 +49,36 @@ namespace Vision
 		static void Shutdown();
 
 		static void BeginScene(const glm::mat4& cameraTransform,
-							   const OrthographicCameraComponent& camera,
-							   uint32 quadShaderAssetID);
+							   const glm::mat4& cameraProjection,
+							   Shader* quadShader);
 
 		static void EndScene();
 
-		static void DrawQuad(const glm::vec2& position,
+		static void DrawQuad(const glm::vec3& position,
 							 float32 rotationAngle,
 							 const glm::vec2& scale,
 							 const glm::vec4& color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
-		static void DrawQuad(const glm::mat3& transform,
+		static void DrawQuad(const glm::mat4& transform,
 							 const glm::vec4& color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
-		static void DrawTexture(const glm::vec2& position,
+		static void DrawTexture(const glm::vec3& position,
 								float32 rotationAngle,
 								const glm::vec2& scale,
-								const Texture2D* texture,
-								const glm::vec4& color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), float tilingFactor = 1.0f);
+								const Texture* texture,
+								const glm::vec4& color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
+								const glm::vec2& bottomLeftUV = glm::vec2(0.0f, 0.0f),
+								const glm::vec2& topRightUV = glm::vec2(1.0f, 1.0f));
 
-		static void DrawTexture(const glm::mat3& transform,
-								const Texture2D* texture,
-								const glm::vec4& color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), float tilingFactor = 1.0f);
-
-		static void DrawSprite(const glm::vec2& position,
-							   float32 rotationAngle,
-							   const glm::vec2& scale,
-							   const SpriteRendererComponent& sprite);
-
-		static void DrawSprite(const glm::mat3& transform, const SpriteRendererComponent& sprite);
-		static void DrawSprite(const glm::mat4& transform, const SpriteRendererComponent& sprite);
-
+		static void DrawTexture(const glm::mat4& transform,
+								const Texture* texture,
+								const glm::vec4& color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
+								const glm::vec2& bottomLeftUV = glm::vec2(0.0f, 0.0f),
+								const glm::vec2& topRightUV = glm::vec2(1.0f, 1.0f));
 	private:
-		static void InitQuadSetup();
+		static uint32 AssginTextureSlot(const Texture* texture);
 
-		static uint32 AssginTextureSlot(const Texture2D* texture);
-
-		inline static glm::mat3 CreateQuadTransform(const glm::vec2& position,
+		inline static glm::mat4 CreateQuadTransform(const glm::vec3& position,
 										  		    float32 rotationAngle,
 										  		    const glm::vec2& scale);
 
@@ -94,8 +87,7 @@ namespace Vision
 		static void FlushQuadBatch();
 
 	private:
-		static SceneData  s_SceneData;
-		static QuadData   s_QuadData;
-		static Texture2D* s_WhitePixel;
+		static SceneData s_SceneData;
+		static QuadData  s_QuadData;
 	};
 }

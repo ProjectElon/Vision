@@ -25,7 +25,7 @@ namespace Vision
 
 		void Close();
 
-		inline Window& GetWindow() const { return (*m_Window); }
+		inline Window& GetWindow() { return m_Window; }
 		inline bool IsRunning() const { return m_Running; }
 
 		inline static Application& Get() { return *s_Instance; }
@@ -37,10 +37,11 @@ namespace Vision
 		bool OnWindowRestored(WindowRestoredEvent& e);
 
 	private:
-		Scope<Window> m_Window;
-		ImGuiLayer*   m_ImGuiLayer;
+		Window m_Window;
 
-		LayerStack   m_LayerStack;
+		ImGuiLayer* m_ImGuiLayer;
+
+		LayerStack m_LayerStack;
 		Timer m_FrameTimer;
 
 		bool m_Running   = true;

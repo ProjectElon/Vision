@@ -1,33 +1,71 @@
 #pragma once
 
 #include "Vision/Core/Base.h"
+#include "Vision/IO/Assets.h"
 
-#include <cstdint>
 #include <glm/glm.hpp>
 
 namespace Vision
 {
-	class Shader
+	struct SubShaderData
 	{
-	public:
-		virtual ~Shader() {}
-
-		virtual const std::string& GetName() const = 0;
-
-		virtual void Bind() const = 0;
-		virtual void UnBind() const = 0;
-
-		virtual void SetInt(const std::string& name, int32 value) = 0;
-		virtual void SetIntArray(const std::string& name, int32* values, uint32_t count) = 0;
-
-		virtual void SetFloat(const std::string& name, float32 value) = 0;
-		virtual void SetFloat2(const std::string& name, const glm::vec2& vec2) = 0;
-		virtual void SetFloat3(const std::string& name, const glm::vec3& vec3) = 0;
-		virtual void SetFloat4(const std::string& name, const glm::vec4& vec4) = 0;
-
-		virtual void SetMatrix3(const std::string& name, const glm::mat3& mat3) = 0;
-		virtual void SetMatrix4(const std::string& name, const glm::mat4& mat4) = 0;
-
-		static Shader* CreateFromFile(const std::string& filepath);
+		std::string Source;
+		int32 RendererID;
 	};
+
+	struct Shader
+	{
+		uint32 RendererID = 0;
+
+		std::unordered_map<int32, SubShaderData> SubShaders;
+		std::unordered_map<std::string, int32>	 UniformLocations;
+	};
+
+	void CreateShader(Shader* shader, const std::string& filepath);
+	void DestroyShader(Shader* shader);
+
+	void BindShader(Shader* shader);
+	void UnBindShader(Shader* shader);
+
+	void SetShaderUniformInt(Shader* shader,
+							 const std::string& uniformName,
+							 int32 value);
+
+	void SetShaderUniformIntArray(Shader* shader,
+								  const std::string& uniformName,
+								  const int32* values,
+								  uint32 count);
+
+	void SetShaderUniformFloat(Shader* shader,
+							   const std::string& uniformName,
+							   float32 v0);
+
+	void SetShaderUniformFloat2(Shader* shader,
+								const std::string& uniformName,
+								float32 v0,
+								float32 v1);
+
+	void SetShaderUniformFloat3(Shader* shader, 
+								const std::string& uniformName,
+								float32 v0,
+								float32 v1,
+								float32 v2);
+
+	void SetShaderUniformFloat4(Shader* shader,
+								const std::string& uniformName,
+								float32 v0,
+								float32 v1,
+								float32 v2,
+								float32 v3);
+
+	void SetShaderUniformMatrix3(Shader* shader,
+								 const std::string& uniformName,
+								 const float* matrix3);
+
+	void SetShaderUniformMatrix4(Shader* shader,
+								 const std::string& uniformName,
+								 const float* matrix4);
+
+	AssetLoadingData LoadShader(const std::string& shaderpath);
+	void UnloadShader(Asset* shader);
 }

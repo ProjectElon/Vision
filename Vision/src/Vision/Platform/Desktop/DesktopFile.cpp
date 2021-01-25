@@ -7,7 +7,7 @@
 
 namespace Vision
 {
-    static const char* s_FileModeTable[(uint32)FileMode::Count] =
+    static const char* InternalFileModeTable[(uint32)FileMode::Count] =
     {
         "r",
         "w",
@@ -15,7 +15,7 @@ namespace Vision
         "w+"
     };
 
-    static const char* s_FileModeBinaryTable[(uint32)FileMode::Count] =
+    static const char* InternalFileModeBinaryTable[(uint32)FileMode::Count] =
     {
         "rb",
         "wb",
@@ -27,7 +27,7 @@ namespace Vision
     {
         FileStream stream;
 
-        const char* mode = (binary) ? s_FileModeBinaryTable[(uint32)fileMode] : s_FileModeTable[(uint32)fileMode];
+        const char* mode = (binary) ? InternalFileModeBinaryTable[(uint32)fileMode] : InternalFileModeTable[(uint32)fileMode];
         stream.Handle = fopen(filepath.c_str(), mode);
 
         if (stream.Handle)

@@ -1,17 +1,19 @@
 #include "pch.h"
 #include "Vision/IO/Assets.h"
 #include "Vision/IO/FileSystem.h"
-#include "Vision/Renderer/Texture2D.h"
+
+#include "Vision/Entity/Scene.h"
+#include "Vision/Renderer/Texture.h"
 #include "Vision/Renderer/Shader.h"
-#include "Vision/Renderer/OpenGL/OpenGLTexture2D.h"
-#include "Vision/Renderer/OpenGL/OpenGLShader.h"
 
 namespace Vision
 {
-    AssetManagerStorage AssetManager::AssetsStorage;
+    AssetsStorage Assets::AssetsStorage;
 
-    void AssetManager::Init()
+    void Assets::Init()
     {
+        AssetsStorage.Assets.resize(1);
+
         std::string textureExtensions[] =
         {
             "png",
@@ -22,7 +24,7 @@ namespace Vision
         };
 
         RigisterAsset("Texture",
-                      ArrayCount(textureExtensions),
+                      VnArrayCount(textureExtensions),
                       textureExtensions,
                       LoadTexture,
                       UnloadTexture);
@@ -33,17 +35,28 @@ namespace Vision
         };
 
         RigisterAsset("Shader",
-                      ArrayCount(shaderExtensions),
+                      VnArrayCount(shaderExtensions),
                       shaderExtensions,
                       LoadShader,
                       UnloadShader);
+
+        std::string sceneExtensions[] =
+        {
+            "vscene"
+        };
+
+        RigisterAsset("Scene",
+                      VnArrayCount(sceneExtensions),
+                      sceneExtensions,
+                      LoadScene,
+                      UnloadScene);
     }
 
-    void AssetManager::Shutdown()
+    void Assets::Shutdown()
     {
     }
 
-    void AssetManager::RigisterAsset(const std::string& assetType,
+    void Assets::RigisterAsset(const std::string& assetType,
                                      uint32 extensionCount,
                                      std::string* extensions,
                                      AssetLoaderFn loaderFn,
@@ -51,7 +64,6 @@ namespace Vision
     {
         AssetInfoMap& assetInfoMap = AssetsStorage.AssetInfoMap;
         AssetInfoList& assetInfoList = AssetsStorage.AssetInfoList;
-        AssetList& assets = AssetsStorage.Assets;
 
         uint32 assetInfoIndex = assetInfoList.size();
         assetInfoList.resize(assetInfoIndex + 1);
@@ -71,165 +83,194 @@ namespace Vision
         }
     }
 
-    uint32 AssetManager::GetAssetInfoIndex(const std::string& extension)
+    uint32 Assets::GetAssetInfoIndex(const std::string& extension)
     {
         AssetInfoMap& assetInfoMap = AssetsStorage.AssetInfoMap;
         auto assetInfoIter = assetInfoMap.find(extension);
-        VN_CORE_ASSERT(assetInfoIter != assetInfoMap.end(), "unsuppored asset type");
+        VnCoreAssert(assetInfoIter != assetInfoMap.end(), "unsuppored asset type");
         uint32 assetInfoIndex = assetInfoIter->second;
         return assetInfoIndex;
     }
 
-    AssetInfo& AssetManager::GetAssetInfo(const std::string& extension)
+    AssetInfo& Assets::GetAssetInfo(const std::string& extension)
     {
         AssetInfoList& assetInfoList = AssetsStorage.AssetInfoList;
         uint32 assetInfoIndex = GetAssetInfoIndex(extension);
         return assetInfoList[assetInfoIndex];
     }
 
-    AssetInfo& AssetManager::GetAssetInfo(AssetID assetID)
+    AssetInfo& Assets::GetAssetInfo(AssetID assetID)
     {
         AssetInfoList& assetInfoList = AssetsStorage.AssetInfoList;
         AssetList& assets = AssetsStorage.Assets;
 
-        VN_CORE_ASSERT(assetID >= 0 && assetID < assetInfoList.size(), "invalid asset id");
+        VnCoreAssert(assetID >= 0 && assetID < assetInfoList.size(), "invalid asset id");
         Asset& asset = assets[assetID];
         return assetInfoList[asset.AssetInfoIndex];
     }
 
-    bool AssetManager::IsExtensionSupported(const std::string& extension)
+    bool Assets::IsExtensionSupported(const std::string& extension)
     {
         AssetInfoMap& assetInfoMap = AssetsStorage.AssetInfoMap;
         auto assetInfoIter = assetInfoMap.find(extension);
         return assetInfoIter != assetInfoMap.end();
     }
 
-    AssetID AssetManager::RequestAsset(const std::string& assetpath)
+    AssetID Assets::RequestAsset(const std::string& assetpath)
     {
-        VN_CORE_ASSERT(FileSystem::FileExists(assetpath), "can't find asset: {0}");
+        VnCoreAssert(FileSystem::FileExists(assetpath), "can't find asset: {0}");
 
         std::string extension = FileSystem::GetFileExtension(assetpath, false);
 
         AssetInfoList& assetInfoList = AssetsStorage.AssetInfoList;
-        AssetList& assets = AssetsStorage.Assets;
-
+        
         uint32 assetInfoIndex = GetAssetInfoIndex(extension);
         AssetInfo& assetInfo = assetInfoList[assetInfoIndex];
 
         AssetRigistry& rigistry = assetInfo.Rigistry;
 
-        auto assetIter = rigistry.find(assetpath);
+        auto assetIDIter = rigistry.find(assetpath);
+
         AssetID assetID;
-        Asset* asset;
-
-        if (assetIter == rigistry.end())
+        
+        if (assetIDIter == rigistry.end())
         {
-            assetID = assets.size();
-            assets.resize(assetID + 1);
+            assetID = AssetsStorage.Assets.size();
+            AssetsStorage.Assets.resize(assetID + 1);
 
-            asset = &assets[assetID];
-            asset->Path = assetpath;
-            asset->AssetInfoIndex = assetInfoIndex;
+            AssetsStorage.Assets[assetID].Path = assetpath;
+            AssetsStorage.Assets[assetID].AssetInfoIndex = assetInfoIndex;
 
             rigistry.emplace(assetpath, assetID);
         }
         else
         {
-            assetID = assetIter->second;
-            asset = &assets[assetID];
+            assetID = assetIDIter->second;
         }
 
-        if (asset->State == AssetState::Unloaded)
+        if (AssetsStorage.Assets[assetID].State == AssetState::Unloaded)
         {
-            asset->State = AssetState::Pending;
+            AssetsStorage.Assets[assetID].State = AssetState::Pending;
 
             AssetLoadingData assetData = assetInfo.LoaderFn(assetpath);
 
             if (assetData.Memory && assetData.SizeInBytes)
             {
-                asset->Memory = assetData.Memory;
-                asset->SizeInBytes = assetData.SizeInBytes;
-                asset->TotalSizeInBytes = assetData.TotalSizeInBytes;
+                AssetsStorage.Assets[assetID].Memory = assetData.Memory;
+                AssetsStorage.Assets[assetID].SizeInBytes = assetData.SizeInBytes;
+                AssetsStorage.Assets[assetID].TotalSizeInBytes = assetData.TotalSizeInBytes;
 
-                asset->State = AssetState::Loaded;
-                AssetsStorage.TotalMemoryUsed += asset->TotalSizeInBytes;
+                AssetsStorage.Assets[assetID].State = AssetState::Loaded;
+                AssetsStorage.TotalMemoryUsed += assetData.TotalSizeInBytes;
 
-                VN_CORE_INFO("loaded {0} asset: {1}", assetInfo.Type, assetpath);
+                VnCoreInfo("loaded {0} asset: {1}", assetInfo.Type, assetpath);
             }
             else
             {
-                VN_CORE_INFO("unable to load {0} asset: {1}", assetInfo.Type, assetpath);
+                VnCoreInfo("unable to load {0} asset: {1}", assetInfo.Type, assetpath);
             }
         }
 
-        asset->RefCount++;
+        AssetsStorage.Assets[assetID].RefCount++;
 
         return assetID;
     }
 
-    const Asset& AssetManager::GetAsset(AssetID assetID)
+    AssetID Assets::GetAssetID(const std::string& assetpath)
     {
-        VN_CORE_ASSERT(assetID >= 0 && assetID < AssetsStorage.Assets.size(), "invalid asset id");
+        VnCoreAssert(FileSystem::FileExists(assetpath), "can't find asset: {0}");
+        std::string extension = FileSystem::GetFileExtension(assetpath, false);
+        uint32 assetInfoIndex = GetAssetInfoIndex(extension);
+        AssetInfoList& assetInfoList = AssetsStorage.AssetInfoList;
+        AssetInfo& assetInfo = assetInfoList[assetInfoIndex];
+        AssetRigistry& rigistry = assetInfo.Rigistry;
+
+        auto assetIDIter = rigistry.find(assetpath);
+        VnCoreAssert(assetIDIter != rigistry.end(), "can't find asset in rigistry");
+
+        AssetID assetID = assetIDIter->second;
+        return assetID;
+    }
+
+    const Asset& Assets::GetAsset(AssetID assetID)
+    {
+        VnCoreAssert(assetID < AssetsStorage.Assets.size(), "invalid asset id");
         return AssetsStorage.Assets[assetID];
     }
 
-    Texture2D* AssetManager::GetTexture(AssetID assetID)
+    Texture* Assets::GetTexture(AssetID assetID)
     {
         const Asset& asset = GetAsset(assetID);
-        VN_CORE_ASSERT(asset.State == AssetState::Loaded, "can't use an unloaded asset");
+        VnCoreAssert(asset.State == AssetState::Loaded, "can't use an unloaded asset");
 
         AssetInfoList& assetInfoList = AssetsStorage.AssetInfoList;
         AssetInfo& assetInfo = assetInfoList[asset.AssetInfoIndex];
-        VN_CORE_ASSERT(assetInfo.Type == "Texture", "asset type mismatch");
+        VnCoreAssert(assetInfo.Type == "Texture", "asset type mismatch");
 
-        return (Texture2D*)asset.Memory;
+        return static_cast<Texture*>(asset.Memory);
     }
 
-    Shader* AssetManager::GetShader(AssetID assetID)
+    Shader* Assets::GetShader(AssetID shaderAssetID)
     {
-        const Asset& asset = GetAsset(assetID);
-        VN_CORE_ASSERT(asset.State == AssetState::Loaded, "can't use an unloaded asset");
+        const Asset& asset = GetAsset(shaderAssetID);
+        VnCoreAssert(asset.State == AssetState::Loaded, "can't use an unloaded asset");
 
         AssetInfoList& assetInfoList = AssetsStorage.AssetInfoList;
         AssetInfo& assetInfo = assetInfoList[asset.AssetInfoIndex];
-        VN_CORE_ASSERT(assetInfo.Type == "Shader", "asset type mismatch");
+        VnCoreAssert(assetInfo.Type == "Shader", "asset type mismatch");
 
-        return (Shader*)asset.Memory;
+        return static_cast<Shader*>(asset.Memory);
     }
 
-    void AssetManager::ReleaseAsset(AssetID assetID)
+    Scene* Assets::GetScene(AssetID sceneAssetID)
+    {
+        const Asset& asset = GetAsset(sceneAssetID);
+        VnCoreAssert(asset.State == AssetState::Loaded, "can't use an unloaded asset");
+
+        AssetInfoList& assetInfoList = AssetsStorage.AssetInfoList;
+        AssetInfo& assetInfo = assetInfoList[asset.AssetInfoIndex];
+        VnCoreAssert(assetInfo.Type == "Scene", "asset type mismatch");
+
+        return static_cast<Scene*>(asset.Memory);
+    }
+
+    void Assets::ReleaseAsset(AssetID assetID)
     {
         AssetList& assets = AssetsStorage.Assets;
         AssetInfoList& assetInfoList = AssetsStorage.AssetInfoList;
-        VN_CORE_ASSERT(assetID >= 0 && assetID < assets.size(), "invalid asset id");
+        VnCoreAssert(assetID < assets.size(), "invalid asset id");
 
         Asset& asset = assets[assetID];
-        asset.RefCount--;
-
         AssetInfo& assetInfo = assetInfoList[asset.AssetInfoIndex];
 
-        if (!asset.RefCount)
+        if (asset.RefCount > 0)
         {
-            VN_CORE_ASSERT(asset.State != AssetState::Unloaded, "invalid asset state");
+            asset.RefCount--;
 
-            assetInfo.UnloaderFn(&asset);
+            if (asset.RefCount == 0)
+            {
+                VnCoreAssert(asset.State != AssetState::Unloaded, "invalid asset state");
 
-            asset.State = AssetState::Unloaded;
-            AssetsStorage.TotalMemoryUsed -= asset.TotalSizeInBytes;
+                assetInfo.UnloaderFn(&asset);
 
-            asset.Memory = nullptr;
-            asset.SizeInBytes = 0;
-            asset.TotalSizeInBytes = 0;
+                asset.State = AssetState::Unloaded;
+                AssetsStorage.TotalMemoryUsed -= asset.TotalSizeInBytes;
 
-            VN_CORE_INFO("unloading {0} asset: {1}", assetInfo.Type, asset.Path);
+                asset.Memory = nullptr;
+                asset.SizeInBytes = 0;
+                asset.TotalSizeInBytes = 0;
+
+                VnCoreInfo("unloading {0} asset: {1}", assetInfo.Type, asset.Path);
+            }
         }
         else
         {
-            VN_CORE_INFO("{0} asset: {1} already unloaded", assetInfo.Type, asset.Path);
+            VnCoreInfo("{0} asset: {1} already unloaded", assetInfo.Type, asset.Path);
+            return;
         }
     }
 
-    void AssetManager::ReleaseAsset(const std::string& assetpath)
+    void Assets::ReleaseAsset(const std::string& assetpath)
     {
         std::string extension = FileSystem::GetFileExtension(assetpath, false);
 
@@ -245,11 +286,11 @@ namespace Vision
         }
         else
         {
-            VN_CORE_INFO("unable to release {0} asset: {1}", assetInfo.Type, assetpath);
+            VnCoreInfo("unable to release {0} asset: {1}", assetInfo.Type, assetpath);
         }
     }
 
-    void AssetManager::ReloadAsset(const std::string& assetpath)
+    void Assets::ReloadAsset(const std::string& assetpath)
     {
         std::string extension = FileSystem::GetFileExtension(assetpath, false);
 
@@ -284,47 +325,20 @@ namespace Vision
 
                     asset.State = AssetState::Loaded;
 
-                    VN_CORE_INFO("reloading {0} asset: {1}", assetInfo.Type, assetpath);
+                    VnCoreInfo("reloading {0} asset: {1}", assetInfo.Type, assetpath);
                 }
                 else
                 {
                     /*
-                    @Harlequin: what we should do if the reloading failed
-                    right now we just leaving the old value ????
+                    @(Harlequin):
+                        what we should do if the reloading failed ?
+                        right now we just leaving the old value and notifing
+                        maybe we want to load a default value instead
+                        like a pink texture for example
                     */
-                    VN_CORE_INFO("unable to reload {0} asset: {1}", assetInfo.Type, assetpath);
+                    VnCoreInfo("unable to reload {0} asset: {1}", assetInfo.Type, assetpath);
                 }
             }
         }
-    }
-
-    AssetLoadingData AssetManager::LoadTexture(const std::string& texturepath)
-    {
-        AssetLoadingData textureAsset;
-        textureAsset.Memory = Texture2D::CreateFromFile(texturepath);
-        // Note: We don't count the gpu used memory
-        textureAsset.SizeInBytes = sizeof(OpenGLTexture2D) + sizeof(Asset);
-        textureAsset.TotalSizeInBytes = sizeof(OpenGLTexture2D) + sizeof(Asset);
-        return textureAsset;
-    }
-
-    void AssetManager::UnloadTexture(Asset* texture)
-    {
-        delete (Texture2D*)texture->Memory;
-    }
-
-    AssetLoadingData AssetManager::LoadShader(const std::string& shaderpath)
-    {
-        AssetLoadingData shaderAsset;
-        shaderAsset.Memory = Shader::CreateFromFile(shaderpath);
-        // Note: We don't count the gpu used memory
-        shaderAsset.SizeInBytes = sizeof(OpenGLShader) + sizeof(Asset);
-        shaderAsset.TotalSizeInBytes = sizeof(OpenGLShader) + sizeof(Asset);
-        return shaderAsset;
-    }
-
-    void AssetManager::UnloadShader(Asset* shader)
-    {
-        delete (Shader*)shader->Memory;
     }
 }

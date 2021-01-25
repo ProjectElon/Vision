@@ -1,15 +1,15 @@
 #pragma once
 
 #include "pch.h"
-#include "Vision/Renderer/RendererAPI.h"
+#include "Vision/Renderer/Renderer.h"
 
 namespace Vision
 {
 	struct VertexAttribute
 	{
-		RendererAPI::DataType Type;
-		const char*           Name;
-		bool                  Normalized;
+		DataType	Type;
+		const char* Name;
+		bool        Normalized;
 	};
 
 	class VertexLayout

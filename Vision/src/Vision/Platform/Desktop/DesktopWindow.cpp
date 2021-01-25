@@ -1,34 +1,47 @@
 #include "pch.h"
 
-#include "DesktopWindow.h"
+#include "Vision/Platform/Window.h"
 #include "Vision/Events/ApplicationEvent.h"
 #include "Vision/Events/KeyEvent.h"
 #include "Vision/Events/MouseEvent.h"
 
+#include <GLFW/glfw3.h>
+
 namespace Vision
 {
-	static unsigned int s_WindowCount = 0;
-	
-	static void GLFWErrorCallback(int error, const char* description)
+	static uint32 InternalWindowCount = 0;
+
+	static void GLFWErrorCallback(int32 error,
+								  const char* description)
 	{
-		VN_CORE_ERROR("GLFW Error {0} : {1}", error, description);
+		VnCoreError("GLFW Error {0} : {1}", error, description);
 	}
 
-	DesktopWindow::DesktopWindow(const WindowData& data)
+	void OpenWindow(Window* window,
+					const std::string& title,
+					uint32 width,
+					uint32 height,
+					EventCallbackFn eventCallback,
+					WindowMode mode,
+					int32 windowX,
+					int32 windowY)
 	{
-		m_WindowData.Title     = data.Title;
-		m_WindowData.Width     = data.Width;
-		m_WindowData.Height    = data.Height;
-		m_WindowData.WindowX   = data.WindowX;
-		m_WindowData.WindowY   = data.WindowY;
-		m_WindowData.VSync     = data.VSync;
-		m_WindowData.Maximized = data.Maximized;
-		m_WindowData.Mode      = data.Mode;
-		
-		if (s_WindowCount == 0)
+		window->Title = title;
+
+		window->Width  = width;
+		window->Height = height;
+
+		window->WindowX = windowX;
+		window->WindowY = windowY;
+
+		window->Mode = mode;
+
+		window->EventCallback = eventCallback;
+
+		if (InternalWindowCount == 0)
 		{
-			int sucess = glfwInit();
-			VN_CORE_ASSERT(sucess, "Unable To Intialize GLFW");
+			int32 sucess = glfwInit();
+			VnCoreAssert(sucess, "unable to intialize GLFW");
 
 			glfwSetErrorCallback(GLFWErrorCallback);
 		}
@@ -42,300 +55,335 @@ namespace Vision
 		glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 #endif
 
-		const char* title = data.Title.c_str();
+		/*
+		@(Harlequin): Right now we are handling one monitor.
+		*/
+		GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
 
-		GLFWmonitor* monitor = glfwGetPrimaryMonitor();
-		const GLFWvidmode* videoMode = glfwGetVideoMode(monitor);
+		int32 montiorX;
+		int32 montiorY;
+		int32 monitorWidth;
+		int32 monitorHeight;
 
-		int montiorX, montiorY, monitorWidth, monitorHeight;
-		glfwGetMonitorWorkarea(monitor, &montiorX, &montiorY, &monitorWidth, &monitorHeight);
-		
-		switch (data.Mode)
+		glfwGetMonitorWorkarea(primaryMonitor,
+							   &montiorX,
+							   &montiorY,
+							   &monitorWidth,
+							   &monitorHeight);
+
+		switch (mode)
 		{
 			case WindowMode::Windowed:
 			{
-				m_WindowHandle = 
-					glfwCreateWindow((int)data.Width, (int)data.Height, title, nullptr, nullptr);
-				
-				int32 centerX = montiorX + (monitorWidth - data.Width) / 2;
-				int32 centerY = montiorY + (monitorHeight - data.Height) / 2;
+				window->Handle = glfwCreateWindow((int32)width,
+												  (int32)height,
+												  title.c_str(),
+												  nullptr,
+												  nullptr);
 
-				SetPosition(centerX, centerY);
+				int32 centerX = montiorX + (monitorWidth - width) / 2;
+				int32 centerY = montiorY + (monitorHeight - height) / 2;
+
+				SetWindowPosition(window, centerX, centerY);
 			}
 			break;
 
 			case WindowMode::Fullscreen:
 			{
-				m_WindowHandle = glfwCreateWindow((int)data.Width, (int)data.Height, title, monitor, nullptr);
+				window->Handle = glfwCreateWindow((int32)width,
+												  (int32)height,
+												  title.c_str(),
+												  primaryMonitor,
+												  nullptr);
 			}
 			break;
 		}
-		
-		++s_WindowCount;
 
-		m_GraphicsContext = GraphicsContext::Create(this);
+		++InternalWindowCount;
 
-		glfwSetWindowUserPointer(m_WindowHandle, &m_WindowData);
+		glfwSetWindowUserPointer((GLFWwindow*)(window->Handle), window);
 
-		glfwSetWindowCloseCallback(m_WindowHandle, [](GLFWwindow* window) 
+		glfwSetWindowCloseCallback((GLFWwindow*)(window->Handle), [](GLFWwindow* window)
 		{
-			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+			Window& userWindow = *(Window*)glfwGetWindowUserPointer(window);
 			WindowCloseEvent event;
-			data.EventCallback(event);
+			userWindow.EventCallback(event);
 		});
 
-		glfwSetWindowSizeCallback(m_WindowHandle, [](GLFWwindow* window, int width, int height) 
+		glfwSetWindowSizeCallback((GLFWwindow*)(window->Handle), [](GLFWwindow* window, int32 width, int32 height)
 		{
-			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+			Window& userWindow = *(Window*)glfwGetWindowUserPointer(window);
 
-			data.Width = width;
-			data.Height = height;
+			userWindow.Width  = width;
+			userWindow.Height = height;
 
 			WindowResizeEvent event(width, height);
-			data.EventCallback(event);
+			userWindow.EventCallback(event);
 		});
 
-		glfwSetWindowFocusCallback(m_WindowHandle, [](GLFWwindow* window, int focused) 
+		glfwSetWindowFocusCallback((GLFWwindow*)window->Handle, [](GLFWwindow* window, int32 focused)
 		{
-			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+			Window& userWindow = *(Window*)glfwGetWindowUserPointer(window);
 
 			if (focused)
 			{
 				WindowFocusEvent event;
-				data.EventCallback(event);
+				userWindow.EventCallback(event);
 			}
 			else
 			{
 				WindowLostFocusEvent event;
-				data.EventCallback(event);
+				userWindow.EventCallback(event);
 			}
 		});
 
-		glfwSetWindowPosCallback(m_WindowHandle, [](GLFWwindow* window, int32 windowX, int32 windowY) 
+		glfwSetWindowPosCallback((GLFWwindow*)(window->Handle), [](GLFWwindow* window, int32 windowX, int32 windowY)
 		{
-			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+			Window& userWindow = *(Window*)glfwGetWindowUserPointer(window);
 
-			data.WindowX = windowX;
-			data.WindowY = windowY;
+			userWindow.WindowX = windowX;
+			userWindow.WindowY = windowY;
 
 			WindowMovedEvent event(windowX, windowY);
-			data.EventCallback(event);
+			userWindow.EventCallback(event);
 		});
 
-		glfwSetWindowIconifyCallback(m_WindowHandle, [](GLFWwindow* window, int32 iconified)
+		glfwSetWindowIconifyCallback((GLFWwindow*)(window->Handle), [](GLFWwindow* window, int32 iconified)
 		{
-			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-			
+			Window& userWindow = *(Window*)glfwGetWindowUserPointer(window);
+			userWindow.Maximized = !iconified;
+
 			if (iconified)
 			{
 				WindowMinimizedEvent event;
-				data.EventCallback(event);
+				userWindow.EventCallback(event);
 			}
 			else
 			{
 				WindowRestoredEvent event;
-				data.EventCallback(event);
+				userWindow.EventCallback(event);
 			}
 		});
 
-		glfwSetWindowMaximizeCallback(m_WindowHandle, [](GLFWwindow* window, int32 maximized)
+		glfwSetWindowMaximizeCallback((GLFWwindow*)window->Handle, [](GLFWwindow* window, int32 maximized)
 		{
-			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-			data.Maximized = maximized;
+			Window& userWindow = *(Window*)glfwGetWindowUserPointer(window);
+			userWindow.Maximized = maximized;
 
 			if (maximized)
 			{
 				WindowMaximizedEvent event;
-				data.EventCallback(event);
+				userWindow.EventCallback(event);
 			}
 			else
 			{
 				WindowRestoredEvent event;
-				data.EventCallback(event);
+				userWindow.EventCallback(event);
 			}
 		});
-			
-		glfwSetKeyCallback(m_WindowHandle, [](GLFWwindow* window, int32 key, int32 scancode, int32 action, int32 mods)
+
+		glfwSetKeyCallback((GLFWwindow*)window->Handle, [](GLFWwindow* window, int32 key, int32 scancode, int32 action, int32 mods)
 		{
-			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+			Window& userWindow = *(Window*)(glfwGetWindowUserPointer(window));
 
 			switch (action)
 			{
 				case GLFW_PRESS:
 				{
 					KeyPressedEvent event(key, 0);
-					data.EventCallback(event);
+					userWindow.EventCallback(event);
 				}
 				break;
 
 				case GLFW_REPEAT:
 				{
 					KeyPressedEvent event(key, 1);
-					data.EventCallback(event);
+					userWindow.EventCallback(event);
 				}
 				break;
 
 				case GLFW_RELEASE:
 				{
 					KeyReleasedEvent event(key);
-					data.EventCallback(event);
+					userWindow.EventCallback(event);
 				}
 				break;
 			}
 		});
 
-		glfwSetCharCallback(m_WindowHandle, [](GLFWwindow* window, uint32 codepoint) 
+		glfwSetCharCallback((GLFWwindow*)window->Handle, [](GLFWwindow* window, uint32 codepoint)
 		{
-			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+			Window& userWindow = *(Window*)glfwGetWindowUserPointer(window);
 
 			KeyTypedEvent event((unsigned char)codepoint);
-			data.EventCallback(event);
+			userWindow.EventCallback(event);
 		});
 
-		glfwSetMouseButtonCallback(m_WindowHandle, [](GLFWwindow* window, int32 button, int32 action, int32 mods)
+		glfwSetMouseButtonCallback((GLFWwindow*)window->Handle, [](GLFWwindow* window, int32 button, int32 action, int32 mods)
 		{
-			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+			Window& userWindow = *(Window*)glfwGetWindowUserPointer(window);
 
 			switch (action)
 			{
 				case GLFW_PRESS:
 				{
 					MouseButtonPressedEvent event(button);
-					data.EventCallback(event);
+					userWindow.EventCallback(event);
 				}
 				break;
-				
+
 				case GLFW_RELEASE:
 				{
 					MouseButtonReleasedEvent event(button);
-					data.EventCallback(event);
+					userWindow.EventCallback(event);
 				}
 				break;
 			}
 		});
 
-		glfwSetCursorPosCallback(m_WindowHandle, [](GLFWwindow* window, double xpos, double ypos) 
+		glfwSetCursorPosCallback((GLFWwindow*)window->Handle, [](GLFWwindow* window, double xpos, double ypos)
 		{
-			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+			Window& userWindow = *(Window*)glfwGetWindowUserPointer(window);
 
-			MouseMovedEvent event(static_cast<float>(xpos), static_cast<float>(ypos));
-			data.EventCallback(event);
+			MouseMovedEvent event(static_cast<float32>(xpos), static_cast<float32>(ypos));
+			userWindow.EventCallback(event);
 		});
 
-		glfwSetScrollCallback(m_WindowHandle, [](GLFWwindow* window, double xoffset, double yoffset) 
+		glfwSetScrollCallback((GLFWwindow*)window->Handle, [](GLFWwindow* window, double xoffset, double yoffset)
 		{
-			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+			Window& userWindow = *(Window*)glfwGetWindowUserPointer(window);
 
-			MouseWheelScrolledEvent event(static_cast<float>(xoffset), static_cast<float>(yoffset));
-			data.EventCallback(event);
+			MouseWheelScrolledEvent event(static_cast<float32>(xoffset), static_cast<float32>(yoffset));
+			userWindow.EventCallback(event);
 		});
 
-		glfwSetCursorEnterCallback(m_WindowHandle, [](GLFWwindow* window, int entered)
+		glfwSetCursorEnterCallback((GLFWwindow*)window->Handle, [](GLFWwindow* window, int entered)
 		{
-			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+			Window& userWindow = *(Window*)glfwGetWindowUserPointer(window);
 
 			if (entered)
 			{
 				MouseCursorEnteredEvent event;
-				data.EventCallback(event);
+				userWindow.EventCallback(event);
 			}
 			else
 			{
 				MouseCursorLeftEvent event;
-				data.EventCallback(event);
+				userWindow.EventCallback(event);
 			}
 		});
 	}
 
-	DesktopWindow::~DesktopWindow()
+	void CloseWindow(Window* window)
 	{
-		glfwDestroyWindow(m_WindowHandle);
-		--s_WindowCount;
+		glfwDestroyWindow((GLFWwindow*)window->Handle);
 
-		if (s_WindowCount == 0)
+		--InternalWindowCount;
+
+		if (InternalWindowCount == 0)
 		{
 			glfwTerminate();
 		}
 	}
 
-	void DesktopWindow::OnUpdate() 
+	void PollEvents()
 	{
 		glfwPollEvents();
-		m_GraphicsContext->SwapBuffers();
 	}
 
-	void DesktopWindow::SetMode(WindowMode mode)
+	void SetWindowTitle(Window* window,
+						const std::string& title)
 	{
-		if (m_WindowData.Mode == mode)
+		glfwSetWindowTitle((GLFWwindow*)window->Handle,
+						   title.c_str());
+	}
+
+	void SetWindowSize(Window* window,
+					   uint32 width,
+					   uint32 height)
+	{
+		VnCoreAssert(width > 0 && height > 0, "invalid window size");
+		glfwSetWindowSize((GLFWwindow*)window->Handle,
+						  (int32)width,
+						  (int32)height);
+	}
+
+	void SetWindowPosition(Window* window,
+						   int32 windowX,
+						   int32 windowY)
+	{
+		window->WindowX = windowX;
+		window->WindowY = windowY;
+		glfwSetWindowPos((GLFWwindow*)window->Handle,
+						 windowX,
+						 windowY);
+	}
+
+	void MaximizeWindow(Window* window)
+	{
+		glfwMaximizeWindow((GLFWwindow*)window->Handle);
+	}
+
+	void MinimizeWindow(Window* window)
+	{
+		glfwIconifyWindow((GLFWwindow*)window->Handle);
+	}
+
+	void SetWindowMode(Window* window, WindowMode mode)
+	{
+		if (window->Mode == mode)
 		{
-			const char* modeName = (mode == WindowMode::Windowed) ? "Windowed" : "Fullscreen";
-			VN_CORE_INFO("WindowMode Is Already Set To {0}", modeName);
+			VnCoreInfo("window mode is already set to {0}", (mode == WindowMode::Windowed) ? "Windowed" : "Fullscreen");
 			return;
 		}
 
-		m_WindowData.Mode = mode;
+		window->Mode = mode;
 
 		GLFWmonitor* monitor = glfwGetPrimaryMonitor();
 		const GLFWvidmode* videoMode = glfwGetVideoMode(monitor);
-		
+
 		switch (mode)
 		{
 			case WindowMode::Windowed:
 			{
-				glfwSetWindowMonitor(m_WindowHandle, nullptr, 0, 0, m_WindowData.Width, m_WindowData.Height, videoMode->refreshRate);
-				
-				int montiorX, montiorY, monitorWidth, monitorHeight;
-				glfwGetMonitorWorkarea(monitor, &montiorX, &montiorY, &monitorWidth, &monitorHeight);
-				
-				int centerX = montiorX + (monitorWidth - m_WindowData.Width) / 2;
-				int centerY = montiorY + (monitorHeight - m_WindowData.Height) / 2;
+				glfwSetWindowMonitor((GLFWwindow*)window->Handle,
+									 nullptr,
+									 0,
+									 0,
+									 window->Width,
+									 window->Height,
+									 videoMode->refreshRate);
 
-				SetPosition(centerX, centerY);
+				int32 montiorX;
+				int32 montiorY;
+				int32 monitorWidth;
+				int32 monitorHeight;
+
+				glfwGetMonitorWorkarea(monitor,
+									   &montiorX,
+									   &montiorY,
+									   &monitorWidth,
+									   &monitorHeight);
+
+				int32 centerX = montiorX + (monitorWidth - window->Width) / 2;
+				int32 centerY = montiorY + (monitorHeight - window->Height) / 2;
+
+				SetWindowPosition(window, centerX, centerY);
 			}
 			break;
-		
+
 			case WindowMode::Fullscreen:
 			{
-				glfwSetWindowMonitor(m_WindowHandle, monitor, 0, 0, m_WindowData.Width, m_WindowData.Height, videoMode->refreshRate);
+				glfwSetWindowMonitor((GLFWwindow*)window->Handle,
+									 monitor,
+									 0,
+									 0,
+									 window->Width,
+									 window->Height,
+									 videoMode->refreshRate);
+
 			}
 			break;
 		}
-	}
-
-	void DesktopWindow::SetVSync(bool enabled)
-	{
-		if (enabled == m_WindowData.VSync)
-		{
-			return;
-		}
-
-		m_GraphicsContext->SetVSync(enabled);
-		m_WindowData.VSync = enabled;
-	}
-
-	std::vector<VideoMode> DesktopWindow::GetMonitorVideoModes() const
-	{
-		GLFWmonitor* monitor = glfwGetPrimaryMonitor();
-		
-		int count;
-		const GLFWvidmode* modes = glfwGetVideoModes(monitor, &count);
-
-		std::vector<VideoMode> videoModes;
-		videoModes.reserve(count);
-
-		for (int i = 0; i < count; i++)
-		{
-			VideoMode currentVideoMode;
-			
-			currentVideoMode.Width = modes[i].width;
-			currentVideoMode.Height = modes[i].height;
-			currentVideoMode.RefreshRate = modes[i].refreshRate;
-
-			videoModes.emplace_back(currentVideoMode);
-		}
-
-		std::reverse(videoModes.begin(), videoModes.end());
-
-		return videoModes;
 	}
 }

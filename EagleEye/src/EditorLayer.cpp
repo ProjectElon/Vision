@@ -1,8 +1,8 @@
 #include "EditorLayer.h"
+
 #include <fstream>
+#include <sstream>
 #include <imgui.h>
-#include <rapidjson/prettywriter.h>
-#include <rapidjson/stringbuffer.h>
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <algorithm>
@@ -12,81 +12,50 @@ namespace Vision
 	EditorLayer::EditorLayer()
 		: Layer("Editor")
 	{
-		m_Window = &Application::Get().GetWindow();
-		m_Window->SetVSync(true);
-		LoadSettings();
+		Window& window = Application::Get().GetWindow();
+		SetWindowTitle(&window, "Eagle Eye");
+		Renderer::SetVSync(true);
 	}
 
 	EditorLayer::~EditorLayer()
 	{
-		SaveSettings();
 	}
 
 	void EditorLayer::OnAttach()
 	{
+		LoadSettings();
+
 		using namespace Vision;
 
-		FrameBufferProps frameBufferProps;
-		frameBufferProps.Width = 800;
-		frameBufferProps.Height = 600;
+		CreateFrameBuffer(&m_SceneFrameBuffer, 800, 600);
+		m_SceneViewPanel.SetFrameBuffer(&m_SceneFrameBuffer);
 
-		m_SceneFrameBuffer = FrameBuffer::Create(frameBufferProps);
-		m_GameFrameBuffer = FrameBuffer::Create(frameBufferProps);
+		EditorState& editorState = Scene::EditorState;
+		m_SceneCamera = &editorState.SceneCamera;
+		ResizeOrthographisCamera(m_SceneCamera, 800, 600);
 
-		m_SceneViewPanel.SetFrameBuffer(m_SceneFrameBuffer.get());
-		m_GameViewPanel.SetFrameBuffer(m_GameFrameBuffer.get());
+		m_SpriteShader = Assets::RequestAsset("Assets/Shaders/Sprite.glsl");
+		m_CheckboardTexture = Assets::RequestAsset("Assets/Textures/Checkerboard.png");
 
-		// @Clean up: Scene camera properties Should be storeed with the scene
-		float32 aspectRatio = (float32)frameBufferProps.Width / (float32)frameBufferProps.Height;
-		using TDS = TextDeserializer;
-		m_CameraController = CreateScope<OrthographicCameraController>(aspectRatio, TDS::DeserializeFloat(m_Settings, "CameraZoomLevel"));
+		WatchDirectory("Assets", VnBindWatcherFn(EditorLayer::OnFileChanged));
 
-		m_SpriteShader = AssetManager::RequestAsset("Assets/Shaders/Sprite.glsl");
-		m_CheckboardTexture = AssetManager::RequestAsset("Assets/Textures/Checkerboard.png");
-
-		std::string lastScenePath = TDS::DeserializeString(m_Settings, "Last Scene Path");
-
-		if (!lastScenePath.empty())
-		{
-			Scene* scene = new Scene();
-			scene->Path = lastScenePath;
-			scene->Name = FileSystem::GetFileName(lastScenePath, false);
-
-			Scene::SetActiveScene(scene);
-			TDS::DeserializeScene(lastScenePath, scene);
-		}
-
-		m_Menubar.SetEditorLayer(this);
-		m_Dialog.SetEditorLayer(this);
-
-		m_FileWatcher = CreateScope<FileWatcher>(BindWatcherFn(EditorLayer::OnFileChanged));
-		m_FileWatcher->Watch("Assets");
-
-		m_PlayerTexture = AssetManager::RequestAsset("Assets/Textures/character_femaleAdventurer_sheetHD.png");
-
-		CreateTextureAtlasGrid(&m_PlayerAtlas,
-							   AssetManager::GetTexture(m_PlayerTexture),
-							   192,
-							   256);
+		m_Menubar.SetEditor(this);
+		m_Dialog.SetEditor(this);
 	}
 
 	void EditorLayer::OnDetach()
 	{
-		FreeTextureAtlas(&m_PlayerAtlas);
+		SaveSettings();
 
-		Scene* scene = Scene::GetActiveScene();
-		m_LastScenePath = "";
-
-		if (scene)
+		if (m_ActiveScene)
 		{
-			m_LastScenePath = scene->Path;
-			TextSerializer::SerializeScene(m_LastScenePath, scene);
-			delete scene;
-			Scene::SetActiveScene(nullptr);
+			SaveActiveScene();
 		}
 	}
 
-	void EditorLayer::OnFileChanged(FileWatcherAction action, std::string filepath, std::string oldpath)
+	void EditorLayer::OnFileChanged(FileWatcherAction action,
+									std::string filepath,
+									std::string oldpath)
 	{
 		std::string extension = FileSystem::GetFileExtension(filepath, false);
 
@@ -108,17 +77,19 @@ namespace Vision
 			{
 				std::string cwd = FileSystem::GetCurrentWorkingDirectory();
 				std::string relativePath = filepath.substr(cwd.length() + 1);
-				
-				if (FileSystem::FileExists(relativePath))
+
+				bool isFile = FileSystem::FileExists(relativePath);
+
+				if (isFile)
 				{
-					AssetManager::ReloadAsset(relativePath);
+					Assets::ReloadAsset(relativePath);
 				}
 			}
 			break;
 
 			case Vision::FileWatcherAction::FileRenamed:
 			{
-				VN_CORE_INFO("Renameing: {0} to {1}", oldpath, filepath);
+				VnCoreInfo("Renameing: {0} to {1}", oldpath, filepath);
 			}
 			break;
 		}
@@ -135,91 +106,76 @@ namespace Vision
 
 		if (m_SceneViewPanel.IsIntractable())
 		{
-			bool control = Input::IsKeyDown(Key::LeftControl) || Input::IsKeyDown(Key::RightControl);
-			bool shift   = Input::IsKeyDown(Key::LeftShift)   || Input::IsKeyDown(Key::RightShift);
+			bool isControlDown = Input::IsKeyDown(Key::LeftControl) || Input::IsKeyDown(Key::RightControl);
+			bool isShiftDown   = Input::IsKeyDown(Key::LeftShift)   || Input::IsKeyDown(Key::RightShift);
 
-			if (!control && !shift)
+			if (m_ActiveScene && !isControlDown && !isShiftDown)
 			{
-				m_CameraController->OnUpdate(deltaTime);
+				UpdateOrthographicCamera(m_SceneCamera, deltaTime);
 			}
 		}
 
-		m_SceneFrameBuffer->Bind();
+		BindFrameBuffer(&m_SceneFrameBuffer);
+		Renderer::Clear(ClearColorBuffer);
 
-		RenderCommand::Clear(RendererAPI::ColorBuffer);
-
-		Renderer2D::BeginScene(m_CameraController->GetCameraTransform(), m_CameraController->Camera, m_SpriteShader);
-
-		Scene* scene = Scene::GetActiveScene();
-
-		if (scene)
+		if (m_ActiveScene)
 		{
+			Renderer2D::BeginScene(glm::translate(glm::mat4(1.0f), m_SceneCamera->Position),
+								   m_SceneCamera->Projection,
+								   Assets::GetShader(m_SpriteShader));
+
+			Scene* scene = Assets::GetScene(m_ActiveScene);
+
 			Renderer2D::DrawTexture(glm::vec3(0.0f, 0.0f, 0.0f), 0.0f,
 									glm::vec2(100.0f, 100.0f),
-									AssetManager::GetTexture(m_CheckboardTexture),
+									Assets::GetTexture(m_CheckboardTexture),
 									glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
-									100.0f);
+									glm::vec2(0.0f, 0.0f),
+									glm::vec2(1.0f, 1.0f) * 100.0f);
 
 			scene->EachGroup<TransformComponent, SpriteRendererComponent>([](auto& transform, auto& sprite)
 			{
-				Renderer2D::DrawSprite(transform.Position, transform.Rotation.z, transform.Scale, sprite);
+				Renderer2D::DrawTexture(transform.Position,
+										transform.Rotation.z,
+										transform.Scale,
+										Assets::GetTexture(sprite.Texture),
+										sprite.Color,
+										sprite.BottomLeftUV,
+										sprite.TopRightUV);
 			});
 
-			Entity player = scene->QueryEntity("Player");
-
-			if (player != entity::null)
-			{
-				auto& sprite = scene->GetComponent<SpriteRendererComponent>(player);
-				sprite.Texture = m_PlayerTexture;
-				sprite.BottomLeftUV = m_PlayerAtlas.Rects[m_TextureIndex].BottomLeft;
-				sprite.TopRightUV = m_PlayerAtlas.Rects[m_TextureIndex].TopRight;
-			}
+			Renderer2D::EndScene();
 		}
 
-		Renderer2D::EndScene();
-
-		m_SceneFrameBuffer->UnBind();
+		UnBindFrameBuffer(&m_SceneFrameBuffer);
  	}
 
 	void EditorLayer::OnEvent(Event& e)
 	{
 		EventDispatcher dispatcher(e);
-		dispatcher.Dispatch<KeyPressedEvent>(VN_BIND_EVENT_FN(EditorLayer::OnKeyPressed));
-
-		if (m_SceneViewPanel.IsIntractable())
-		{
-			e.Handled = false;
-			m_CameraController->OnEvent(e);
-		}
-		else
-		{
-			e.Handled = true;
-		}
+		dispatcher.Dispatch<KeyPressedEvent>(VnBindEventFn(EditorLayer::OnKeyPressed));
+		dispatcher.Dispatch<MouseWheelScrolledEvent>(VnBindEventFn(EditorLayer::OnMouseWheelScrolled));
 	}
 
 	void EditorLayer::OnImGuiRender()
 	{
 		using namespace Vision;
 
-		Window& window = Application::Get().GetWindow();
-		Scene* scene = Scene::GetActiveScene();
-
 		if (m_SceneViewPanel.IsViewportResized())
 		{
 			glm::vec2 viewportSize = m_SceneViewPanel.GetViewportSize();
-			m_CameraController->Resize((uint32)viewportSize.x, (uint32)viewportSize.y);
-		}
 
-		ImGui::Begin("Stats");
-		double totalMemoryUnsedInMbs = AssetManager::AssetsStorage.TotalMemoryUsed / 1024.0;
-		ImGui::TextColored({ 0.2f, 0.3f, 0.9f, 1.0f }, "Total Asset Memory Used: %.3lf MBs", totalMemoryUnsedInMbs);
-		ImGui::End();
+			if (m_ActiveScene)
+			{
+				ResizeOrthographisCamera(m_SceneCamera,
+										 (uint32)viewportSize.x,
+										 (uint32)viewportSize.y);
+			}
+		}
 
 		m_Menubar.OnImGuiRender();
 		m_SceneHierarchyPanel.OnImGuiRender();
-		// m_GameViewPanel.OnImGuiRender();
 		m_InspectorPanel.OnImGuiRender();
-		// m_ConsolePanel.OnImGuiRender();
 		m_SceneViewPanel.OnImGuiRender();
 		m_Dialog.OnImGuiRender();
 	}
@@ -231,14 +187,14 @@ namespace Vision
 			return false;
 		}
 
-		bool control = Input::IsKeyDown(Key::LeftControl) || Input::IsKeyDown(Key::RightControl);
-		bool shift = Input::IsKeyDown(Key::LeftShift) || Input::IsKeyDown(Key::RightShift);
+		bool isControlDown = Input::IsKeyDown(Key::LeftControl) || Input::IsKeyDown(Key::RightControl);
+		bool isShiftDown = Input::IsKeyDown(Key::LeftShift) || Input::IsKeyDown(Key::RightShift);
 
 		switch (e.GetKeyCode())
 		{
 			case Key::N:
 			{
-				if (control && shift)
+				if (isControlDown && isShiftDown)
 				{
 					Dialog::Open(DialogType::CreateScene);
 				}
@@ -247,22 +203,18 @@ namespace Vision
 
 			case Key::S:
 			{
-				if (control && shift)
+				if (isControlDown && isShiftDown)
 				{
-					Scene* scene = Scene::GetActiveScene();
-
-					if (scene)
+					if (m_ActiveScene)
 					{
-						SaveSceneAs(scene);
+						SaveActiveSceneAs();
 					}
 				}
-				else if (control)
+				else if (isControlDown)
 				{
-					Scene* scene = Scene::GetActiveScene();
-
-					if (scene)
+					if (m_ActiveScene)
 					{
-						SaveScene(scene);
+						SaveActiveScene();
 					}
 				}
 			}
@@ -270,7 +222,7 @@ namespace Vision
 
 			case Key::O:
 			{
-				if (control && shift)
+				if (isControlDown && isShiftDown)
 				{
 					OpenScene();
 				}
@@ -279,13 +231,11 @@ namespace Vision
 
 			case Key::E:
 			{
-				if (control)
+				if (isControlDown)
 				{
-					Scene* scene = Scene::GetActiveScene();
-
-					if (scene)
+					if (m_ActiveScene)
 					{
-						CloseScene(scene);
+						CloseActiveScene();
 					}
 				}
 			}
@@ -293,10 +243,10 @@ namespace Vision
 
 			case Key::Delete:
 			{
-				Scene* scene = Scene::GetActiveScene();
-
-				if (scene && m_SceneHierarchyPanel.IsInteractable())
+				if (m_ActiveScene && m_SceneHierarchyPanel.IsInteractable())
 				{
+					Scene* scene = Assets::GetScene(m_ActiveScene);
+
 					if (!scene->EditorState.SelectedEntityTag.empty())
 					{
 						scene->FreeEntity(scene->EditorState.SelectedEntityTag);
@@ -306,24 +256,22 @@ namespace Vision
 			}
 			break;
 
-			case Key::R:
+			case Key::Escape:
 			{
-				m_FileWatcher->UnWatch("Assets");
+				Application& app = Application::Get();
+				app.Close();
 			}
 			break;
+		}
 
-			case Key::Right:
-			{
-				m_TextureIndex = (m_TextureIndex + 1) % 45;
-			}
-			break;
+		return false;
+	}
 
-			case Key::Left:
-			{
-				m_TextureIndex--;
-				if (m_TextureIndex == -1) m_TextureIndex = 44;
-			}
-			break;
+	bool EditorLayer::OnMouseWheelScrolled(MouseWheelScrolledEvent& e)
+	{
+		if (m_SceneViewPanel.IsIntractable())
+		{
+			UpdateOrthographicCameraSize(m_SceneCamera, -e.GetYOffset());
 		}
 
 		return false;
@@ -333,93 +281,103 @@ namespace Vision
 	{
 		using namespace Vision;
 
-		m_Window->SetTitle("Eagle Eye");
-
-		std::ifstream ifs("Settings.json");
+		FileStream handle = File::Open("Settings.vars", FileMode::Read);
 
 		std::string line;
 		std::string contents;
 
-		while (std::getline(ifs, line))
+		while (File::ReadLine(handle, line))
 		{
-			contents += line;
+			contents += line + " ";
 		}
 
-		m_Settings.Parse(contents.c_str(), contents.length());
+		std::string prop;
+		std::stringstream stringStream(contents);
 
-		using TDS = TextDeserializer;
+		int windowX;
+		int windowY;
+		int windowWidth;
+		int windowHeight;
+		bool maximized;
+		std::string scenePath;
 
-		int32  windowX      = TDS::DeserializeInt32(m_Settings, "WindowX");
-		int32  windowY      = TDS::DeserializeInt32(m_Settings, "WindowY");
-		uint32 windowWidth  = TDS::DeserializeUint32(m_Settings, "WindowWidth");
-		uint32 windowHeight = TDS::DeserializeUint32(m_Settings, "WindowHeight");
-		bool   maximized    = TDS::DeserializeBool(m_Settings, "Maximized");
+		stringStream >> prop >> windowX;
+		stringStream >> prop >> windowY;
+		stringStream >> prop >> windowWidth;
+		stringStream >> prop >> windowHeight;
+		stringStream >> prop >> maximized;
+		stringStream >> prop >> scenePath; // @(Harlequin): not right because the path may contain spaces
 
-		m_Window->SetPosition(windowX, windowY);
-		m_Window->SetSize(windowWidth, windowHeight);
+		Window& window = Application::Get().GetWindow();
+
+		SetWindowPosition(&window, windowX, windowY);
+		SetWindowSize(&window, windowWidth, windowHeight);
 
 		if (maximized)
 		{
-			m_Window->Maximize();
+			MaximizeWindow(&window);
 		}
+
+		if (scenePath != "none")
+		{
+			m_ActiveScene = Assets::RequestAsset(scenePath);
+			m_SceneHierarchyPanel.SetActiveScene(m_ActiveScene);
+			m_InspectorPanel.SetActiveScene(m_ActiveScene);
+		}
+
+		File::Close(handle);
 	}
 
 	void EditorLayer::SaveSettings()
 	{
 		using namespace Vision;
 
-		rapidjson::StringBuffer s;
-		Writer writer(s);
+		FileStream handle = File::Open("Settings.vars", FileMode::Write);
 
-		writer.StartObject();
+		Window& window = Application::Get().GetWindow();
 
-		const WindowData& windowData = m_Window->GetData();
+		std::stringstream stringstream;
+		stringstream << "WindowX " << window.WindowX << "\n";
+		stringstream << "WindowY " << window.WindowY << "\n";
+		stringstream << "WindowWidth " << window.Width << "\n";
+		stringstream << "WindowHeight " << window.Height << "\n";
+		stringstream << "WindowMaximized " << window.Maximized << "\n";
 
-		using TS = TextSerializer;
+		std::string activeScenePath = "none";
 
-		TS::SerializeInt32(writer, "WindowX", windowData.WindowX);
-		TS::SerializeInt32(writer, "WindowY", windowData.WindowY);
-		TS::SerializeUint32(writer, "WindowWidth", windowData.Width);
-		TS::SerializeUint32(writer, "WindowHeight", windowData.Height);
-		TS::SerializeBool(writer, "Maximized", windowData.Maximized);
-
-		TS::SerializeString(writer, "Last Scene Path", m_LastScenePath);
-
-		// @Clean Up: Should be save with the scene ...
-		TS::SerializeFloat(writer, "CameraZoomLevel", m_CameraController->Camera.Size);
-
-		writer.EndObject();
-
-		std::ofstream ofs("Settings.json");
-
-		if (ofs.is_open())
+		if (m_ActiveScene)
 		{
-			ofs << s.GetString();
-			VN_CORE_INFO("Saving Editor Settings");
+			const Asset& activeSceneAsset = Assets::GetAsset(m_ActiveScene);
+			activeScenePath = activeSceneAsset.Path;
 		}
-		else
-		{
-			VN_CORE_INFO("Can't OpenFile: Settings.json");
-		}
+
+		stringstream << "ScenePath " << activeScenePath << "\n";
+
+		File::WriteContents(handle, stringstream.str());
+		File::Close(handle);
 	}
 
 	void EditorLayer::NewScene(const std::string& filepath, uint32 maxEntityCount)
 	{
-		Scene* scene = Scene::GetActiveScene();
-
-		if (scene)
+		if (m_ActiveScene)
 		{
-			TextSerializer::SerializeScene(scene->Path, scene);
-			delete scene;
+			SaveActiveScene();
+			Assets::ReleaseAsset(m_ActiveScene);
 		}
 
-		Scene* newScene = new Scene();
-		newScene->Path = filepath;
-		newScene->Name = FileSystem::GetFileName(filepath, false);
-		newScene->MaxEntityCount = maxEntityCount;
+		InitOrthographicCamera(m_SceneCamera,
+							   m_SceneCamera->AspectRatio);
 
-		Scene::SetActiveScene(newScene);
-		SaveScene(newScene);
+		Scene* tempScene = new Scene;
+		CreateScene(tempScene, maxEntityCount);
+		SerializeScene(filepath, tempScene);
+
+		DestroyScene(tempScene);
+		delete tempScene;
+
+		m_ActiveScene = Assets::RequestAsset(filepath);
+		m_SceneHierarchyPanel.SetActiveScene(m_ActiveScene);
+		m_InspectorPanel.SetActiveScene(m_ActiveScene);
 	}
 
 	void EditorLayer::OpenScene()
@@ -428,42 +386,42 @@ namespace Vision
 
 		if (!filepath.empty())
 		{
-			Scene* scene = Scene::GetActiveScene();
-
-			if (scene)
+			if (m_ActiveScene)
 			{
-				SaveScene(scene);
-				delete scene;
+				SaveActiveScene();
+				Assets::ReleaseAsset(m_ActiveScene);
 			}
 
-			Scene* newScene = new Scene();
-			newScene->Path = filepath;
-			newScene->Name = FileSystem::GetFileName(filepath, false);
-
-			Scene::SetActiveScene(newScene);
-			TextDeserializer::DeserializeScene(filepath, newScene);
+			m_ActiveScene = Assets::RequestAsset(filepath);
+			m_SceneHierarchyPanel.SetActiveScene(m_ActiveScene);
+			m_InspectorPanel.SetActiveScene(m_ActiveScene);
 		}
 	}
 
-	void EditorLayer::SaveSceneAs(Scene* scene)
+	void EditorLayer::SaveActiveSceneAs()
 	{
 		std::string filepath = FileDialog::SaveFile("Vision Scene (*.vscene)", "vscene");
 
 		if (!filepath.empty())
 		{
-			SaveScene(scene);
+			Scene* activeScene = Assets::GetScene(m_ActiveScene);
+			SerializeScene(filepath, activeScene);
 		}
 	}
 
-	void EditorLayer::SaveScene(Scene* scene)
+	void EditorLayer::SaveActiveScene()
 	{
-		TextSerializer::SerializeScene(scene->Path, scene);
+		const Asset& activeSceneAsset = Assets::GetAsset(m_ActiveScene);
+		Scene* activeScene = Assets::GetScene(m_ActiveScene);
+		SerializeScene(activeSceneAsset.Path, activeScene);
 	}
 
-	void EditorLayer::CloseScene(Scene* scene)
+	void EditorLayer::CloseActiveScene()
 	{
-		SaveScene(scene);
-		delete scene;
-		Scene::SetActiveScene(nullptr);
+		SaveActiveScene();
+		Assets::ReleaseAsset(m_ActiveScene);
+		m_ActiveScene = 0;
+		m_SceneHierarchyPanel.SetActiveScene(0);
+		m_InspectorPanel.SetActiveScene(0);
 	}
 }

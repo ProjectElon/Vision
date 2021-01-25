@@ -37,7 +37,8 @@ namespace Vision
 
     struct TagComponent
     {
-        std::string Tag;
+        // std::string Tag;
+        char Tag[256];
     };
 
     struct TransformComponent
@@ -75,15 +76,12 @@ namespace Vision
 
     struct SpriteRendererComponent
     {
-        //@Harlequin: move a default texture to a local directory
-        AssetID Texture = AssetManager::RequestAsset("Assets/Textures/wood.png");
+        // @(Harlequin): move a default texture to a local directory for now we use wood.png
+        AssetID Texture = Assets::RequestAsset("Assets/Textures/wood.png");
 
         glm::vec4 Color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
         glm::vec2 BottomLeftUV = { 0.0f, 0.0f };
         glm::vec2 TopRightUV   = { 1.0f, 1.0f };
-
-        bool FlipX = false;
-        bool FlipY = false;
     };
 }

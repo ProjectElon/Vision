@@ -26,27 +26,23 @@
 /*--------------------------------*/
 
 /*----------  IO  ----------*/
-#include "Vision/IO/TextSerializer.h"
-#include "Vision/IO/TextDeserializer.h"
 #include "Vision/IO/File.h"
 #include "Vision/IO/FileSystem.h"
 #include "Vision/IO/FileWatcher.h"
 #include "Vision/IO/Assets.h"
+#include "Vision/IO/TextSerializer.h"
+#include "Vision/IO/TextDeserializer.h"
 /*--------------------------------*/
 
 /*----------  Renderer  ----------*/
-#include "Vision/Renderer/GraphicsContext.h"
-#include "Vision/Renderer/RenderCommand.h"
 #include "Vision/Renderer/Renderer.h"
 #include "Vision/Renderer/Renderer2D.h"
-#include "Vision/Renderer/VertexBuffer.h"
-#include "Vision/Renderer/IndexBuffer.h"
+#include "Vision/Renderer/Buffers.h"
 #include "Vision/Renderer/VertexLayout.h"
-#include "Vision/Renderer/Texture2D.h"
+#include "Vision/Renderer/Texture.h"
 #include "Vision/Renderer/TextureAtlas.h"
 #include "Vision/Renderer/Shader.h"
-#include "Vision/Renderer/RendererAPI.h"
-#include "Vision/Renderer/OrthographicCameraController.h"
+#include "Vision/Renderer/OrthographicCamera.h"
 #include "Vision/Renderer/FrameBuffer.h"
 /*--------------------------------*/
 

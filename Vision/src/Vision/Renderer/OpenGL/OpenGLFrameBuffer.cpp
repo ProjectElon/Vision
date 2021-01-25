@@ -1,71 +1,85 @@
 #include "pch.h"
-#include "Vision/Renderer/OpenGL/OpenGLFrameBuffer.h"
 #include <glad/glad.h>
+#include "Vision/Renderer/FrameBuffer.h"
 
 namespace Vision
 {
-    OpenGLFrameBuffer::OpenGLFrameBuffer(const FrameBufferProps& frameBufferProps)
-        : m_Props(frameBufferProps)
-        , m_RendererId(0)
-        , m_ColorAttachmentRendererId(0)
+    static void InvalidateFrameBuffer(FrameBuffer* frameBuffer)
     {
-        Invalidate();
-    }
-
-    void OpenGLFrameBuffer::Resize(uint32 width, uint32 height)
-    {
-        if (width == 0 || height == 0 || width < 100 || height < 100)
+        if (frameBuffer->RendererID)
         {
-            VN_CORE_WARN("invalid framebuffer size ({}, {})", width, height);
-            return;
+            glDeleteFramebuffers(1, &frameBuffer->RendererID);
+            glDeleteTextures(1, &frameBuffer->ColorAttachmentID);
         }
 
-        m_Props.Width = width;
-        m_Props.Height = height;
+        glGenFramebuffers(1, &frameBuffer->RendererID);
+        glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer->RendererID);
 
-        Invalidate();
-    }
+        glGenTextures(1, &frameBuffer->ColorAttachmentID);
+        glBindTexture(GL_TEXTURE_2D, frameBuffer->ColorAttachmentID);
+        glTexImage2D(GL_TEXTURE_2D,
+                     0,
+                     GL_RGBA8,
+                     frameBuffer->Width,
+                     frameBuffer->Height,
+                     0,
+                     GL_RGBA,
+                     GL_UNSIGNED_BYTE,
+                     nullptr);
 
-    OpenGLFrameBuffer::~OpenGLFrameBuffer()
-    {
-        glDeleteFramebuffers(1, &m_RendererId);
-        glDeleteTextures(1, &m_ColorAttachmentRendererId);
-    }
+        glTextureParameteri(frameBuffer->ColorAttachmentID, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTextureParameteri(frameBuffer->ColorAttachmentID, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    void OpenGLFrameBuffer::Bind()
-    {
-        glBindFramebuffer(GL_FRAMEBUFFER, m_RendererId);
-        glViewport(0, 0, m_Props.Width, m_Props.Height);
-    }
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, frameBuffer->ColorAttachmentID, 0);
 
-    void OpenGLFrameBuffer::UnBind()
-    {
+        VnCoreAssert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Incomplete Framebuffer");
+
+        glBindTexture(GL_TEXTURE_2D, 0);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    void OpenGLFrameBuffer::Invalidate()
+    void CreateFrameBuffer(FrameBuffer* frameBuffer, uint32 width, uint32 height)
     {
-        if (m_RendererId)
+        frameBuffer->Width = width;
+        frameBuffer->Height = height;
+        frameBuffer->RendererID = 0;
+        frameBuffer->ColorAttachmentID = 0;
+        
+        InvalidateFrameBuffer(frameBuffer);
+    }
+
+    void ResizeFrameBuffer(FrameBuffer* frameBuffer, uint32 width, uint32 height)
+    {
+        if (width == 0 || height == 0 || width < 100 || height < 100)
         {
-            glDeleteFramebuffers(1, &m_RendererId);
-            glDeleteTextures(1, &m_ColorAttachmentRendererId);
+            VnCoreWarn("invalid framebuffer size ({}, {})", width, height);
+            return;
         }
 
-        glGenFramebuffers(1, &m_RendererId);
-        glBindFramebuffer(GL_FRAMEBUFFER, m_RendererId);
+        frameBuffer->Width = width;
+        frameBuffer->Height = height;
 
-        glGenTextures(1, &m_ColorAttachmentRendererId);
-        glBindTexture(GL_TEXTURE_2D, m_ColorAttachmentRendererId);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_Props.Width, m_Props.Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+        InvalidateFrameBuffer(frameBuffer);
+    }
+
+    void DestroyFrameBuffer(FrameBuffer* frameBuffer)
+    {
+        glDeleteFramebuffers(1, &frameBuffer->RendererID);
+        glDeleteTextures(1, &frameBuffer->ColorAttachmentID);
         
-        glTextureParameteri(m_ColorAttachmentRendererId, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTextureParameteri(m_ColorAttachmentRendererId, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        // @(Harlequin): Not sure 0 is valid or not in opengl land
+        frameBuffer->RendererID = 0;
+        frameBuffer->ColorAttachmentID = 0;
+    }
 
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_ColorAttachmentRendererId, 0);
+    void BindFrameBuffer(FrameBuffer* frameBuffer)
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer->RendererID);
+        glViewport(0, 0, frameBuffer->Width, frameBuffer->Height);
+    }
 
-        VN_CORE_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Incomplete Framebuffer");
-
-        glBindTexture(GL_TEXTURE_2D, 0);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);   
+    void UnBindFrameBuffer(FrameBuffer* frameBuffer)
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 }

@@ -29,7 +29,7 @@ namespace Vision
 
 		ImVec2 currentViewportSize = ImGui::GetContentRegionAvail();
 
-		uint32 textureID = m_FrameBuffer->GetColorAttachmentRendererId();
+		uint32 textureID = m_FrameBuffer->ColorAttachmentID;
 		ImGui::Image((void*)(intptr_t)textureID, { currentViewportSize.x, currentViewportSize.y }, ImVec2(0, 1), ImVec2(1, 0));
 
 		if (m_ViewportSize != glm::vec2(currentViewportSize.x, currentViewportSize.y) &&
@@ -38,7 +38,7 @@ namespace Vision
 		{
 			m_IsViewportResized = true;
 			m_ViewportSize = { currentViewportSize.x, currentViewportSize.y };
-			m_FrameBuffer->Resize((uint32)currentViewportSize.x, (uint32)currentViewportSize.y);
+			ResizeFrameBuffer(m_FrameBuffer, (uint32)currentViewportSize.x, (uint32)currentViewportSize.y);
 		}
 
 		ImGui::End();

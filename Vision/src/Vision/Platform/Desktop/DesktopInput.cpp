@@ -14,7 +14,7 @@ namespace Vision
 	void Input::Init()
 	{
 		Application& app = Application::Get();
-		window = (GLFWwindow*)app.GetWindow().GetNativeHandle();
+		window = (GLFWwindow*)app.GetWindow().Handle;
 	}
 
 	void Input::Shutdown()

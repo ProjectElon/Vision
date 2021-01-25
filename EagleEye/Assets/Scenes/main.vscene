@@ -1,267 +1,34 @@
-{
-    "MaxEntityCount": 100,
-    "PrimaryCamera": "",
-    "SelectedEntity": "Entity2",
-    "Entities": [
-        {
-            "Tag": "Player",
-            "Components": [
-                {
-                    "Name": "Transform",
-                    "ID": 1066925509535886804,
-                    "Data": {
-                        "Position": [
-                            0.0,
-                            0.0,
-                            0.0
-                        ],
-                        "Rotation": [
-                            0.0,
-                            0.0,
-                            0.0
-                        ],
-                        "Scale": [
-                            1.0,
-                            1.0,
-                            1.0
-                        ]
-                    }
-                },
-                {
-                    "Name": "Sprite Renderer",
-                    "ID": 13080639714729183211,
-                    "Data": {
-                        "Texture Path": "Assets/Textures/character_femaleAdventurer_sheetHD.png",
-                        "Texture Wrap X": 0,
-                        "Texture Wrap Y": 0,
-                        "Texture Fliter Mode": 0,
-                        "Color": [
-                            0.9999899864196777,
-                            0.9999985694885254,
-                            1.0,
-                            1.0
-                        ],
-                        "Bottom Left Point": [
-                            0.0,
-                            0.800000011920929
-                        ],
-                        "Top Right Point": [
-                            0.1111111119389534,
-                            1.0
-                        ],
-                        "Flip X": false,
-                        "Flip Y": false
-                    }
-                }
-            ]
-        },
-        {
-            "Tag": "Entity0",
-            "Components": [
-                {
-                    "Name": "Transform",
-                    "ID": 1066925509535886804,
-                    "Data": {
-                        "Position": [
-                            1.0,
-                            1.0,
-                            0.0
-                        ],
-                        "Rotation": [
-                            0.0,
-                            0.0,
-                            0.0
-                        ],
-                        "Scale": [
-                            1.0,
-                            1.0,
-                            1.0
-                        ]
-                    }
-                },
-                {
-                    "Name": "Sprite Renderer",
-                    "ID": 13080639714729183211,
-                    "Data": {
-                        "Texture Path": "Assets/Textures/dirt.png",
-                        "Texture Wrap X": 0,
-                        "Texture Wrap Y": 0,
-                        "Texture Fliter Mode": 0,
-                        "Color": [
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0
-                        ],
-                        "Bottom Left Point": [
-                            0.0,
-                            0.0
-                        ],
-                        "Top Right Point": [
-                            1.0,
-                            1.0
-                        ],
-                        "Flip X": false,
-                        "Flip Y": false
-                    }
-                }
-            ]
-        },
-        {
-            "Tag": "Entity1",
-            "Components": [
-                {
-                    "Name": "Transform",
-                    "ID": 1066925509535886804,
-                    "Data": {
-                        "Position": [
-                            -1.0,
-                            -1.0,
-                            0.0
-                        ],
-                        "Rotation": [
-                            0.0,
-                            0.0,
-                            0.0
-                        ],
-                        "Scale": [
-                            1.0,
-                            1.0,
-                            1.0
-                        ]
-                    }
-                },
-                {
-                    "Name": "Sprite Renderer",
-                    "ID": 13080639714729183211,
-                    "Data": {
-                        "Texture Path": "Assets/Textures/cotton_blue.png",
-                        "Texture Wrap X": 0,
-                        "Texture Wrap Y": 0,
-                        "Texture Fliter Mode": 0,
-                        "Color": [
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0
-                        ],
-                        "Bottom Left Point": [
-                            0.0,
-                            0.0
-                        ],
-                        "Top Right Point": [
-                            1.0,
-                            1.0
-                        ],
-                        "Flip X": false,
-                        "Flip Y": false
-                    }
-                }
-            ]
-        },
-        {
-            "Tag": "Entity2",
-            "Components": [
-                {
-                    "Name": "Transform",
-                    "ID": 1066925509535886804,
-                    "Data": {
-                        "Position": [
-                            2.299999952316284,
-                            -0.8999999761581421,
-                            0.0
-                        ],
-                        "Rotation": [
-                            0.0,
-                            0.0,
-                            0.0
-                        ],
-                        "Scale": [
-                            1.0,
-                            1.0,
-                            1.0
-                        ]
-                    }
-                },
-                {
-                    "Name": "Sprite Renderer",
-                    "ID": 13080639714729183211,
-                    "Data": {
-                        "Texture Path": "Assets/Textures/stone.png",
-                        "Texture Wrap X": 0,
-                        "Texture Wrap Y": 0,
-                        "Texture Fliter Mode": 0,
-                        "Color": [
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0
-                        ],
-                        "Bottom Left Point": [
-                            0.0,
-                            0.0
-                        ],
-                        "Top Right Point": [
-                            1.0,
-                            1.0
-                        ],
-                        "Flip X": false,
-                        "Flip Y": false
-                    }
-                }
-            ]
-        },
-        {
-            "Tag": "Entity3",
-            "Components": [
-                {
-                    "Name": "Transform",
-                    "ID": 1066925509535886804,
-                    "Data": {
-                        "Position": [
-                            -1.399999976158142,
-                            1.100000023841858,
-                            0.0
-                        ],
-                        "Rotation": [
-                            0.0,
-                            0.0,
-                            0.0
-                        ],
-                        "Scale": [
-                            1.0,
-                            1.0,
-                            1.0
-                        ]
-                    }
-                },
-                {
-                    "Name": "Sprite Renderer",
-                    "ID": 13080639714729183211,
-                    "Data": {
-                        "Texture Path": "Assets/Textures/gravel_dirt.png",
-                        "Texture Wrap X": 0,
-                        "Texture Wrap Y": 0,
-                        "Texture Fliter Mode": 0,
-                        "Color": [
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0
-                        ],
-                        "Bottom Left Point": [
-                            0.0,
-                            0.0
-                        ],
-                        "Top Right Point": [
-                            1.0,
-                            1.0
-                        ],
-                        "Flip X": false,
-                        "Flip Y": false
-                    }
-                }
-            ]
-        }
-    ]
-}
+MaxEntityCount 100
+PrimaryCamera SelectedEntity
+SelectedEntity Entity1
+CameraPosition -0.107636 0.0101735 0
+CameraMovementSpeed 1.75
+CameraOrthographicSize 1.75
+CameraNear -1
+CameraFar 1
+Entity Entity0
+Component 1066925509535886804 Transform
+Position 1 1 0
+Rotation 0 0 0
+Scale 1 1 1
+Component 13080639714729183211 Sprite Renderer
+Texture Path Assets/Textures/wood.png
+Texture Wrap X 0
+Texture Wrap Y 0
+Texture Fliter Mode 0
+Color 0.947581 0.328597 0.328597 1
+Bottom Left Point 0 0
+Top Right Point 1 1
+Entity Entity1
+Component 1066925509535886804 Transform
+Position -1 -1 0
+Rotation 0 0 0
+Scale 1 1 1
+Component 13080639714729183211 Sprite Renderer
+Texture Path Assets/Textures/brick_red.png
+Texture Wrap X 0
+Texture Wrap Y 0
+Texture Fliter Mode 0
+Color 0.301103 0.770161 0.139747 1
+Bottom Left Point 0 0
+Top Right Point 1 1

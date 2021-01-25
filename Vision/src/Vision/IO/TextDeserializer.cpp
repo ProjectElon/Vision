@@ -1,165 +1,101 @@
 #include "pch.h"
 
 #include "Vision/IO/TextDeserializer.h"
-#include "Vision/Entity/Scene.h"
+#include "Vision/IO/File.h"
 
-#include <fstream>
+#include <sstream>
 
 namespace Vision
 {
-    void TextDeserializer::DeserializeEntity(const Reader& reader, Scene* scene, uint32 entityIndex)
+    void DeserializeScene(const std::string& filepath, Scene* scene)
     {
-        EditorState& editorState = Scene::EditorState;
+        FileStream handle = File::Open(filepath, FileMode::Read);
+        std::string contents = "";
+        std::string line;
 
-        using namespace rapidjson;
+        std::string newline;
+        std::string prop;
+        std::string space;
 
-        const Value& entity = reader[entityIndex];
-
-        const char* tag = entity["Tag"].GetString();
-        scene->CreateEntity(tag);
-
-        const Value& components = entity["Components"];
-
-        for (uint32 componentIndex = 0;
-            componentIndex < components.Size();
-            componentIndex++)
+        for (int i = 0; i < 8; i++)
         {
-            const Value& component = components[componentIndex];
-            const char* name = component["Name"].GetString();
-            ComponentID componentID = component["ID"].GetUint64();
-            ComponentInfo& info = editorState.ComponentMeta[componentID];
-            info.AddFn(entityIndex + 1);
-
-            if (info.DeserializeFn)
-            {
-                const Value& data = component["Data"];
-                void* componentMemory = scene->GetComponent(entityIndex + 1, componentID);
-                info.DeserializeFn(data, componentMemory);
-            }
-        }
-    }
-
-    bool TextDeserializer::DeserializeScene(const std::string& filepath, Scene* scene)
-    {
-        using namespace rapidjson;
-
-        // @Clean Up: File IO
-        std::ifstream ifs(filepath);
-        std::string contents;
-
-        if (ifs.is_open())
-        {
-            std::string line;
-
-            while (std::getline(ifs, line))
-            {
-                contents += line;
-            }
-
-            ifs.close();
-        }
-        else
-        {
-            VN_CORE_INFO("Can't Open Scene: {0}", filepath);
-            return false;
+            File::ReadLine(handle, line);
+            contents += line + " ";
         }
 
         EditorState& editorState = Scene::EditorState;
 
-        Document doc;
-        doc.Parse(contents.c_str(), contents.length());
+        std::stringstream stringStream(contents);
+        stringStream >> prop >> scene->MaxEntityCount;
+        stringStream >> prop >> scene->PrimaryCameraTag;
+        stringStream >> prop >> editorState.SelectedEntityTag;
 
-        scene->MaxEntityCount = doc["MaxEntityCount"].GetUint();
-        scene->PrimaryCameraTag = doc["PrimaryCamera"].GetString();
-        editorState.SelectedEntityTag = doc["SelectedEntity"].GetString();
+        CreateScene(scene, scene->MaxEntityCount);
 
-        scene->ReConstruct();
+        OrthographicCamera& camera = editorState.SceneCamera;
+        glm::vec3& p = camera.Position;
+        stringStream >> prop >> p.x >> p.y >> p.z;
+        stringStream >> prop >> camera.MovementSpeed;
+        stringStream >> prop >> camera.OrthographicSize;
+        stringStream >> prop >> camera.Near;
+        stringStream >> prop >> camera.Far;
 
-        const Value& entites = doc["Entities"];
+        contents = "";
+        Entity entity = 0;
+        ComponentID componentID = 0;
 
-        for (uint32 entityIndex = 0;
-            entityIndex < entites.Size();
-            entityIndex++)
+        while (File::ReadLine(handle, line))
         {
-            DeserializeEntity(entites, scene, entityIndex);
+            std::stringstream stringStream(line);
+            stringStream >> prop;
+
+            if (prop == "Entity")
+            {
+                if (!contents.empty())
+                {
+                    DeserializeComponent(componentID, contents, scene, entity);
+                    contents = "";
+                }
+
+                std::string tag = line.substr(7);
+                entity = scene->CreateEntity(tag);
+            }
+            else if (prop == "Component")
+            {
+                if (!contents.empty())
+                {
+                    DeserializeComponent(componentID, contents, scene, entity);
+                    contents = "";
+                }
+                stringStream >> componentID;
+            }
+            else
+            {
+                contents += line + " ";
+            }
         }
 
-        VN_CORE_INFO("Deserializing: {0}", filepath);
+        if (!contents.empty())
+        {
+            DeserializeComponent(componentID, contents, scene, entity);
+            contents = "";
+        }
 
-        return true;
+        File::Close(handle);
     }
 
-    std::string TextDeserializer::DeserializeString(const Reader& reader,
-        const std::string& name)
+    void DeserializeComponent(ComponentID componentID,
+                              const std::string& contents,
+                              Scene* scene,
+                              Entity entity)
     {
-        return reader[name.c_str()].GetString();
-    }
-
-    bool TextDeserializer::DeserializeBool(const Reader& reader, const std::string& name)
-    {
-        return reader[name.c_str()].GetBool();
-    }
-
-    float TextDeserializer::DeserializeFloat(const Reader& reader, const std::string& name)
-    {
-        return reader[name.c_str()].GetFloat();
-    }
-
-    int32 TextDeserializer::DeserializeInt32(const Reader& reader, const std::string& name)
-    {
-        return reader[name.c_str()].GetInt();
-    }
-
-    uint32 TextDeserializer::DeserializeUint32(const rapidjson::Value& reader, const std::string& name)
-    {
-        return reader[name.c_str()].GetUint();
-    }
-
-    static int64 DeserializeInt64(const Reader& reader, const std::string& name)
-    {
-        return reader[name.c_str()].GetInt64();
-    }
-
-    uint64 TextDeserializer::DeserializeUint64(const rapidjson::Value& reader, const std::string& name)
-    {
-        return reader[name.c_str()].GetUint64();
-    }
-
-    glm::vec2 TextDeserializer::DeserializeVector2(const rapidjson::Value& reader, const std::string& name)
-    {
-        const auto& array = reader[name.c_str()];
-
-        glm::vec3 result;
-        result.x = array[0].GetFloat();
-        result.y = array[1].GetFloat();
-
-        return result;
-    }
-
-    glm::vec3 TextDeserializer::DeserializeVector3(const rapidjson::Value& reader,
-        const std::string& name)
-    {
-        const auto& array = reader[name.c_str()];
-
-        glm::vec3 result;
-        result.x = array[0].GetFloat();
-        result.y = array[1].GetFloat();
-        result.z = array[2].GetFloat();
-
-        return result;
-    }
-
-    glm::vec4 TextDeserializer::DeserializeVector4(const rapidjson::Value& reader, const std::string& name)
-    {
-        const auto& array = reader[name.c_str()];
-
-        glm::vec4 result;
-
-        result.x = array[0].GetFloat();
-        result.y = array[1].GetFloat();
-        result.z = array[2].GetFloat();
-        result.w = array[3].GetFloat();
-
-        return result;
+        EditorState& editorState = Scene::EditorState;
+        const ComponentInfo& info = editorState.ComponentMeta[componentID];
+        info.AddFn(scene, entity);
+        if (info.DeserializeFn)
+        {
+            void* componentMemory = scene->GetComponent(entity, componentID);
+            info.DeserializeFn(componentMemory, contents);
+        }
     }
 }

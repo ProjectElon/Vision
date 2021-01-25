@@ -1,34 +1,74 @@
 #pragma once
 
-#include "Vision/Renderer/RendererAPI.h"
+#include "Vision/Core/Base.h"
 
 namespace Vision
 {
+	enum class DataType
+	{
+		Bool,
+		Int8,
+		UInt8,
+		Int16,
+		UInt16,
+		Int32,
+		UInt32,
+		Float,
+		Float2,
+		Float3,
+		Float4,
+		Matrix3,
+		Matrix4
+	};
+
+	enum ClearFlags
+	{
+		ClearColorBuffer   = VnBitUInt32(1),
+		ClearDepthBuffer   = VnBitUInt32(2),
+		ClearStencilBuffer = VnBitUInt32(3)
+	};
+
+	enum class Primitive
+	{
+		Lines,
+		Triangles
+	};
+
+	struct Window;
+	struct VertexBuffer;
+	struct IndexBuffer;
+
 	class Renderer
 	{
 	public:
-		enum class API : uint8_t
-		{
-			None,
-			OpenGL
-		};
+		static Window* RenderTargetWindow;
 
-	public:
-		inline static void SetAPI(API api) { s_API = api; }
-		inline static API GetAPI() { return s_API; }
-
-		inline static RendererAPI& GetRendererAPI()
-		{
-			return *s_RendererAPI;
-		}
-
-		static void Init();
+		static void Init(Window* renderTargetWindow);
 		static void Shutdown();
 
-		static void OnWindowResize(uint32_t width, uint32_t height);
+		static uint32 GetDataTypeSize(DataType dataType);
+		static uint32 GetDataTypeComponentCount(DataType dataType);
 
-	private:
-		static API s_API;
-		static Scope<RendererAPI> s_RendererAPI;
+		static void Clear(ClearFlags clearflags);
+
+		static void SetClearColor(float32 r,
+								  float32 g,
+								  float32 b,
+								  float32 a);
+
+		static void SetViewport(uint32 x,
+								uint32 y,
+								uint32 width,
+								uint32 height);
+
+		static void DrawIndexed(const VertexBuffer* vertexBuffer,
+								const IndexBuffer* indexBuffer,
+								uint32 count,
+								Primitive primitive = Primitive::Triangles);
+
+		static void SetVSync(bool enabled);
+		static void SwapBuffers();
+
+		static int32 GetMaxTextureSlots();
 	};
 }

@@ -1,14 +1,10 @@
 #pragma once
 
 #include <Vision.h>
-#include <rapidjson/document.h>
-
 #include "Widgets/Menubar.h"
 #include "Widgets/SceneHierarchyPanel.h"
 #include "Widgets/InspectorPanel.h"
-#include "Widgets/ConsolePanel.h"
 #include "Widgets/SceneViewPanel.h"
-#include "Widgets/GameViewPanel.h"
 #include "Widgets/Dialog.h"
 
 namespace Vision
@@ -23,49 +19,42 @@ namespace Vision
 		void OnDetach() override;
 
 		void OnUpdate(float deltaTime) override;
-		void OnEvent(Event& event) override;
+		void OnEvent(Event& e) override;
 		void OnImGuiRender() override;
 
 		bool OnKeyPressed(KeyPressedEvent& e);
+		bool OnMouseWheelScrolled(MouseWheelScrolledEvent& e);
 
-		void OnFileChanged(FileWatcherAction action, std::string filepath, std::string oldpath);
+		void OnFileChanged(FileWatcherAction action,
+						   std::string filepath,
+						   std::string oldpath);
 
 		void NewScene(const std::string& filepath, uint32 maxEntityCount);
 		void OpenScene();
-		void SaveSceneAs(Scene* scene);
-		void SaveScene(Scene* scene);
-		void CloseScene(Scene* scene);
+		void SaveActiveSceneAs();
+		void SaveActiveScene();
+		void CloseActiveScene();
 
    	private:
 		void LoadSettings();
 		void SaveSettings();
 
    	private:
-		Window* m_Window;
-
 		Menubar             m_Menubar;
 		SceneHierarchyPanel m_SceneHierarchyPanel;
 		InspectorPanel		m_InspectorPanel;
-		ConsolePanel		m_ConsolePanel;
 		SceneViewPanel		m_SceneViewPanel;
-		GameViewPanel		m_GameViewPanel;
 		Dialog				m_Dialog;
 
-		rapidjson::Document    m_Settings;
-		std::string			   m_LastScenePath;
+		FrameBuffer m_SceneFrameBuffer;
 
-		Scope<OrthographicCameraController> m_CameraController;
+		OrthographicCamera* m_SceneCamera;
 
-		Scope<FileWatcher> m_FileWatcher;
+		AssetID m_ActiveScene = 0;
+		AssetID m_CheckboardTexture = 0;
+		AssetID m_SpriteShader = 0;
 
-		TextureAtlasGrid m_PlayerAtlas;
-		uint32 m_TextureIndex = 0;
-
-		AssetID m_CheckboardTexture;
-		AssetID m_PlayerTexture;
-		AssetID m_SpriteShader;
-
-		Ref<FrameBuffer> m_SceneFrameBuffer;
-		Ref<FrameBuffer> m_GameFrameBuffer;
+		friend class Menubar;
+		friend class Dialog;
 	};
 }

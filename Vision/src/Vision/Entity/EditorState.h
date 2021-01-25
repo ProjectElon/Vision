@@ -1,27 +1,22 @@
 #pragma once
 
+#include "Vision/Renderer/OrthographicCamera.h"
 #include "Vision/Entity/Entity.h"
 #include "Vision/Entity/Components.h"
 
-#include <rapidjson/document.h>
-#include <rapidjson/prettywriter.h>
-
 namespace Vision
 {
-    class Scene;
+    struct Scene;
 
     struct ComponentState
     {
         bool Open = true;
     };
 
-    using Writer = rapidjson::PrettyWriter<rapidjson::StringBuffer>;
-    using Reader = rapidjson::Value;
-
-    using ComponentAddFn         = std::function<void(Entity)>;
-    using ComponentInspectFn     = std::function<void(void*)>;
-    using ComponentSerializeFn   = std::function<void(Writer&, void*)>;
-    using ComponentDeserializeFn = std::function<void(const Reader&, void*)>;
+    using ComponentAddFn         = std::function<void(Scene* scene, Entity)>;
+    using ComponentInspectFn     = std::function<void(Scene* scene, void* component)>;
+    using ComponentSerializeFn   = std::function<std::string(void* component)>;
+    using ComponentDeserializeFn = std::function<void(void* component, const std::string& contents)>;
 
     struct ComponentInfo
     {
@@ -40,6 +35,8 @@ namespace Vision
     {
         std::string      SelectedEntityTag;
         ComponentMetaMap ComponentMeta;
+
+        OrthographicCamera SceneCamera;
     };
 
     template<typename Component, bool Removable = true>
@@ -78,13 +75,8 @@ namespace Vision
     }
 
     template<typename Component>
-    void AddComponentInInspectorFn(Entity entity)
+    void AddComponentInInspectorFn(Scene* scene, Entity entity)
     {
-        Scene* scene = Scene::GetActiveScene();
-
-        if (scene)
-        {
-            scene->AddComponent<Component>(entity);
-        }
+        scene->AddComponent<Component>(entity);
     }
 }

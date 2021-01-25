@@ -52,7 +52,7 @@ namespace Vision
 		ZeroMemory(&ofn, sizeof(OPENFILENAME));
 
 		ofn.lStructSize  = sizeof(OPENFILENAME);
-		ofn.hwndOwner    = glfwGetWin32Window((GLFWwindow*)Application::Get().GetWindow().GetNativeHandle());
+		ofn.hwndOwner    = glfwGetWin32Window((GLFWwindow*)Application::Get().GetWindow().Handle);
 		ofn.lpstrFile    = szFile;
 		ofn.nMaxFile     = sizeof(szFile);
 		ofn.lpstrFilter  = win32FilterFormat.c_str();
@@ -96,7 +96,7 @@ namespace Vision
 		ZeroMemory(&ofn, sizeof(OPENFILENAME));
 
 		ofn.lStructSize  = sizeof(OPENFILENAME);
-		ofn.hwndOwner    = glfwGetWin32Window((GLFWwindow*)Application::Get().GetWindow().GetNativeHandle());
+		ofn.hwndOwner    = glfwGetWin32Window((GLFWwindow*)Application::Get().GetWindow().Handle);
 		ofn.lpstrFile    = szFile;
 		ofn.nMaxFile     = sizeof(szFile);
 		ofn.lpstrFilter  = win32FilterFormat.c_str();

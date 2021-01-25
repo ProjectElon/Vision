@@ -1,21 +1,26 @@
 #include <Vision.h>
-
 #include "SceneHierarchyPanel.h"
 #include <imgui.h>
 
 namespace Vision
 {
+	void SceneHierarchyPanel::SetActiveScene(AssetID scene)
+	{
+		m_ActiveScene = scene;
+	}
+
 	void SceneHierarchyPanel::OnImGuiRender()
 	{
 		EditorState& editorState = Scene::EditorState;
-		Scene* scene = Scene::GetActiveScene();
 
 		ImGui::Begin("Scene Hierarchy");
 
 		m_IsInteractable = ImGui::IsWindowFocused() && ImGui::IsWindowHovered();
 
-		if (scene)
+		if (m_ActiveScene)
 		{
+			Scene* scene = Assets::GetScene(m_ActiveScene);
+
 			// Deselect Entity
 			{
 				if (ImGui::IsMouseDown(0) &&
@@ -49,15 +54,17 @@ namespace Vision
 
 			// Drawing Entites
 			{
-				std::string sceneName = scene->Name + " (" + std::to_string(scene->EntityCount) + "/" + std::to_string(scene->MaxEntityCount) + ")";
+				const Asset& sceneAsset = Assets::GetAsset(m_ActiveScene);
+				std::string sceneName = FileSystem::GetFileName(sceneAsset.Path, false);
+				std::string sceneText = sceneName + " (" + std::to_string(scene->EntityCount) + "/" + std::to_string(scene->MaxEntityCount) + ")";
 
 				uint32 flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_FramePadding;
 
-				if (ImGui::TreeNodeEx(sceneName.c_str(), flags))
+				if (ImGui::TreeNodeEx(sceneText.c_str(), flags))
 				{
 					scene->EachEntity([&](Entity entity)
 					{
-						DrawEntity(*scene, entity);
+						DrawEntity(scene, entity);
 					});
 
 					ImGui::TreePop();
@@ -68,11 +75,11 @@ namespace Vision
 		ImGui::End();
 	}
 
-	void SceneHierarchyPanel::DrawEntity(Scene& scene, Entity entity)
+	void SceneHierarchyPanel::DrawEntity(Scene* scene, Entity entity)
 	{
 		EditorState& editorState = Scene::EditorState;
 
-		auto& tagComponent = scene.GetComponent<TagComponent>(entity);
+		auto& tagComponent = scene->GetComponent<TagComponent>(entity);
 
 		const std::string& tag = tagComponent.Tag;
 
@@ -100,7 +107,7 @@ namespace Vision
 					editorState.SelectedEntityTag = "";
 				}
 
-				scene.FreeEntity(tag);
+				scene->FreeEntity(tag);
 			}
 
 			ImGui::EndPopup();
