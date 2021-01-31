@@ -56,6 +56,13 @@ namespace Vision
 				textureFormat  = GL_RGBA;
 			}
 			break;
+
+			case PixelFormat::Font:
+			{
+				internalFormat = GL_RGBA8;
+				textureFormat  = GL_ALPHA;
+			}
+			break;
 		}
 
 		glCreateTextures(GL_TEXTURE_2D, 1, &texture->RendererID);

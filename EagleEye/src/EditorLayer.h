@@ -36,10 +36,9 @@ namespace Vision
 		void CloseActiveScene();
 
    	private:
-		void LoadSettings();
-		void SaveSettings();
+		friend class Menubar;
+		friend class Dialog;
 
-   	private:
 		Menubar             m_Menubar;
 		SceneHierarchyPanel m_SceneHierarchyPanel;
 		InspectorPanel		m_InspectorPanel;
@@ -52,9 +51,13 @@ namespace Vision
 
 		AssetID m_ActiveScene = 0;
 		AssetID m_CheckboardTexture = 0;
-		AssetID m_SpriteShader = 0;
 
-		friend class Menubar;
-		friend class Dialog;
+		AssetID m_SpriteShader = 0;
+		AssetID m_FontShader = 0;
+
+		Font font;
+
+		void LoadSettings();
+		void SaveSettings();
 	};
 }

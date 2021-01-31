@@ -1,9 +1,9 @@
 MaxEntityCount 100
-PrimaryCamera SelectedEntity
+PrimaryCamera Entity1
 SelectedEntity Entity1
-CameraPosition -0.107636 0.0101735 0
-CameraMovementSpeed 1.75
-CameraOrthographicSize 1.75
+CameraPosition 0.0023611 0.0101735 0
+CameraMovementSpeed 2.25
+CameraOrthographicSize 2.25
 CameraNear -1
 CameraFar 1
 Entity Entity0
@@ -19,6 +19,12 @@ Texture Fliter Mode 0
 Color 0.947581 0.328597 0.328597 1
 Bottom Left Point 0 0
 Top Right Point 1 1
+Component 1734294881175729993 Orthographic Camera
+Aspect Ratio 0
+Size 1
+Near -1
+Far 1
+Static 0
 Entity Entity1
 Component 1066925509535886804 Transform
 Position -1 -1 0
@@ -32,3 +38,9 @@ Texture Fliter Mode 0
 Color 0.301103 0.770161 0.139747 1
 Bottom Left Point 0 0
 Top Right Point 1 1
+Component 1734294881175729993 Orthographic Camera
+Aspect Ratio 0
+Size 1
+Near -1
+Far 1
+Static 0

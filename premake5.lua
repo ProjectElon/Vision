@@ -71,12 +71,12 @@ outputdir = "%{cfg.system}-%{cfg.architecture}-%{cfg.buildcfg}"
 
 includedir = {}
 
-includedir["spdlog"]    = "ThirdParty/spdlog/include"
-includedir["GLFW"]      = "ThirdParty/GLFW/include"
-includedir["Glad"]      = "ThirdParty/Glad/include"
-includedir["ImGui"]     = "ThirdParty/imgui"
-includedir["glm"]       = "ThirdParty/glm"
-includedir["stb_image"] = "ThirdParty/stb"
+includedir["spdlog"] = "ThirdParty/spdlog/include"
+includedir["GLFW"]   = "ThirdParty/GLFW/include"
+includedir["Glad"]   = "ThirdParty/Glad/include"
+includedir["ImGui"]  = "ThirdParty/imgui"
+includedir["glm"]    = "ThirdParty/glm"
+includedir["stb"]	 = "ThirdParty/stb"
 
 group ("Dependencies")
 
@@ -111,7 +111,7 @@ project ("Vision")
 		"%{includedir.Glad}",
 		"%{includedir.ImGui}",
 		"%{includedir.glm}",
-		"%{includedir.stb_image}"
+		"%{includedir.stb}"
 	}
 
 	links
@@ -152,7 +152,8 @@ project ("EagleEye")
 		"%{includedir.ImGui}",
 		"%{includedir.spdlog}",
 		"%{includedir.glm}",
-		"%{includedir.rapidjson}"
+		"%{includedir.rapidjson}",
+		"%{includedir.stb}",
 	}
 
 	links

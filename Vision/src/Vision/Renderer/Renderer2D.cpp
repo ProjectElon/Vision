@@ -162,6 +162,48 @@ namespace Vision
 		s_QuadData.Count++;
 	}
 
+	void Renderer2D::DrawString(Font* font,
+	                            const std::string& text,
+	                            float32 x,
+	                            float32 y,
+	                            const glm::vec4& color)
+	{
+		for (uint32 i = 0; i < text.length(); i++)
+		{
+			char c = text[i];
+			if (c >= 32 && c < 128)
+			{
+				stbtt_aligned_quad quad;
+
+				stbtt_GetBakedQuad(font->Glyphs,
+					512,
+					512,
+					c - 32,
+					&x,
+					&y,
+					&quad,
+					1);
+
+				float sx = (quad.x1 - quad.x0);
+				float sy = (quad.y1 - quad.y0);
+
+				float xp = (quad.x1 + quad.x0) / 2.0f;
+				float yp = (quad.y1 + quad.y0) / 2.0f;
+
+				glm::vec2 uv0 = { quad.s0, quad.t0 };
+				glm::vec2 uv1 = { quad.s1, quad.t1 };
+
+				DrawTexture(glm::vec3(xp, yp, 0.0f),
+					0.0f,
+					glm::vec2(sx, sy),
+					&font->Atlas,
+					color,
+					uv0,
+					uv1);
+			}
+		}
+	}
+
 	void Renderer2D::EndScene()
 	{
 		FlushQuadBatch();

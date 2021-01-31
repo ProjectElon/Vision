@@ -15,10 +15,39 @@ namespace Vision
 		Window& window = Application::Get().GetWindow();
 		SetWindowTitle(&window, "Eagle Eye");
 		Renderer::SetVSync(true);
+
+		FileStream handle = File::Open("Assets/Fonts/FiraCode-Regular.ttf",
+		                               FileMode::Read,
+		                               true);
+
+		uint8* font_buffer = new uint8[1 << 20];
+		uint8* texture_bitmap = new uint8[512 * 512];
+
+		File::Read(handle, font_buffer, handle.SizeInBytes);
+		File::Close(handle);
+
+		font.SizeInPixels = 64;
+
+		stbtt_BakeFontBitmap(font_buffer,
+		                     0,
+		                     font.SizeInPixels,
+		                     texture_bitmap,
+		                     512,
+		                     512,
+		                     32,
+		                     96,
+		                     font.Glyphs);
+
+		CreateTexture(&font.Atlas, texture_bitmap, 512, 512, PixelFormat::Font);
+		SetTextureFilterMode(&font.Atlas, FilterMode::Bilinear);
+
+		delete[] font_buffer;
+		delete[] texture_bitmap;
 	}
 
 	EditorLayer::~EditorLayer()
 	{
+		DestroyTexture(&font.Atlas);
 	}
 
 	void EditorLayer::OnAttach()
@@ -35,6 +64,7 @@ namespace Vision
 		ResizeOrthographisCamera(m_SceneCamera, 800, 600);
 
 		m_SpriteShader = Assets::RequestAsset("Assets/Shaders/Sprite.glsl");
+		m_FontShader = Assets::RequestAsset("Assets/Shaders/Font.glsl");
 		m_CheckboardTexture = Assets::RequestAsset("Assets/Textures/Checkerboard.png");
 
 		WatchDirectory("Assets", VnBindWatcherFn(EditorLayer::OnFileChanged));
@@ -63,33 +93,30 @@ namespace Vision
 		{
 			case Vision::FileWatcherAction::FileAdded:
 			{
-				// VN_CORE_INFO("Added: {0}", filepath);
 			}
 			break;
 
 			case Vision::FileWatcherAction::FileRemoved:
 			{
-				// VN_CORE_INFO("Removed: {0}", filepath);
 			}
 			break;
 
 			case Vision::FileWatcherAction::FileModified:
 			{
 				std::string cwd = FileSystem::GetCurrentWorkingDirectory();
-				std::string relativePath = filepath.substr(cwd.length() + 1);
+				std::string fileRelativePath = filepath.substr(cwd.length() + 1);
 
-				bool isFile = FileSystem::FileExists(relativePath);
+				bool isFile = FileSystem::FileExists(fileRelativePath);
 
 				if (isFile)
 				{
-					Assets::ReloadAsset(relativePath);
+					Assets::ReloadAsset(fileRelativePath);
 				}
 			}
 			break;
 
 			case Vision::FileWatcherAction::FileRenamed:
 			{
-				VnCoreInfo("Renameing: {0} to {1}", oldpath, filepath);
 			}
 			break;
 		}
@@ -126,12 +153,14 @@ namespace Vision
 
 			Scene* scene = Assets::GetScene(m_ActiveScene);
 
-			Renderer2D::DrawTexture(glm::vec3(0.0f, 0.0f, 0.0f), 0.0f,
+			Renderer2D::DrawTexture(glm::vec3(0.0f, 0.0f, 0.0f),
+			                        0.0f,
 									glm::vec2(100.0f, 100.0f),
 									Assets::GetTexture(m_CheckboardTexture),
 									glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
 									glm::vec2(0.0f, 0.0f),
 									glm::vec2(1.0f, 1.0f) * 100.0f);
+
 
 			scene->EachGroup<TransformComponent, SpriteRendererComponent>([](auto& transform, auto& sprite)
 			{
@@ -144,6 +173,14 @@ namespace Vision
 										sprite.TopRightUV);
 			});
 
+			Renderer2D::EndScene();
+			glm::mat4 ortho = glm::ortho(0.0f, (float32)m_SceneFrameBuffer.Width,
+									           (float32)m_SceneFrameBuffer.Height, 0.0f);
+
+			Renderer2D::BeginScene(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)),
+								   ortho,
+								   Assets::GetShader(m_FontShader));
+			Renderer2D::DrawString(&font, "Hello, World!", 50, 50, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
 			Renderer2D::EndScene();
 		}
 

@@ -23,7 +23,8 @@ namespace Vision
     {
         R,
         RGB,
-        RGBA
+        RGBA,
+        Font
     };
 
     struct TextureRect
