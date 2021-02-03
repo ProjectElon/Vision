@@ -3,6 +3,7 @@
 
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/matrix_transform_2d.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
 
 namespace Vision
 {
@@ -10,7 +11,7 @@ namespace Vision
 	{
 		uint32 white = 0xffffffff;
 
-		CreateTexture(&s_QuadData.WhitePixel,
+		InitTexture(&s_QuadData.WhitePixel,
 					  &white,
 			          1,
 			          1,
@@ -31,7 +32,8 @@ namespace Vision
 			{ DataType::Float2, "a_Position",     false },
 			{ DataType::Float4, "a_Color", 	      false },
 			{ DataType::Float2, "a_TextureCoord", false },
-			{ DataType::Float,  "a_TextureIndex", false }
+			{ DataType::Float,  "a_TextureIndex", false },
+			{ DataType::Float,  "a_EntityIndex",  false }
 		});
 
 		s_QuadData.VertexBase = new QuadVertex[4 * s_QuadData.MaxCount];
@@ -80,7 +82,7 @@ namespace Vision
 								Shader* quadShader)
 	{
 		s_SceneData.CameraPosition = cameraTransform[3];
-		s_SceneData.ViewProjection =  cameraProjection * glm::inverse(cameraTransform);
+		s_SceneData.ViewProjection = cameraProjection * glm::inverse(cameraTransform);
 
 		BindShader(quadShader);
 		SetShaderUniformIntArray(quadShader,
@@ -94,22 +96,27 @@ namespace Vision
 	}
 
 	void Renderer2D::DrawQuad(const glm::mat4& transform,
-						      const glm::vec4& color)
+						      const glm::vec4& color,
+						      uint32 entityIndex)
 	{
 		DrawTexture(transform,
 					&s_QuadData.WhitePixel,
-					color);
+					color,
+					{ 0.0f, 0.0f },
+					{ 1.0f, 1.0f },
+					entityIndex);
 	}
 
 	void Renderer2D::DrawQuad(const glm::vec3& position,
 							  float32 rotationAngle,
 							  const glm::vec2& scale,
-							  const glm::vec4& color)
+							  const glm::vec4& color,
+							  uint32 entityIndex)
 	{
 		glm::mat4 transform = CreateQuadTransform(position,
 												  rotationAngle,
 												  scale);
-		DrawQuad(transform, color);
+		DrawQuad(transform, color, entityIndex);
 	}
 
 	void Renderer2D::DrawTexture(const glm::vec3& position,
@@ -118,7 +125,8 @@ namespace Vision
 								 const Texture* texture,
 								 const glm::vec4& color,
 								 const glm::vec2& bottomLeftUV,
-								 const glm::vec2& topRightUV)
+								 const glm::vec2& topRightUV,
+								 uint32 entityIndex)
 	{
 		glm::mat4 transform = CreateQuadTransform(position,
 											      rotationAngle,
@@ -128,14 +136,16 @@ namespace Vision
 			        texture,
 			        color,
 					bottomLeftUV,
-					topRightUV);
+					topRightUV,
+					entityIndex);
 	}
 
 	void Renderer2D::DrawTexture(const glm::mat4& transform,
 								 const Texture* texture,
 								 const glm::vec4& color,
 								 const glm::vec2& bottomLeftUV,
-								 const glm::vec2& topRightUV)
+								 const glm::vec2& topRightUV,
+								 uint32 entityIndex)
 	{
 		if (s_QuadData.Count >= s_QuadData.MaxCount)
 		{
@@ -154,52 +164,58 @@ namespace Vision
 		glm::vec2 uv2 = topRightUV;
 		glm::vec2 uv3 = glm::vec2(bottomLeftUV.x, topRightUV.y);
 
-		SubmitQuadVertex({ v0, color, uv0, textureIndex });
-		SubmitQuadVertex({ v1, color, uv1, textureIndex });
-		SubmitQuadVertex({ v2, color, uv2, textureIndex });
-		SubmitQuadVertex({ v3, color, uv3, textureIndex });
+		SubmitQuadVertex({ v0, color, uv0, textureIndex, (float32)entityIndex });
+		SubmitQuadVertex({ v1, color, uv1, textureIndex, (float32)entityIndex });
+		SubmitQuadVertex({ v2, color, uv2, textureIndex, (float32)entityIndex });
+		SubmitQuadVertex({ v3, color, uv3, textureIndex, (float32)entityIndex });
 
 		s_QuadData.Count++;
 	}
 
-	void Renderer2D::DrawString(Font* font,
+	void Renderer2D::DrawString(BitmapFont* font,
 	                            const std::string& text,
-	                            float32 x,
-	                            float32 y,
-	                            const glm::vec4& color)
+	                            glm::vec2 position,
+	                            const glm::vec4& color,
+	                            uint32 entityIndex)
 	{
-		for (uint32 i = 0; i < text.length(); i++)
+		for (size_t characterIndex = 0; characterIndex < text.length(); characterIndex++)
 		{
-			char c = text[i];
-			if (c >= 32 && c < 128)
+			char character = text[characterIndex];
+
+			if (character >= font->FirstCharacter && character <= font->LastCharacter)
 			{
 				stbtt_aligned_quad quad;
 
-				stbtt_GetBakedQuad(font->Glyphs,
-					512,
-					512,
-					c - 32,
-					&x,
-					&y,
-					&quad,
-					1);
-
-				float sx = (quad.x1 - quad.x0);
-				float sy = (quad.y1 - quad.y0);
+				stbtt_GetPackedQuad(font->Glyphs,
+									font->Atlas.Width,
+									font->Atlas.Height,
+									character - font->FirstCharacter,
+									&position.x,
+									&position.y,
+									&quad,
+									1); // 1 for opengl, 0 for dx3d
 
 				float xp = (quad.x1 + quad.x0) / 2.0f;
 				float yp = (quad.y1 + quad.y0) / 2.0f;
+
+				float sx = (quad.x1 - quad.x0);
+				float sy = (quad.y1 - quad.y0);
 
 				glm::vec2 uv0 = { quad.s0, quad.t0 };
 				glm::vec2 uv1 = { quad.s1, quad.t1 };
 
 				DrawTexture(glm::vec3(xp, yp, 0.0f),
-					0.0f,
-					glm::vec2(sx, sy),
-					&font->Atlas,
-					color,
-					uv0,
-					uv1);
+							0.0f,
+							glm::vec2(sx, sy),
+							&font->Atlas,
+							color,
+							uv0,
+							uv1,
+							entityIndex);
+			}
+			else
+			{
+				VnCoreInfo("UnPacked character: {0} in font atlas bitmap", character);
 			}
 		}
 	}
@@ -265,6 +281,7 @@ namespace Vision
 		s_QuadData.CurrentVertex->Color        = vertex.Color;
 		s_QuadData.CurrentVertex->TextureCoord = vertex.TextureCoord;
 		s_QuadData.CurrentVertex->TextureIndex = vertex.TextureIndex;
+		s_QuadData.CurrentVertex->EntityIndex  = vertex.EntityIndex;
 		s_QuadData.CurrentVertex++;
 	}
 

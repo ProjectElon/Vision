@@ -15,39 +15,10 @@ namespace Vision
 		Window& window = Application::Get().GetWindow();
 		SetWindowTitle(&window, "Eagle Eye");
 		Renderer::SetVSync(true);
-
-		FileStream handle = File::Open("Assets/Fonts/FiraCode-Regular.ttf",
-		                               FileMode::Read,
-		                               true);
-
-		uint8* font_buffer = new uint8[1 << 20];
-		uint8* texture_bitmap = new uint8[512 * 512];
-
-		File::Read(handle, font_buffer, handle.SizeInBytes);
-		File::Close(handle);
-
-		font.SizeInPixels = 64;
-
-		stbtt_BakeFontBitmap(font_buffer,
-		                     0,
-		                     font.SizeInPixels,
-		                     texture_bitmap,
-		                     512,
-		                     512,
-		                     32,
-		                     96,
-		                     font.Glyphs);
-
-		CreateTexture(&font.Atlas, texture_bitmap, 512, 512, PixelFormat::Font);
-		SetTextureFilterMode(&font.Atlas, FilterMode::Bilinear);
-
-		delete[] font_buffer;
-		delete[] texture_bitmap;
 	}
 
 	EditorLayer::~EditorLayer()
 	{
-		DestroyTexture(&font.Atlas);
 	}
 
 	void EditorLayer::OnAttach()
@@ -56,7 +27,10 @@ namespace Vision
 
 		using namespace Vision;
 
-		CreateFrameBuffer(&m_SceneFrameBuffer, 800, 600);
+		FrameBufferAttachmentSpecification SceneBufferSpecification;
+		SceneBufferSpecification.Attachments = { FrameBufferTextureFormat::RGBA8, FrameBufferTextureFormat::RedInteger, FrameBufferTextureFormat::Depth24Stencil8 };
+
+		InitFrameBuffer(&m_SceneFrameBuffer, SceneBufferSpecification, 800, 600);
 		m_SceneViewPanel.SetFrameBuffer(&m_SceneFrameBuffer);
 
 		EditorState& editorState = Scene::EditorState;
@@ -66,6 +40,10 @@ namespace Vision
 		m_SpriteShader = Assets::RequestAsset("Assets/Shaders/Sprite.glsl");
 		m_FontShader = Assets::RequestAsset("Assets/Shaders/Font.glsl");
 		m_CheckboardTexture = Assets::RequestAsset("Assets/Textures/Checkerboard.png");
+
+		m_FiraCodeFont = Assets::RequestAsset("Assets/Fonts/FiraCode-Regular.ttf");
+		BitmapFont* firaCodeFont = Assets::GetBitmapFont(m_FiraCodeFont);
+		SetFontSize(firaCodeFont, 72);
 
 		WatchDirectory("Assets", VnBindWatcherFn(EditorLayer::OnFileChanged));
 
@@ -161,8 +139,7 @@ namespace Vision
 									glm::vec2(0.0f, 0.0f),
 									glm::vec2(1.0f, 1.0f) * 100.0f);
 
-
-			scene->EachGroup<TransformComponent, SpriteRendererComponent>([](auto& transform, auto& sprite)
+			scene->EachGroup<TransformComponent, SpriteRendererComponent>([](Entity entity, auto& transform, auto& sprite)
 			{
 				Renderer2D::DrawTexture(transform.Position,
 										transform.Rotation.z,
@@ -170,18 +147,79 @@ namespace Vision
 										Assets::GetTexture(sprite.Texture),
 										sprite.Color,
 										sprite.BottomLeftUV,
-										sprite.TopRightUV);
+										sprite.TopRightUV,
+										entity);
 			});
 
 			Renderer2D::EndScene();
-			glm::mat4 ortho = glm::ortho(0.0f, (float32)m_SceneFrameBuffer.Width,
-									           (float32)m_SceneFrameBuffer.Height, 0.0f);
 
-			Renderer2D::BeginScene(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)),
+			glm::mat4 ortho = glm::ortho(0.0f,
+			                             (float32)m_SceneFrameBuffer.Width,
+									     (float32)m_SceneFrameBuffer.Height,
+									     0.0f);
+
+			Renderer2D::BeginScene(glm::translate(glm::mat4(1.0f), m_SceneCamera->Position),
 								   ortho,
 								   Assets::GetShader(m_FontShader));
-			Renderer2D::DrawString(&font, "Hello, World!", 50, 50, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+
+			Renderer2D::DrawString(Assets::GetBitmapFont(m_FiraCodeFont),
+								   "Vision Engine!",
+									glm::vec2(100.0f, 100.0f),
+			                        glm::vec4(0.1f, 0.1f, 0.1f, 1.0f));
+
 			Renderer2D::EndScene();
+
+			const glm::vec2* bounds = m_SceneViewPanel.GetViewportBounds();
+			glm::vec2 minBound = bounds[0];
+			glm::vec2 maxBound = bounds[1];
+
+			auto [mx, my] = ImGui::GetMousePos();
+
+			mx -= minBound.x;
+			my -= minBound.y;
+
+			glm::vec2 viewportSize = maxBound - minBound;
+
+			my = viewportSize.y - my;
+
+			int32 mouseX = (int32)mx;
+			int32 mouseY = (int32)my;
+
+			EditorState& editorState = Scene::EditorState;
+
+			if (mouseX >= 0 && mouseX < (int32)viewportSize.x && mouseY >= 0 && mouseY < (int32)viewportSize.y)
+			{
+				if (Input::IsMouseButtonDown(Mouse::ButtonLeft))
+				{
+					int32 pixel = ReadPixel(&m_SceneFrameBuffer, 1, mouseX, mouseY);
+					
+					if (pixel > 0)
+					{
+						bool shouldSelectEntity = false;
+
+						if (editorState.SelectedEntityTag.empty())
+						{
+							shouldSelectEntity = true;
+						}
+						else
+						{
+							auto tagIt = scene->Tags.find(editorState.SelectedEntityTag);
+							uint32 seletedEntity = tagIt->second;
+
+							if (seletedEntity != pixel)
+							{
+								shouldSelectEntity = true;
+							}
+						}
+
+						if (shouldSelectEntity)
+						{
+							auto& tagComponent = scene->GetComponent<TagComponent>(pixel);
+							editorState.SelectedEntityTag = tagComponent.Tag;
+						}
+					}
+				}
+			}
 		}
 
 		UnBindFrameBuffer(&m_SceneFrameBuffer);

@@ -48,10 +48,10 @@ namespace Vision
 
             Tags.insert_or_assign(tag, entity);
 
-            TagComponent t;
-            strcpy(t.Tag, tag.c_str());
+            TagComponent tagComponent;
+            strcpy(tagComponent.Tag, tag.c_str());
 
-            AddComponents(entity, t, components...);
+            AddComponents(entity, tagComponent, components...);
 
             return entity;
         }
@@ -85,7 +85,7 @@ namespace Vision
         }
 
         template<typename Component, typename ... Components>
-        void EachGroup(const std::function<void(Component&, Components&...)>& callbackFn)
+        void EachGroup(const std::function<void(Entity entity, Component&, Components&...)>& callbackFn)
         {
             for (Entity entity = 1;
                  entity <= EntityCount;
@@ -93,7 +93,7 @@ namespace Vision
             {
                 if (HasComponents<Component, Components...>(entity))
                 {
-                    callbackFn(GetComponent<Component>(entity), GetComponent<Components>(entity)...);
+                    callbackFn(entity, GetComponent<Component>(entity), GetComponent<Components>(entity)...);
                 }
             }
         }
@@ -110,7 +110,7 @@ namespace Vision
             {
                 componentStorage.SizeInBytes = sizeof(Component);
 
-                componentStorage.Data     = new uint8[MaxEntityCount * sizeof(Component)];
+                componentStorage.Data     = (uint8*)new Component[MaxEntityCount];
                 componentStorage.Entities = new Entity[MaxEntityCount];
             }
 

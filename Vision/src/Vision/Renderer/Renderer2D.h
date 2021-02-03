@@ -3,6 +3,7 @@
 #include "Vision/Renderer/Shader.h"
 #include "Vision/Renderer/Buffers.h"
 #include "Vision/Renderer/Texture.h"
+#include "Vision/Renderer/Font.h"
 
 #define MAX_TEXTURE_SLOTS 128
 
@@ -20,6 +21,7 @@ namespace Vision
 		glm::vec4 Color;
 		glm::vec2 TextureCoord;
 		float32   TextureIndex;
+		float32	  EntityIndex;
 	};
 
 	struct QuadData
@@ -57,30 +59,34 @@ namespace Vision
 		static void DrawQuad(const glm::vec3& position,
 							 float32 rotationAngle,
 							 const glm::vec2& scale,
-							 const glm::vec4& color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+							 const glm::vec4& color = { 1.0f, 1.0f, 1.0f, 1.0f },
+							 uint32 entityIndex = 0);
 
 		static void DrawQuad(const glm::mat4& transform,
-							 const glm::vec4& color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+							 const glm::vec4& color = { 1.0f, 1.0f, 1.0f, 1.0f },
+							 uint32 entityIndex = 0);
 
 		static void DrawTexture(const glm::vec3& position,
 								float32 rotationAngle,
 								const glm::vec2& scale,
 								const Texture* texture,
-								const glm::vec4& color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
-								const glm::vec2& bottomLeftUV = glm::vec2(0.0f, 0.0f),
-								const glm::vec2& topRightUV = glm::vec2(1.0f, 1.0f));
+								const glm::vec4& color = { 1.0f, 1.0f, 1.0f, 1.0f },
+								const glm::vec2& bottomLeftUV = { 0.0f, 0.0f },
+								const glm::vec2& topRightUV = { 1.0f, 1.0f },
+								uint32 entityIndex = 0);
 
 		static void DrawTexture(const glm::mat4& transform,
 								const Texture* texture,
-								const glm::vec4& color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
-								const glm::vec2& bottomLeftUV = glm::vec2(0.0f, 0.0f),
-								const glm::vec2& topRightUV = glm::vec2(1.0f, 1.0f));
+								const glm::vec4& color = { 1.0f, 1.0f, 1.0f, 1.0f },
+								const glm::vec2& bottomLeftUV = { 0.0f, 0.0f },
+								const glm::vec2& topRightUV = { 1.0f, 1.0f },
+								uint32 entityIndex = 0);
 
-		static void DrawString(Font* font,
+		static void DrawString(BitmapFont* font,
 		                       const std::string& text,
-		                       float32 x,
-		                       float32 y,
-		                       const glm::vec4& color = { 1.0f, 1.0f, 1.0f, 1.0f });
+		                       glm::vec2 position,
+		                       const glm::vec4& color = { 1.0f, 1.0f, 1.0f, 1.0f },
+							   uint32 entityIndex = 0);
 
 	private:
 		static uint32 AssginTextureSlot(const Texture* texture);

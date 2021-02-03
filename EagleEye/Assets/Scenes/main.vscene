@@ -1,7 +1,7 @@
 MaxEntityCount 100
 PrimaryCamera Entity1
-SelectedEntity Entity1
-CameraPosition 0.0023611 0.0101735 0
+SelectedEntity Entity0
+CameraPosition 0 0 0
 CameraMovementSpeed 2.25
 CameraOrthographicSize 2.25
 CameraNear -1
@@ -12,19 +12,13 @@ Position 1 1 0
 Rotation 0 0 0
 Scale 1 1 1
 Component 13080639714729183211 Sprite Renderer
-Texture Path Assets/Textures/wood.png
+Texture Path Assets/Textures/glass_frame.png
 Texture Wrap X 0
 Texture Wrap Y 0
 Texture Fliter Mode 0
-Color 0.947581 0.328597 0.328597 1
+Color 1 0.99999 0.99999 1
 Bottom Left Point 0 0
 Top Right Point 1 1
-Component 1734294881175729993 Orthographic Camera
-Aspect Ratio 0
-Size 1
-Near -1
-Far 1
-Static 0
 Entity Entity1
 Component 1066925509535886804 Transform
 Position -1 -1 0
@@ -34,8 +28,8 @@ Component 13080639714729183211 Sprite Renderer
 Texture Path Assets/Textures/brick_red.png
 Texture Wrap X 0
 Texture Wrap Y 0
-Texture Fliter Mode 0
-Color 0.301103 0.770161 0.139747 1
+Texture Fliter Mode 1
+Color 0.999993 1 0.99999 1
 Bottom Left Point 0 0
 Top Right Point 1 1
 Component 1734294881175729993 Orthographic Camera

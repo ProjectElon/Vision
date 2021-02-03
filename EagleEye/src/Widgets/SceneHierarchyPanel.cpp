@@ -25,7 +25,7 @@ namespace Vision
 			{
 				if (ImGui::IsMouseDown(0) &&
 					ImGui::IsWindowHovered() &&
-					editorState.SelectedEntityTag.empty())
+					!editorState.SelectedEntityTag.empty())
 				{
 					editorState.SelectedEntityTag = "";
 				}

@@ -64,6 +64,26 @@ namespace Vision
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
+	static GLenum GetGLType(DataType dataType)
+	{
+		switch (dataType)
+        {
+            case DataType::Bool:    return GL_BOOL;           break;
+            case DataType::Int8:    return GL_BYTE;			  break;
+            case DataType::UInt8:   return GL_UNSIGNED_BYTE;  break;
+            case DataType::Int16:   return GL_SHORT;		  break;
+            case DataType::UInt16:  return GL_UNSIGNED_SHORT; break;
+            case DataType::Int32:   return GL_INT;            break;
+            case DataType::UInt32:  return GL_UNSIGNED_INT;   break;
+            case DataType::Float:   return GL_FLOAT;		  break;
+            case DataType::Float2:  return GL_FLOAT;		  break;
+            case DataType::Float3:  return GL_FLOAT;		  break;
+            case DataType::Float4:  return GL_FLOAT;		  break;
+            case DataType::Matrix3: return GL_FLOAT;		  break;
+            case DataType::Matrix4: return GL_FLOAT;		  break;
+        }
+	}
+
 	void SetVertexBufferLayout(VertexBuffer* vertexBuffer,
 							   const VertexLayout* vertexLayout)
 	{
@@ -78,7 +98,7 @@ namespace Vision
 			glEnableVertexAttribArray(i);
 			glVertexAttribPointer(i,
 				Renderer::GetDataTypeComponentCount(attributes[i].Type),
-				GL_FLOAT,
+				GetGLType(attributes[i].Type),
 				attributes[i].Normalized,
 				stride,
 				(const void*)offset

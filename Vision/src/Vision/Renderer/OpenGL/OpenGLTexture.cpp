@@ -22,7 +22,7 @@ namespace Vision
 		GL_LINEAR
 	};
 
-	void CreateTexture(Texture* texture,
+	void InitTexture(Texture* texture,
 					   void* data,
 					   uint32 width,
 					   uint32 height,
@@ -122,7 +122,7 @@ namespace Vision
 				pixelFormat = PixelFormat::RGBA;
 			}
 
-			CreateTexture(texture,
+			InitTexture(texture,
 						  data,
 						  width,
 						  height,
@@ -141,11 +141,11 @@ namespace Vision
 	void UnloadTexture(Asset* textureAsset)
 	{
 		Texture* texture = (Texture*)textureAsset->Memory;
-		DestroyTexture(texture);
+		UninitTexture(texture);
 		delete texture;
 	}
 
-	void DestroyTexture(Texture* texture)
+	void UninitTexture(Texture* texture)
 	{
 		glDeleteTextures(1, &texture->RendererID);
 

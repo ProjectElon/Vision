@@ -13,8 +13,8 @@ namespace Vision
             case DataType::UInt8:   return 1;         break;
             case DataType::Int16:   return 2;         break;
             case DataType::UInt16:  return 2;         break;
-            case DataType::Int32:     return 4;         break;
-            case DataType::UInt32:    return 4;         break;
+            case DataType::Int32:   return 4;         break;
+            case DataType::UInt32:  return 4;         break;
             case DataType::Float:   return 1 * 4;     break;
             case DataType::Float2:  return 2 * 4;     break;
             case DataType::Float3:  return 3 * 4;     break;
@@ -33,8 +33,8 @@ namespace Vision
             case DataType::UInt8:   return 1;     break;
             case DataType::Int16:   return 1;     break;
             case DataType::UInt16:  return 1;     break;
-            case DataType::Int32:     return 1;     break;
-            case DataType::UInt32:    return 1;     break;
+            case DataType::Int32:   return 1;     break;
+            case DataType::UInt32:  return 1;     break;
             case DataType::Float:   return 1;     break;
             case DataType::Float2:  return 2;     break;
             case DataType::Float3:  return 3;     break;

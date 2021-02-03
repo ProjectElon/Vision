@@ -5,6 +5,7 @@
 #include "Vision/Entity/Scene.h"
 #include "Vision/Renderer/Texture.h"
 #include "Vision/Renderer/Shader.h"
+#include "Vision/Renderer/Font.h"
 
 namespace Vision
 {
@@ -50,6 +51,17 @@ namespace Vision
                       sceneExtensions,
                       LoadScene,
                       UnloadScene);
+
+        std::string fontExtensions[] =
+        {
+            "ttf"
+        };
+
+        RigisterAsset("BitmapFont",
+                      VnArrayCount(fontExtensions),
+                      fontExtensions,
+                      LoadBitmapFont,
+                      UnloadBitmapFont);
     }
 
     void Assets::Shutdown()
@@ -123,7 +135,7 @@ namespace Vision
         std::string extension = FileSystem::GetFileExtension(assetpath, false);
 
         AssetInfoList& assetInfoList = AssetsStorage.AssetInfoList;
-        
+
         uint32 assetInfoIndex = GetAssetInfoIndex(extension);
         AssetInfo& assetInfo = assetInfoList[assetInfoIndex];
 
@@ -132,7 +144,7 @@ namespace Vision
         auto assetIDIter = rigistry.find(assetpath);
 
         AssetID assetID;
-        
+
         if (assetIDIter == rigistry.end())
         {
             assetID = AssetsStorage.Assets.size();
@@ -232,6 +244,18 @@ namespace Vision
         VnCoreAssert(assetInfo.Type == "Scene", "asset type mismatch");
 
         return static_cast<Scene*>(asset.Memory);
+    }
+
+    BitmapFont* Assets::GetBitmapFont(AssetID bitmapFontAssetID)
+    {
+        const Asset& asset = GetAsset(bitmapFontAssetID);
+        VnCoreAssert(asset.State == AssetState::Loaded, "can't use an unloaded asset");
+
+        AssetInfoList& assetInfoList = AssetsStorage.AssetInfoList;
+        AssetInfo& assetInfo = assetInfoList[asset.AssetInfoIndex];
+        VnCoreAssert(assetInfo.Type == "BitmapFont", "asset type mismatch");
+
+        return static_cast<BitmapFont*>(asset.Memory);
     }
 
     void Assets::ReleaseAsset(AssetID assetID)

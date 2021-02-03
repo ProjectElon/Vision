@@ -67,6 +67,7 @@ namespace Vision
     struct Shader;
     struct Texture;
     struct Scene;
+    struct BitmapFont;
 
     class Assets
     {
@@ -95,6 +96,7 @@ namespace Vision
         static Texture* GetTexture(AssetID textureAssetID);
         static Shader* GetShader(AssetID shaderAssetID);
         static Scene* GetScene(AssetID sceneAssetID);
+        static BitmapFont* GetBitmapFont(AssetID bitmapFontAssetID);
 
         static void ReleaseAsset(AssetID assetID);
         static void ReleaseAsset(const std::string& assetpath);

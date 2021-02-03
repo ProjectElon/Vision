@@ -1,9 +1,6 @@
 #pragma once
 
 #include "Vision/Core/Base.h"
-#include "Vision/Renderer/Texture.h"
-
-#include <stb_truetype.h>
 
 namespace Vision
 {
@@ -41,13 +38,6 @@ namespace Vision
 	struct VertexBuffer;
 	struct IndexBuffer;
 
-	struct Font
-	{
-		uint32   		SizeInPixels;
-		stbtt_bakedchar Glyphs[96];
-		Texture 		Atlas;
-	};
-
 	class Renderer
 	{
 	public:
@@ -75,8 +65,6 @@ namespace Vision
 								const IndexBuffer* indexBuffer,
 								uint32 count,
 								Primitive primitive = Primitive::Triangles);
-
-		static void DrawText(Font* font, const std::string& text, float32 x, float32 y);
 
 		static void SetVSync(bool enabled);
 		static void SwapBuffers();

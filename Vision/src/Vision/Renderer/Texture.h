@@ -54,13 +54,13 @@ namespace Vision
         FilterMode FilterMode = FilterMode::Point;
     };
 
-    void CreateTexture(Texture* texture,
+    void InitTexture(Texture* texture,
                        void* data,
                        uint32 width,
                        uint32 height,
                        PixelFormat pixelFormat);
 
-    void DestroyTexture(Texture* texture);
+    void UninitTexture(Texture* texture);
 
     void BindTexture(const Texture* texture, uint32 textureSlot);
     void UnBindTexture(const Texture* texture);

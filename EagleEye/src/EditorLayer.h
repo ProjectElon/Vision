@@ -52,10 +52,9 @@ namespace Vision
 		AssetID m_ActiveScene = 0;
 		AssetID m_CheckboardTexture = 0;
 
+		AssetID m_FiraCodeFont;
 		AssetID m_SpriteShader = 0;
 		AssetID m_FontShader = 0;
-
-		Font font;
 
 		void LoadSettings();
 		void SaveSettings();

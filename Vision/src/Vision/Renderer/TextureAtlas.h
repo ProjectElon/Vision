@@ -30,21 +30,17 @@ namespace Vision
         uint32 CellHeight = 0;
     };
 
-    void CreateTextureAtlasVaryingRects(TextureAtlas* atlas,
+    void InitTextureAtlasVaryingRects(TextureAtlas* atlas,
                                         AssetID textureID,
                                         uint32 rectCount,
                                         TextureRect* textureRects);
 
-    void DestroyTextureAtlas(TextureAtlas* atlas);
+    void UninitTextureAtlas(TextureAtlas* atlas);
 
-    void CreateTextureAtlasGrid(TextureAtlasGrid* atlas,
+    void InitTextureAtlasGrid(TextureAtlasGrid* atlas,
                                 AssetID textureID,
                                 uint32 cellWidth,
                                 uint32 cellHeight);
 
-    void DestroyTextureAtlasGird(TextureAtlasGrid* atlas);
-
-    UVRect& GetUVRectFromTextureAtlasGird(TextureAtlasGrid* atlas,
-                                          uint32 row,
-                                          uint32 col);
+    void UninitTextureAtlasGird(TextureAtlasGrid* atlas);
 }

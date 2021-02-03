@@ -33,7 +33,7 @@ namespace Vision
         uvRect->TopRight   = { bottomRightUV.x, topLeftUV.y };
     }
 
-    void CreateTextureAtlasVaryingRects(TextureAtlas* atlas,
+    void InitTextureAtlasVaryingRects(TextureAtlas* atlas,
                                         AssetID textureID,
                                         uint32 rectCount,
                                         TextureRect* textureRects)
@@ -55,7 +55,7 @@ namespace Vision
         }
     }
 
-    void CreateTextureAtlasGrid(TextureAtlasGrid* atlas,
+    void InitTextureAtlasGrid(TextureAtlasGrid* atlas,
                                 AssetID textureID,
                                 uint32 cellWidth,
                                 uint32 cellHeight)
@@ -107,7 +107,7 @@ namespace Vision
         return atlas->UVRects[rectIndex];
     }
 
-    void DestroyTextureAtlas(TextureAtlas* atlas)
+    void UninitTextureAtlas(TextureAtlas* atlas)
     {
         VnCoreAssert(atlas->UVRects != nullptr, "can't free a nullptr");
 
@@ -117,8 +117,8 @@ namespace Vision
         atlas->RectCount = 0;
     }
 
-    void DestroyTextureAtlasGird(TextureAtlasGrid* atlas)
+    void UninitTextureAtlasGird(TextureAtlasGrid* atlas)
     {
-        DestroyTextureAtlas((TextureAtlas*)atlas);
+        UninitTextureAtlas((TextureAtlas*)atlas);
     }
 }
