@@ -1,6 +1,8 @@
 #include "pch.h"
-#include <glad/glad.h>
 #include "Vision/Renderer/FrameBuffer.h"
+#include "Vision/Renderer/OpenGL/OpenGLUtils.h"
+
+#include <glad/glad.h>
 
 namespace Vision
 {
@@ -25,28 +27,13 @@ namespace Vision
                  attachmentIndex < frameBuffer->ColorAttachmentSpecification.size();
                  attachmentIndex++)
             {
+                auto& colorSpec = frameBuffer->ColorAttachmentSpecification[attachmentIndex];
+
                 glCreateTextures(GL_TEXTURE_2D, 1, &frameBuffer->ColorAttachments[attachmentIndex]);
                 glBindTexture(GL_TEXTURE_2D, frameBuffer->ColorAttachments[attachmentIndex]);
 
-                GLenum internalFormat;
-                GLenum textureFormat;
-
-                switch (frameBuffer->ColorAttachmentSpecification[attachmentIndex].TextureFormat)
-                {
-                    case FrameBufferTextureFormat::RGBA8:
-                    {
-                        internalFormat = GL_RGBA8;
-                        textureFormat = GL_RGBA;
-                    }
-                    break;
-
-                    case FrameBufferTextureFormat::RedInteger:
-                    {
-                        internalFormat = GL_R32I;
-                        textureFormat = GL_RED_INTEGER;
-                    }
-                    break;
-                }
+                GLenum internalFormat = GLInternalFormat(colorSpec.TextureFormat);
+                GLenum textureFormat = GLTextureFormat(colorSpec.TextureFormat);
 
                 glTexImage2D(GL_TEXTURE_2D,
                              0,
@@ -58,8 +45,11 @@ namespace Vision
                              GL_UNSIGNED_BYTE,
                              nullptr);
 
-                glTextureParameteri(frameBuffer->ColorAttachments[attachmentIndex], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-                glTextureParameteri(frameBuffer->ColorAttachments[attachmentIndex], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                glTextureParameteri(frameBuffer->ColorAttachments[attachmentIndex], GL_TEXTURE_MIN_FILTER, GLFilterMode(colorSpec.FilterMode));
+                glTextureParameteri(frameBuffer->ColorAttachments[attachmentIndex], GL_TEXTURE_MAG_FILTER, GLFilterMode(colorSpec.FilterMode));
+
+                glTextureParameteri(frameBuffer->ColorAttachments[attachmentIndex], GL_TEXTURE_WRAP_S, GLWrapMode(colorSpec.WrapX));
+                glTextureParameteri(frameBuffer->ColorAttachments[attachmentIndex], GL_TEXTURE_WRAP_T, GLWrapMode(colorSpec.WrapY));
 
                 glFramebufferTexture2D(GL_FRAMEBUFFER,
                                        GL_COLOR_ATTACHMENT0 + attachmentIndex,
@@ -68,19 +58,34 @@ namespace Vision
                                        0);
             }
 
-            GLenum buffers[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
+            GLenum buffers[4] = { 
+                GL_COLOR_ATTACHMENT0,
+                GL_COLOR_ATTACHMENT1,
+                GL_COLOR_ATTACHMENT2,
+                GL_COLOR_ATTACHMENT3
+            };
+            VnCoreAssert(frameBuffer->ColorAttachments.size() <= 4, "max color attachments allowed is 4");
             glDrawBuffers(frameBuffer->ColorAttachments.size(), buffers);
         }
 
         if (frameBuffer->DepthAttachmentFormat.TextureFormat != FrameBufferTextureFormat::None)
         {
+
+            auto& depthSpec = frameBuffer->DepthAttachmentFormat;
+
             glCreateTextures(GL_TEXTURE_2D, 1, &frameBuffer->DepthAttachment);
             glBindTexture(GL_TEXTURE_2D, frameBuffer->DepthAttachment);
             glTexStorage2D(GL_TEXTURE_2D,
-                         1,
-                         GL_DEPTH24_STENCIL8,
-                         frameBuffer->Width,
-                         frameBuffer->Height);
+                           1,
+                           GL_DEPTH24_STENCIL8,
+                           frameBuffer->Width,
+                           frameBuffer->Height);
+
+            glTextureParameteri(frameBuffer->DepthAttachment, GL_TEXTURE_MIN_FILTER, GLFilterMode(depthSpec.FilterMode));
+            glTextureParameteri(frameBuffer->DepthAttachment, GL_TEXTURE_MAG_FILTER, GLFilterMode(depthSpec.FilterMode));
+
+            glTextureParameteri(frameBuffer->DepthAttachment, GL_TEXTURE_WRAP_S, GLWrapMode(depthSpec.WrapX));
+            glTextureParameteri(frameBuffer->DepthAttachment, GL_TEXTURE_WRAP_T, GLWrapMode(depthSpec.WrapY));
 
             glFramebufferTexture2D(GL_FRAMEBUFFER,
                                    GL_DEPTH_STENCIL_ATTACHMENT,
@@ -158,6 +163,32 @@ namespace Vision
     {
         glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer->RendererID);
         glViewport(0, 0, frameBuffer->Width, frameBuffer->Height);
+    }
+
+    void ClearColorAttachment(FrameBuffer* frameBuffer, uint32 index, const void* value)
+    {
+        auto& spec = frameBuffer->ColorAttachmentSpecification[index];
+
+        GLenum type = (spec.TextureFormat == FrameBufferTextureFormat::RedInt32) ? GL_INT : GL_FLOAT;
+
+        GLenum internalFormat;
+
+        switch (spec.TextureFormat)
+        {
+            case FrameBufferTextureFormat::RGBA8:
+            {
+                internalFormat = GL_RGBA8;
+            }
+            break;
+
+            case FrameBufferTextureFormat::RedInt32:
+            {
+                internalFormat = GL_RED_INTEGER;
+            }
+            break;
+
+        }
+        glClearTexImage(frameBuffer->ColorAttachments[index], 0, internalFormat, type, value);
     }
 
     void UnBindFrameBuffer(FrameBuffer* frameBuffer)

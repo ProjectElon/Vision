@@ -4,7 +4,7 @@
 
 namespace Vision
 {
-	enum class DataType
+	enum class ShaderDataType
 	{
 		Bool,
 		Int8,
@@ -30,7 +30,6 @@ namespace Vision
 
 	enum class Primitive
 	{
-		Lines,
 		Triangles
 	};
 
@@ -45,9 +44,6 @@ namespace Vision
 
 		static void Init(Window* renderTargetWindow);
 		static void Shutdown();
-
-		static uint32 GetDataTypeSize(DataType dataType);
-		static uint32 GetDataTypeComponentCount(DataType dataType);
 
 		static void Clear(ClearFlags clearflags);
 

@@ -1,6 +1,6 @@
 MaxEntityCount 100
 PrimaryCamera Entity1
-SelectedEntity Entity0
+SelectedEntity Entity1
 CameraPosition 0 0 0
 CameraMovementSpeed 2.25
 CameraOrthographicSize 2.25
@@ -12,7 +12,7 @@ Position 1 1 0
 Rotation 0 0 0
 Scale 1 1 1
 Component 13080639714729183211 Sprite Renderer
-Texture Path Assets/Textures/glass_frame.png
+Texture Path Assets/Textures/cotton_red.png
 Texture Wrap X 0
 Texture Wrap Y 0
 Texture Fliter Mode 0
@@ -25,10 +25,10 @@ Position -1 -1 0
 Rotation 0 0 0
 Scale 1 1 1
 Component 13080639714729183211 Sprite Renderer
-Texture Path Assets/Textures/brick_red.png
+Texture Path Assets/Textures/leaves_orange.png
 Texture Wrap X 0
 Texture Wrap Y 0
-Texture Fliter Mode 1
+Texture Fliter Mode 0
 Color 0.999993 1 0.99999 1
 Bottom Left Point 0 0
 Top Right Point 1 1

@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Vision/Renderer/Buffers.h"
+#include "Vision/Renderer/OpenGL/OpenGLUtils.h"
 
 #include <glad/glad.h>
 
@@ -64,47 +65,66 @@ namespace Vision
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
-	static GLenum GetGLType(DataType dataType)
-	{
-		switch (dataType)
-        {
-            case DataType::Bool:    return GL_BOOL;           break;
-            case DataType::Int8:    return GL_BYTE;			  break;
-            case DataType::UInt8:   return GL_UNSIGNED_BYTE;  break;
-            case DataType::Int16:   return GL_SHORT;		  break;
-            case DataType::UInt16:  return GL_UNSIGNED_SHORT; break;
-            case DataType::Int32:   return GL_INT;            break;
-            case DataType::UInt32:  return GL_UNSIGNED_INT;   break;
-            case DataType::Float:   return GL_FLOAT;		  break;
-            case DataType::Float2:  return GL_FLOAT;		  break;
-            case DataType::Float3:  return GL_FLOAT;		  break;
-            case DataType::Float4:  return GL_FLOAT;		  break;
-            case DataType::Matrix3: return GL_FLOAT;		  break;
-            case DataType::Matrix4: return GL_FLOAT;		  break;
-        }
-	}
-
 	void SetVertexBufferLayout(VertexBuffer* vertexBuffer,
 							   const VertexLayout* vertexLayout)
 	{
+		// @(Harlequin): Note that this code will fail
+		// if the alignment of the vertex layout is not 4 bytes
+		// to solve this we need meta programming
+
+		const auto& attributes = vertexLayout->Attributes;
+
+		uint32 offset = 0;
+		uint32 stride = 0; // vertex size in bytes
+
+		for (uint32 vertexIndex = 0; vertexIndex < attributes.size(); ++vertexIndex)
+		{
+			stride += GLTypeSize(attributes[vertexIndex].Type);
+		}
+
 		glBindVertexArray(vertexBuffer->BufferLayoutID);
 
-		const std::vector<VertexAttribute>& attributes = vertexLayout->GetAttributes();
-		uint32_t offset = 0;
-		uint32_t stride = vertexLayout->CalculateVertexSize();
-
-		for (uint32_t i = 0; i < attributes.size(); ++i)
+		for (uint32 vertexIndex = 0; vertexIndex < attributes.size(); ++vertexIndex)
 		{
-			glEnableVertexAttribArray(i);
-			glVertexAttribPointer(i,
-				Renderer::GetDataTypeComponentCount(attributes[i].Type),
-				GetGLType(attributes[i].Type),
-				attributes[i].Normalized,
-				stride,
-				(const void*)offset
-			);
+			const VertexAttribute& attribute = attributes[vertexIndex];
+			glEnableVertexAttribArray(vertexIndex);
 
-			offset += Renderer::GetDataTypeSize(attributes[i].Type);
+			switch(attribute.Type)
+			{
+				case ShaderDataType::Bool:
+				case ShaderDataType::Int8:
+				case ShaderDataType::UInt8:
+				case ShaderDataType::Int16:
+				case ShaderDataType::UInt16:
+				case ShaderDataType::Int32:
+				case ShaderDataType::UInt32:
+				{
+					glVertexAttribIPointer(vertexIndex,
+										   GLTypeComponentCount(attribute.Type),
+										   ShaderDataTypeToOpenGLType(attribute.Type),
+										   stride,
+										   (const void*)offset);
+				}
+				break;
+
+				case ShaderDataType::Float:
+				case ShaderDataType::Float2:
+				case ShaderDataType::Float3:
+				case ShaderDataType::Float4:
+				case ShaderDataType::Matrix3:
+				case ShaderDataType::Matrix4:
+				{
+					glVertexAttribPointer(vertexIndex,
+										  GLTypeComponentCount(attribute.Type),
+										  ShaderDataTypeToOpenGLType(attribute.Type),
+										  attribute.Normalized ? GL_TRUE : GL_FALSE,
+										  stride,
+										  (const void*)offset);
+				}
+				break;
+			}
+
+			offset += GLTypeSize(attribute.Type);
 		}
 
 		glBindVertexArray(0);

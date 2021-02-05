@@ -6,14 +6,14 @@ layout (location = 0) in vec2  a_Position;
 layout (location = 1) in vec4  a_Color;
 layout (location = 2) in vec2  a_TextureCoord;
 layout (location = 3) in float a_TextureIndex;
-layout (location = 4) in float  a_EntityIndex;
+layout (location = 4) in float a_EntityIndex;
 
 out VertexOutput
 {
     vec4  Color;
     vec2  TextureCoord;
     float TextureIndex;
-    float  EntityIndex;
+    float EntityIndex;
 }
 vertexOuput;
 
@@ -38,7 +38,6 @@ void main()
 layout (location = 0) out vec4 color;
 layout (location = 1) out int entityIndex;
 
-
 in VertexOutput
 {
     vec4  Color;
@@ -52,11 +51,9 @@ uniform sampler2D u_Textures[gl_MaxTextureImageUnits];
 
 void main()
 {
-    int textureIndex = int(fragmentInput.TextureIndex);
-
-    for (int i = 0; i < gl_MaxTextureImageUnits; ++i)
+    for (uint i = 0; i < gl_MaxTextureImageUnits; ++i)
     {
-        if (textureIndex == i)
+        if (fragmentInput.TextureIndex == i)
         {
             color = texture(u_Textures[i], fragmentInput.TextureCoord)
             * fragmentInput.Color;

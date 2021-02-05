@@ -124,24 +124,7 @@ namespace Vision
 							   uint32 count,
 							   Primitive primitive)
 	{
-		uint32 glPrimitive = 0;
-
-		switch (primitive)
-		{
-			case Primitive::Triangles:
-			{
-				glPrimitive = GL_TRIANGLES;
-			}
-			break;
-
-			case Primitive::Lines:
-			{
-				glPrimitive = GL_LINES;
-			}
-			break;
-		};
-
-		glDrawElements(glPrimitive, count, GL_UNSIGNED_INT, (const void*)0);
+		glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, (const void*)0);
 	}
 
 	int32 Renderer::GetMaxTextureSlots()

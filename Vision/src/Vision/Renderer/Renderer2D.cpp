@@ -29,11 +29,11 @@ namespace Vision
 
 		VertexLayout quadVertexlayout(
 		{
-			{ DataType::Float2, "a_Position",     false },
-			{ DataType::Float4, "a_Color", 	      false },
-			{ DataType::Float2, "a_TextureCoord", false },
-			{ DataType::Float,  "a_TextureIndex", false },
-			{ DataType::Float,  "a_EntityIndex",  false }
+			{ ShaderDataType::Float2, "a_Position",     false },
+			{ ShaderDataType::Float4, "a_Color", 	    false },
+			{ ShaderDataType::Float2, "a_TextureCoord", false },
+			{ ShaderDataType::Float,  "a_TextureIndex", false },
+			{ ShaderDataType::Float,  "a_EntityIndex",  false }
 		});
 
 		s_QuadData.VertexBase = new QuadVertex[4 * s_QuadData.MaxCount];
@@ -152,7 +152,7 @@ namespace Vision
 			FlushQuadBatch();
 		}
 
-		float32 textureIndex = (float32)AssginTextureSlot(texture);
+		uint32 textureIndex = AssginTextureSlot(texture);
 
 		glm::vec3 v0 = transform * glm::vec4(-0.5f, -0.5f, 1.0f, 1.0f);
 		glm::vec3 v1 = transform * glm::vec4( 0.5f, -0.5f, 1.0f, 1.0f);
@@ -164,10 +164,10 @@ namespace Vision
 		glm::vec2 uv2 = topRightUV;
 		glm::vec2 uv3 = glm::vec2(bottomLeftUV.x, topRightUV.y);
 
-		SubmitQuadVertex({ v0, color, uv0, textureIndex, (float32)entityIndex });
-		SubmitQuadVertex({ v1, color, uv1, textureIndex, (float32)entityIndex });
-		SubmitQuadVertex({ v2, color, uv2, textureIndex, (float32)entityIndex });
-		SubmitQuadVertex({ v3, color, uv3, textureIndex, (float32)entityIndex });
+		SubmitQuadVertex({ v0, color, uv0, (float32)textureIndex, (float32)entityIndex });
+		SubmitQuadVertex({ v1, color, uv1, (float32)textureIndex, (float32)entityIndex });
+		SubmitQuadVertex({ v2, color, uv2, (float32)textureIndex, (float32)entityIndex });
+		SubmitQuadVertex({ v3, color, uv3, (float32)textureIndex, (float32)entityIndex });
 
 		s_QuadData.Count++;
 	}
@@ -215,7 +215,7 @@ namespace Vision
 			}
 			else
 			{
-				VnCoreInfo("UnPacked character: {0} in font atlas bitmap", character);
+				VnCoreInfo("unpacked character: {0} in font atlas bitmap", character);
 			}
 		}
 	}

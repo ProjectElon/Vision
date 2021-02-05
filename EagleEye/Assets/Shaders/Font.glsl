@@ -40,8 +40,8 @@ in VertexOutput
 {
     vec4  Color;
     vec2  TextureCoord;
-    float TextureIndex;
-    float EntityIndex;
+    float  TextureIndex;
+    float  EntityIndex;
 }
 fragmentInput;
 
@@ -49,11 +49,9 @@ uniform sampler2D u_Textures[gl_MaxTextureImageUnits];
 
 void main()
 {
-    int textureIndex = int(fragmentInput.TextureIndex);
-
-    for (int i = 0; i < gl_MaxTextureImageUnits; ++i)
+    for (uint i = 0; i < gl_MaxTextureImageUnits; ++i)
     {
-        if (textureIndex == i)
+        if (fragmentInput.TextureIndex == i)
         {
             vec4 font_texel = texture(u_Textures[i], fragmentInput.TextureCoord);
             color = vec4(1.0f, 1.0f, 1.0f, font_texel.a) * fragmentInput.Color;

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Vision/Core/Base.h"
+#include "Vision/Renderer/Texture.h"
+
 #include <vector>
 #include <initializer_list>
 
@@ -16,13 +18,18 @@ namespace Vision
 
         Depth = Depth24Stencil8,
 
-        RedInteger,
+        RedInt32,
+        RedUInt32
     };
 
     struct FrameBufferTextureSpecification
     {
         FrameBufferTextureFormat TextureFormat = FrameBufferTextureFormat::None;
-        // @(Harlequin): Filtering and Wraping
+
+        WrapMode WrapX = WrapMode::ClampToEdge;
+        WrapMode WrapY = WrapMode::ClampToEdge;
+
+        FilterMode FilterMode = FilterMode::Point;
 
         FrameBufferTextureSpecification() = default;
 
@@ -62,6 +69,8 @@ namespace Vision
     void ResizeFrameBuffer(FrameBuffer* frameBuffer, uint32 width, uint32 height);
 
     int ReadPixel(FrameBuffer* frameBuffer, uint32 attachmentIndex, int32 x, int32 y);
+
+    void ClearColorAttachment(FrameBuffer* frameBuffer, uint32 index, const void* value);
 
     void BindFrameBuffer(FrameBuffer* frameBuffer);
     void UnBindFrameBuffer(FrameBuffer* frameBuffer);

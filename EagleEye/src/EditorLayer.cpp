@@ -28,7 +28,7 @@ namespace Vision
 		using namespace Vision;
 
 		FrameBufferAttachmentSpecification SceneBufferSpecification;
-		SceneBufferSpecification.Attachments = { FrameBufferTextureFormat::RGBA8, FrameBufferTextureFormat::RedInteger, FrameBufferTextureFormat::Depth24Stencil8 };
+		SceneBufferSpecification.Attachments = { FrameBufferTextureFormat::RGBA8, FrameBufferTextureFormat::RedInt32, FrameBufferTextureFormat::Depth };
 
 		InitFrameBuffer(&m_SceneFrameBuffer, SceneBufferSpecification, 800, 600);
 		m_SceneViewPanel.SetFrameBuffer(&m_SceneFrameBuffer);
@@ -192,7 +192,7 @@ namespace Vision
 				if (Input::IsMouseButtonDown(Mouse::ButtonLeft))
 				{
 					int32 pixel = ReadPixel(&m_SceneFrameBuffer, 1, mouseX, mouseY);
-					
+
 					if (pixel > 0)
 					{
 						bool shouldSelectEntity = false;

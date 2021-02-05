@@ -3,6 +3,8 @@
 #include "Vision/Renderer/Texture.h"
 #include "Vision/IO/FileSystem.h"
 
+#include "Vision/Renderer/OpenGL/OpenGLUtils.h"
+
 #include <glad/glad.h>
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -10,18 +12,6 @@
 
 namespace Vision
 {
-	const uint32 InternalWrapModeMap[] =
-	{
-		GL_REPEAT,
-		GL_CLAMP_TO_EDGE
-	};
-
-	const uint32 InternalFilterModeMap[] =
-	{
-		GL_NEAREST,
-		GL_LINEAR
-	};
-
 	void InitTexture(Texture* texture,
 					   void* data,
 					   uint32 width,
@@ -31,48 +21,21 @@ namespace Vision
 		texture->Width  = width;
 		texture->Height = height;
 
-		uint32 internalFormat;
-		uint32 textureFormat;
-
-		switch (pixelFormat)
-		{
-			case PixelFormat::R:
-			{
-				internalFormat = GL_R8;
-				textureFormat  = GL_RED;
-			}
-			break;
-
-			case PixelFormat::RGB:
-			{
-				internalFormat = GL_RGB8;
-				textureFormat  = GL_RGB;
-			}
-			break;
-
-			case PixelFormat::RGBA:
-			{
-				internalFormat = GL_RGBA8;
-				textureFormat  = GL_RGBA;
-			}
-			break;
-
-			case PixelFormat::Font:
-			{
-				internalFormat = GL_RGBA8;
-				textureFormat  = GL_ALPHA;
-			}
-			break;
-		}
+		GLenum internalFormat = GLInternalFormat(pixelFormat);
+		GLenum textureFormat  = GLTextureFormat(pixelFormat);
 
 		glCreateTextures(GL_TEXTURE_2D, 1, &texture->RendererID);
-		glTextureStorage2D(texture->RendererID, 1, internalFormat, texture->Width, texture->Height);
+		glTextureStorage2D(texture->RendererID,
+		                   1,
+		                   internalFormat,
+		                   texture->Width,
+		                   texture->Height);
 
 		glTextureParameteri(texture->RendererID, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTextureParameteri(texture->RendererID, GL_TEXTURE_MAG_FILTER, InternalFilterModeMap[(uint32)texture->FilterMode]);
+		glTextureParameteri(texture->RendererID, GL_TEXTURE_MAG_FILTER, GLFilterMode(texture->FilterMode));
 
-		glTextureParameteri(texture->RendererID, GL_TEXTURE_WRAP_S, InternalWrapModeMap[(uint32)texture->WrapX]);
-		glTextureParameteri(texture->RendererID, GL_TEXTURE_WRAP_T, InternalWrapModeMap[(uint32)texture->WrapY]);
+		glTextureParameteri(texture->RendererID, GL_TEXTURE_WRAP_S, GLWrapMode(texture->WrapX));
+		glTextureParameteri(texture->RendererID, GL_TEXTURE_WRAP_T, GLWrapMode(texture->WrapY));
 
 		glTextureSubImage2D(texture->RendererID,
 							0,
@@ -162,11 +125,11 @@ namespace Vision
 
 		glTextureParameteri(texture->RendererID,
 							GL_TEXTURE_WRAP_S,
-							InternalWrapModeMap[(int32)wrapModeX]);
+							GLWrapMode(wrapModeX));
 
 		glTextureParameteri(texture->RendererID,
 							GL_TEXTURE_WRAP_T,
-							InternalWrapModeMap[(int32)wrapModeY]);
+							GLWrapMode(wrapModeY));
 	}
 
 	void SetTextureFilterMode(Texture* texture, FilterMode filterMode)
@@ -174,7 +137,7 @@ namespace Vision
 		texture->FilterMode = filterMode;
 		glTextureParameteri(texture->RendererID,
 							GL_TEXTURE_MAG_FILTER,
-							InternalFilterModeMap[(int32)filterMode]);
+							GLFilterMode(filterMode));
 	}
 
 	void BindTexture(const Texture* texture, uint32 textureSlot)

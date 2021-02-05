@@ -3,26 +3,24 @@
 #include "pch.h"
 #include "Vision/Renderer/Renderer.h"
 
+#include <initializer_list>
+
 namespace Vision
 {
 	struct VertexAttribute
 	{
-		DataType	Type;
-		const char* Name;
-		bool        Normalized;
+		ShaderDataType	Type;
+		const char* 	Name;
+		bool        	Normalized;
 	};
 
-	class VertexLayout
+	struct VertexLayout
 	{
-	public:
-		VertexLayout(const std::vector<VertexAttribute>& attributes);
-		~VertexLayout();
-		
-		inline const std::vector<VertexAttribute>& GetAttributes() const { return m_Attributes; }
-		
-		uint32_t CalculateVertexSize() const;
+		VertexLayout(const std::initializer_list<VertexAttribute>& attributes)
+			: Attributes(attributes)
+		{
+		}
 
-	private:
-		std::vector<VertexAttribute> m_Attributes;
+		std::vector<VertexAttribute> Attributes;
 	};
 }
