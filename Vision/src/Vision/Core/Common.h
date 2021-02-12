@@ -12,7 +12,7 @@
 --------------------------
 */
 
-#define VnArrayCount(Array) (sizeof(Array) / sizeof(Array[0]))
+#define VnArrayCount(Array) (sizeof((Array)) / sizeof((Array)[0]))
 
 /*
 -------------------------
@@ -30,6 +30,7 @@ typedef int64_t	 int64;
 typedef uint64_t uint64;
 typedef float	 float32;
 typedef double	 float64;
+typedef size_t	 memorysize;
 
 /*
 --------------------------
@@ -95,14 +96,14 @@ namespace Vision
 /* Note : __debugbreak() works only on windows with msvc */
 
 #ifdef VN_DEBUG
-	
+
 	#define VnCoreAssert(x, ...) { if (!(x)) { VnCoreError(__VA_ARGS__); __debugbreak(); } }
 	#define VnAssert(x, ...)     { if (!(x)) { VnError(__VA_ARGS__);     __debugbreak(); } }
-		
+
 #else
 
 	#define VnCoreAssert(x, ...)
-	#define VnAssert(x, ...) 
+	#define VnAssert(x, ...)
 
 #endif
 

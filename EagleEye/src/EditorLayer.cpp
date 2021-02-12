@@ -15,6 +15,27 @@ namespace Vision
 		Window& window = Application::Get().GetWindow();
 		SetWindowTitle(&window, "Eagle Eye");
 		Renderer::SetVSync(true);
+
+		StackAllocator stack(MegaBytes(5));
+
+		{
+			RewindScope(&stack);
+
+			auto* p0 = stack.AllocateAndAssign<char>('a');
+			auto* p1 = stack.AllocateAndAssign<uint32>(10);
+			auto* p2 = stack.AllocateAndAssign<float64>(100.0);
+
+			VnCoreInfo("{0}, {1}, {2}", *p0, *p1, *p2);
+
+			{
+				RewindScope(&stack);
+
+				auto* x0 = stack.AllocateAndAssign<std::string>("ahmed");
+				auto* x1 = stack.AllocateAndAssign<std::string>("mohamed");
+
+				VnCoreInfo("{0}, {1}", *x0, *x1);
+			}
+		}
 	}
 
 	EditorLayer::~EditorLayer()
@@ -204,11 +225,15 @@ namespace Vision
 						else
 						{
 							auto tagIt = scene->Tags.find(editorState.SelectedEntityTag);
-							uint32 seletedEntity = tagIt->second;
 
-							if (seletedEntity != pixel)
+							if (tagIt != scene->Tags.end())
 							{
-								shouldSelectEntity = true;
+								uint32 seletedEntity = tagIt->second;
+
+								if (seletedEntity != pixel)
+								{
+									shouldSelectEntity = true;
+								}
 							}
 						}
 

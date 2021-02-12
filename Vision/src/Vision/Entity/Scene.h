@@ -1,11 +1,12 @@
 #pragma once
 
-#include "Vision/Core/Base.h"
+#include "Vision/Core/Common.h"
 
 #include "Vision/Entity/Entity.h"
 #include "Vision/Entity/Components.h"
 #include "Vision/Entity/EditorState.h"
 #include "Vision/IO/Assets.h"
+
 #include <unordered_map>
 
 namespace Vision

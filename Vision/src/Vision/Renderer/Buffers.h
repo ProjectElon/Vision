@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vision/Core/Base.h"
+#include "Vision/Core/Common.h"
 #include "Vision/Renderer/Renderer.h"
 #include "Vision/Renderer/VertexLayout.h"
 

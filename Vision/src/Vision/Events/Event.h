@@ -1,7 +1,7 @@
 #pragma once
 
 #include "pch.h"
-#include "Vision/Core/Base.h"
+#include "Vision/Core/Common.h"
 
 namespace Vision
 {

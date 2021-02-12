@@ -64,13 +64,13 @@ namespace Vision
                 GL_COLOR_ATTACHMENT2,
                 GL_COLOR_ATTACHMENT3
             };
+
             VnCoreAssert(frameBuffer->ColorAttachments.size() <= 4, "max color attachments allowed is 4");
             glDrawBuffers(frameBuffer->ColorAttachments.size(), buffers);
         }
 
         if (frameBuffer->DepthAttachmentFormat.TextureFormat != FrameBufferTextureFormat::None)
         {
-
             auto& depthSpec = frameBuffer->DepthAttachmentFormat;
 
             glCreateTextures(GL_TEXTURE_2D, 1, &frameBuffer->DepthAttachment);

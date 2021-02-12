@@ -1,7 +1,7 @@
 #pragma once
 
 /*----------    Core    ----------*/
-#include "Vision/Core/Base.h"
+#include "Vision/Core/Common.h"
 #include "Vision/Core/Log.h"
 #include "Vision/Core/Application.h"
 #include "Vision/Core/Layer.h"
@@ -23,6 +23,7 @@
 #include "Vision/Platform/MouseCodes.h"
 #include "Vision/Platform/Timer.h"
 #include "Vision/Platform/PlatformUtils.h"
+#include "Vision/Platform/Memory.h"
 /*--------------------------------*/
 
 /*----------  IO  ----------*/

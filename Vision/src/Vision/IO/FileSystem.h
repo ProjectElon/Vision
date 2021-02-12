@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "Vision/Core/Base.h"
+#include "Vision/Core/Common.h"
 
 // @Note: Thanks Windows
 #ifdef VN_PLATFORM_WINDOWS

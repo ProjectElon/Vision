@@ -1,9 +1,9 @@
 MaxEntityCount 100
 PrimaryCamera Entity1
-SelectedEntity Entity1
+SelectedEntity Entity0
 CameraPosition 0 0 0
-CameraMovementSpeed 2.25
-CameraOrthographicSize 2.25
+CameraMovementSpeed 2.5
+CameraOrthographicSize 2.5
 CameraNear -1
 CameraFar 1
 Entity Entity0
