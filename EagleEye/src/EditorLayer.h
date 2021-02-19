@@ -47,10 +47,9 @@ namespace Vision
 
 		FrameBuffer m_SceneFrameBuffer;
 
-		OrthographicCamera* m_SceneCamera;
+		PerspectiveCamera* m_SceneCamera;
 
 		AssetID m_ActiveScene = 0;
-		AssetID m_CheckboardTexture = 0;
 
 		AssetID m_FiraCodeFont;
 		AssetID m_SpriteShader = 0;

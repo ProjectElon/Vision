@@ -17,7 +17,7 @@ namespace Vision
         std::string prop;
         std::string space;
 
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < 4; i++)
         {
             File::ReadLine(handle, line);
             contents += line + " ";
@@ -30,15 +30,24 @@ namespace Vision
         stringStream >> prop >> scene->PrimaryCameraTag;
         stringStream >> prop >> editorState.SelectedEntityTag;
 
+        if (scene->PrimaryCameraTag == "none")
+        {
+            scene->PrimaryCameraTag = "";
+        }
+
+        if (editorState.SelectedEntityTag == "none")
+        {
+            editorState.SelectedEntityTag = "";
+        }
+
         CreateScene(scene, scene->MaxEntityCount);
 
-        OrthographicCamera& camera = editorState.SceneCamera;
-        glm::vec3& p = camera.Position;
+        PerspectiveCamera& camera = editorState.SceneCamera;
+        glm::vec3& p = camera.FocalPoint;
         stringStream >> prop >> p.x >> p.y >> p.z;
-        stringStream >> prop >> camera.MovementSpeed;
-        stringStream >> prop >> camera.OrthographicSize;
-        stringStream >> prop >> camera.Near;
-        stringStream >> prop >> camera.Far;
+        
+        camera.UpdateView();
+        camera.UpdateProjection();
 
         contents = "";
         Entity entity = 0;
@@ -67,6 +76,7 @@ namespace Vision
                     DeserializeComponent(componentID, contents, scene, entity);
                     contents = "";
                 }
+
                 stringStream >> componentID;
             }
             else

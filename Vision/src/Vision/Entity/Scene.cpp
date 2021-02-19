@@ -11,7 +11,7 @@ namespace Vision
 
         for (auto& [componentID, componentStorage] : scene->Components)
         {
-            componentStorage.ReConstruct(maxEntityCount);
+            componentStorage.ReConstruct(maxEntityCount, componentStorage.Alignment);
         }
     }
 

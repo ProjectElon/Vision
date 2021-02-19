@@ -28,8 +28,8 @@ typedef int32_t	 int32;
 typedef uint32_t uint32;
 typedef int64_t	 int64;
 typedef uint64_t uint64;
-typedef float	 float32;
-typedef double	 float64;
+typedef float_t	 float32;
+typedef double_t float64;
 typedef size_t	 memorysize;
 
 /*
@@ -72,26 +72,7 @@ typedef size_t	 memorysize;
 
 /* ---------------------------------------- */
 
-namespace Vision
-{
-	template<typename T>
-	using Scope = std::unique_ptr<T>;
-
-	template<typename T>
-	using Ref = std::shared_ptr<T>;
-
-	template<typename T, typename ... Args>
-	constexpr Scope<T> CreateScope(Args&& ... args)
-	{
-		return std::make_unique<T>(std::forward<Args>(args)...);
-	}
-
-	template<typename T, typename ... Args>
-	constexpr Ref<T> CreateRef(Args&& ... args)
-	{
-		return std::make_shared<T>(std::forward<Args>(args)...);
-	}
-}
+#define Inspect(params)
 
 /* Note : __debugbreak() works only on windows with msvc */
 

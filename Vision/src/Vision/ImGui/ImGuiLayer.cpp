@@ -4,6 +4,7 @@
 
 #include <imgui.h>
 #include <imgui_internal.h>
+#include <ImGuizmo.h>
 
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
@@ -13,7 +14,7 @@
 	#define IMGUI_IMPL_OPENGL_LOADER_GLAD
 	#include <examples/imgui_impl_opengl3.cpp>
 	#include <examples/imgui_impl_glfw.cpp>
-	
+
 #endif
 
 namespace Vision
@@ -21,7 +22,7 @@ namespace Vision
 	ImGuiLayer::ImGuiLayer()
 		: Layer("ImGui")
 	{
-	}	
+	}
 
 	void ImGuiLayer::OnAttach()
 	{
@@ -41,7 +42,7 @@ namespace Vision
 
 		io.Fonts->AddFontFromFileTTF("Assets/Fonts/Maven Pro/MavenPro-Medium.ttf", 17.0f);
 		io.Fonts->AddFontFromFileTTF("Assets/Fonts/Maven Pro/MavenPro-Bold.ttf", 17.0f);
-	
+
 		io.FontDefault = io.Fonts->Fonts[0];
 
 		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
@@ -69,6 +70,8 @@ namespace Vision
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
+		ImGuizmo::BeginFrame();
+
 		static bool opt_fullscreen_persistant = true;
 		bool opt_fullscreen = opt_fullscreen_persistant;
 		static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
@@ -76,7 +79,7 @@ namespace Vision
 		// We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
 		// because it would be confusing to have two docking targets within each others.
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-		
+
 		if (opt_fullscreen)
 		{
 			ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -89,7 +92,7 @@ namespace Vision
 			window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 		}
 
-		// When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background 
+		// When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
 		// and handle the pass-thru hole, so we ask Begin() to not render a background.
 		if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
 		{
@@ -128,7 +131,7 @@ namespace Vision
 		style.WindowMinSize.x = minWindowSizeX;
 	}
 
-	void ImGuiLayer::End() 
+	void ImGuiLayer::End()
 	{
 	    ImGui::End();
 

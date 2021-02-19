@@ -61,6 +61,10 @@ namespace Vision
 			else
 			{
 				glGetShaderInfoLog(data.RendererID, 512, nullptr, logInfo);
+				VnCoreInfo("unable to compile {0} shader: {1}", type, logInfo);
+
+				data.RendererID = 0;
+				shader->RendererID = 0;
 			}
 		}
 
@@ -69,11 +73,13 @@ namespace Vision
 
 		if (success)
 		{
-			VnCoreInfo("Shader Compiled");
+			VnCoreInfo("shader compiled");
 		}
 		else
 		{
 			glGetProgramInfoLog(shader->RendererID, 512, nullptr, logInfo);
+			VnCoreInfo("unable to link program : {0}", logInfo);
+			shader->RendererID = 0;
 		}
 	}
 

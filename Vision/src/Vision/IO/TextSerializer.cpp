@@ -12,17 +12,29 @@ namespace Vision
         FileStream handle = File::Open(filepath, FileMode::Write);
         std::stringstream stringStream;
         stringStream << "MaxEntityCount " << scene->MaxEntityCount << "\n";
-        stringStream << "PrimaryCamera "  << scene->PrimaryCameraTag << "\n";
-        stringStream << "SelectedEntity " << editorState.SelectedEntityTag << "\n";
 
-        const OrthographicCamera& sceneCamera = editorState.SceneCamera;
+        if (scene->PrimaryCameraTag.empty())
+        {
+            stringStream << "PrimaryCamera "  << "none" << "\n";
+        }
+        else
+        {
+            stringStream << "PrimaryCamera "  << scene->PrimaryCameraTag << "\n";
+        }
+
+        if (editorState.SelectedEntityTag.empty())
+        {
+            stringStream << "SelectedEntity " << "none" << "\n";
+        }
+        else
+        {
+            stringStream << "SelectedEntity " << editorState.SelectedEntityTag << "\n";
+        }
+
+        const PerspectiveCamera& sceneCamera = editorState.SceneCamera;
         stringStream << "CameraPosition "
-                     << sceneCamera.Position.x << " " << sceneCamera.Position.y << " " << sceneCamera.Position.z << "\n";
-        stringStream << "CameraMovementSpeed " << sceneCamera.MovementSpeed << "\n";
-        stringStream << "CameraOrthographicSize " << sceneCamera.OrthographicSize << "\n";
-        stringStream << "CameraNear " << sceneCamera.Near << "\n";
-        stringStream << "CameraFar " << sceneCamera.Far << "\n";
-
+                     << sceneCamera.FocalPoint.x << " " << sceneCamera.FocalPoint.y << " " << sceneCamera.FocalPoint.z << "\n";
+        
         for (uint32 entity = 1; entity <= scene->EntityCount; entity++)
         {
             const auto& tagComponent = scene->GetComponent<TagComponent>(entity);

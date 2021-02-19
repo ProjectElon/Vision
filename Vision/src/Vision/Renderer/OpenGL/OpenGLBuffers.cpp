@@ -89,7 +89,7 @@ namespace Vision
 			const VertexAttribute& attribute = attributes[vertexIndex];
 			glEnableVertexAttribArray(vertexIndex);
 
-			switch(attribute.Type)
+			switch (attribute.Type)
 			{
 				case ShaderDataType::Bool:
 				case ShaderDataType::Int8:

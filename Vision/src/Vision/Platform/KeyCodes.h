@@ -4,11 +4,9 @@
 
 namespace Vision
 {
-	using KeyCode = uint32;
-
 	namespace Key
 	{
-		enum : KeyCode
+		enum : uint16
 		{
 			Space = 32,
 			Apostrophe = 39, /* ' */

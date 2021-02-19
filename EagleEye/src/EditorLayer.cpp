@@ -5,7 +5,9 @@
 #include <imgui.h>
 #include <glm/gtc/matrix_transform.hpp>
 
+
 #include <algorithm>
+#include <ImGuizmo.h>
 
 namespace Vision
 {
@@ -15,27 +17,6 @@ namespace Vision
 		Window& window = Application::Get().GetWindow();
 		SetWindowTitle(&window, "Eagle Eye");
 		Renderer::SetVSync(true);
-
-		StackAllocator stack(MegaBytes(5));
-
-		{
-			RewindScope(&stack);
-
-			auto* p0 = stack.AllocateAndAssign<char>('a');
-			auto* p1 = stack.AllocateAndAssign<uint32>(10);
-			auto* p2 = stack.AllocateAndAssign<float64>(100.0);
-
-			VnCoreInfo("{0}, {1}, {2}", *p0, *p1, *p2);
-
-			{
-				RewindScope(&stack);
-
-				auto* x0 = stack.AllocateAndAssign<std::string>("ahmed");
-				auto* x1 = stack.AllocateAndAssign<std::string>("mohamed");
-
-				VnCoreInfo("{0}, {1}", *x0, *x1);
-			}
-		}
 	}
 
 	EditorLayer::~EditorLayer()
@@ -49,18 +30,24 @@ namespace Vision
 		using namespace Vision;
 
 		FrameBufferAttachmentSpecification SceneBufferSpecification;
-		SceneBufferSpecification.Attachments = { FrameBufferTextureFormat::RGBA8, FrameBufferTextureFormat::RedInt32, FrameBufferTextureFormat::Depth };
+		SceneBufferSpecification.Attachments =
+		{
+			FrameBufferTextureFormat::RGBA8,
+			FrameBufferTextureFormat::RedInt32,
+			FrameBufferTextureFormat::Depth24Stencil8
+		};
 
-		InitFrameBuffer(&m_SceneFrameBuffer, SceneBufferSpecification, 800, 600);
-		m_SceneViewPanel.SetFrameBuffer(&m_SceneFrameBuffer);
+		InitFrameBuffer(&m_SceneFrameBuffer, SceneBufferSpecification, 1280, 720);
+		m_SceneViewPanel.FrameBuffer = &m_SceneFrameBuffer;
 
 		EditorState& editorState = Scene::EditorState;
 		m_SceneCamera = &editorState.SceneCamera;
-		ResizeOrthographisCamera(m_SceneCamera, 800, 600);
+
+		float32 aspectRatio = 1.778f;
+		m_SceneCamera->Init(aspectRatio, 45.0f);
 
 		m_SpriteShader = Assets::RequestAsset("Assets/Shaders/Sprite.glsl");
 		m_FontShader = Assets::RequestAsset("Assets/Shaders/Font.glsl");
-		m_CheckboardTexture = Assets::RequestAsset("Assets/Textures/Checkerboard.png");
 
 		m_FiraCodeFont = Assets::RequestAsset("Assets/Fonts/FiraCode-Regular.ttf");
 		BitmapFont* firaCodeFont = Assets::GetBitmapFont(m_FiraCodeFont);
@@ -125,74 +112,66 @@ namespace Vision
 	{
 		using namespace Vision;
 
-		if (deltaTime >= 0.5f)
+		if (m_SceneViewPanel.IsInteractable)
 		{
-			deltaTime = 0.5f;
-		}
+			bool isControlDown = Input::IsKeyDown(Key::LeftControl) ||
+								 Input::IsKeyDown(Key::RightControl);
 
-		if (m_SceneViewPanel.IsIntractable())
-		{
-			bool isControlDown = Input::IsKeyDown(Key::LeftControl) || Input::IsKeyDown(Key::RightControl);
-			bool isShiftDown   = Input::IsKeyDown(Key::LeftShift)   || Input::IsKeyDown(Key::RightShift);
-
-			if (m_ActiveScene && !isControlDown && !isShiftDown)
+			if (m_ActiveScene && !isControlDown)
 			{
-				UpdateOrthographicCamera(m_SceneCamera, deltaTime);
+				m_SceneCamera->OnUpdate(deltaTime);
 			}
 		}
 
 		BindFrameBuffer(&m_SceneFrameBuffer);
-		Renderer::Clear(ClearColorBuffer);
 
 		if (m_ActiveScene)
 		{
-			Renderer2D::BeginScene(glm::translate(glm::mat4(1.0f), m_SceneCamera->Position),
+			float32 values[] = { 0.1f, 0.1f, 0.1f, 1.0f };
+			ClearColorAttachment(&m_SceneFrameBuffer, 0, values);
+
+			int value = -1;
+			ClearColorAttachment(&m_SceneFrameBuffer, 1, &value);
+
+			Renderer2D::BeginScene(m_SceneCamera->View,
 								   m_SceneCamera->Projection,
 								   Assets::GetShader(m_SpriteShader));
 
 			Scene* scene = Assets::GetScene(m_ActiveScene);
 
-			Renderer2D::DrawTexture(glm::vec3(0.0f, 0.0f, 0.0f),
-			                        0.0f,
-									glm::vec2(100.0f, 100.0f),
-									Assets::GetTexture(m_CheckboardTexture),
-									glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
-									glm::vec2(0.0f, 0.0f),
-									glm::vec2(1.0f, 1.0f) * 100.0f);
-
 			scene->EachGroup<TransformComponent, SpriteRendererComponent>([](Entity entity, auto& transform, auto& sprite)
 			{
 				Renderer2D::DrawTexture(transform.Position,
-										transform.Rotation.z,
+										transform.Rotation,
 										transform.Scale,
 										Assets::GetTexture(sprite.Texture),
 										sprite.Color,
 										sprite.BottomLeftUV,
 										sprite.TopRightUV,
-										entity);
+										(int32)entity);
 			});
 
 			Renderer2D::EndScene();
-
+			
 			glm::mat4 ortho = glm::ortho(0.0f,
 			                             (float32)m_SceneFrameBuffer.Width,
 									     (float32)m_SceneFrameBuffer.Height,
 									     0.0f);
 
-			Renderer2D::BeginScene(glm::translate(glm::mat4(1.0f), m_SceneCamera->Position),
+			Renderer2D::BeginScene(glm::mat4(1.0f),
 								   ortho,
 								   Assets::GetShader(m_FontShader));
 
 			Renderer2D::DrawString(Assets::GetBitmapFont(m_FiraCodeFont),
 								   "Vision Engine!",
-									glm::vec2(100.0f, 100.0f),
-			                        glm::vec4(0.1f, 0.1f, 0.1f, 1.0f));
+									glm::vec2(10.0f, 50.0f),
+			                        glm::vec4(0.9f, 0.3f, 0.0f, 1.0f),
+									0);
 
 			Renderer2D::EndScene();
-
-			const glm::vec2* bounds = m_SceneViewPanel.GetViewportBounds();
-			glm::vec2 minBound = bounds[0];
-			glm::vec2 maxBound = bounds[1];
+			
+			glm::vec2 minBound = m_SceneViewPanel.ViewportBounds[0];
+			glm::vec2 maxBound = m_SceneViewPanel.ViewportBounds[1];
 
 			auto [mx, my] = ImGui::GetMousePos();
 
@@ -210,7 +189,7 @@ namespace Vision
 
 			if (mouseX >= 0 && mouseX < (int32)viewportSize.x && mouseY >= 0 && mouseY < (int32)viewportSize.y)
 			{
-				if (Input::IsMouseButtonDown(Mouse::ButtonLeft))
+				if (Input::IsMouseButtonDown(Mouse::ButtonLeft) && !ImGuizmo::IsUsing() && !ImGuizmo::IsOver())
 				{
 					int32 pixel = ReadPixel(&m_SceneFrameBuffer, 1, mouseX, mouseY);
 
@@ -243,6 +222,10 @@ namespace Vision
 							editorState.SelectedEntityTag = tagComponent.Tag;
 						}
 					}
+					else
+					{
+						editorState.SelectedEntityTag = "";
+					}
 				}
 			}
 		}
@@ -261,15 +244,13 @@ namespace Vision
 	{
 		using namespace Vision;
 
-		if (m_SceneViewPanel.IsViewportResized())
+		if (m_SceneViewPanel.IsViewportResized)
 		{
-			glm::vec2 viewportSize = m_SceneViewPanel.GetViewportSize();
 
 			if (m_ActiveScene)
 			{
-				ResizeOrthographisCamera(m_SceneCamera,
-										 (uint32)viewportSize.x,
-										 (uint32)viewportSize.y);
+				m_SceneCamera->SetViewportSize(m_SceneViewPanel.ViewportSize.x,
+											   m_SceneViewPanel.ViewportSize.y);
 			}
 		}
 
@@ -329,18 +310,6 @@ namespace Vision
 			}
 			break;
 
-			case Key::E:
-			{
-				if (isControlDown)
-				{
-					if (m_ActiveScene)
-					{
-						CloseActiveScene();
-					}
-				}
-			}
-			break;
-
 			case Key::Delete:
 			{
 				if (m_ActiveScene && m_SceneHierarchyPanel.IsInteractable())
@@ -362,6 +331,43 @@ namespace Vision
 				app.Close();
 			}
 			break;
+
+			case Key::Q:
+			{
+				if (m_SceneViewPanel.IsInteractable && !ImGuizmo::IsUsing())
+				{
+					m_SceneViewPanel.GizmoType = -1; // cancel gizmos
+				}
+			}
+			break;
+
+			case Key::E:
+			{
+				if (m_SceneViewPanel.IsInteractable && !ImGuizmo::IsUsing())
+				{
+					m_SceneViewPanel.GizmoType = ImGuizmo::OPERATION::TRANSLATE;
+				}
+			}
+			break;
+
+			case Key::R:
+			{
+				if (m_SceneViewPanel.IsInteractable && !ImGuizmo::IsUsing())
+				{
+					m_SceneViewPanel.GizmoType = ImGuizmo::OPERATION::ROTATE;
+				}
+			}
+			break;
+
+			case Key::T:
+			{
+				if (m_SceneViewPanel.IsInteractable && !ImGuizmo::IsUsing())
+				{
+					m_SceneViewPanel.GizmoType = ImGuizmo::OPERATION::SCALE;
+				}
+
+			}
+			break;
 		}
 
 		return false;
@@ -369,9 +375,10 @@ namespace Vision
 
 	bool EditorLayer::OnMouseWheelScrolled(MouseWheelScrolledEvent& e)
 	{
-		if (m_SceneViewPanel.IsIntractable())
+		if (m_SceneViewPanel.IsInteractable)
 		{
-			UpdateOrthographicCameraSize(m_SceneCamera, -e.GetYOffset());
+			float32 mouseWheelDelta = -e.GetYOffset() * 0.1f;
+			m_SceneCamera->Zoom(mouseWheelDelta);
 		}
 
 		return false;
@@ -418,11 +425,12 @@ namespace Vision
 			MaximizeWindow(&window);
 		}
 
-		if (scenePath != "none")
+		if (scenePath != "none" && FileSystem::FileExists(scenePath))
 		{
 			m_ActiveScene = Assets::RequestAsset(scenePath);
 			m_SceneHierarchyPanel.SetActiveScene(m_ActiveScene);
 			m_InspectorPanel.SetActiveScene(m_ActiveScene);
+			m_SceneViewPanel.ActiveScene = m_ActiveScene;
 		}
 
 		File::Close(handle);
@@ -465,8 +473,7 @@ namespace Vision
 			Assets::ReleaseAsset(m_ActiveScene);
 		}
 
-		InitOrthographicCamera(m_SceneCamera,
-							   m_SceneCamera->AspectRatio);
+		m_SceneCamera->Reset();
 
 		Scene* tempScene = new Scene;
 		CreateScene(tempScene, maxEntityCount);
@@ -478,6 +485,7 @@ namespace Vision
 		m_ActiveScene = Assets::RequestAsset(filepath);
 		m_SceneHierarchyPanel.SetActiveScene(m_ActiveScene);
 		m_InspectorPanel.SetActiveScene(m_ActiveScene);
+		m_SceneViewPanel.ActiveScene = m_ActiveScene;
 	}
 
 	void EditorLayer::OpenScene()
@@ -495,6 +503,7 @@ namespace Vision
 			m_ActiveScene = Assets::RequestAsset(filepath);
 			m_SceneHierarchyPanel.SetActiveScene(m_ActiveScene);
 			m_InspectorPanel.SetActiveScene(m_ActiveScene);
+			m_SceneViewPanel.ActiveScene = m_ActiveScene;
 		}
 	}
 
@@ -523,5 +532,6 @@ namespace Vision
 		m_ActiveScene = 0;
 		m_SceneHierarchyPanel.SetActiveScene(0);
 		m_InspectorPanel.SetActiveScene(0);
+		m_ActiveScene = 0;
 	}
 }

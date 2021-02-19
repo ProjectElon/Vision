@@ -71,12 +71,13 @@ outputdir = "%{cfg.system}-%{cfg.architecture}-%{cfg.buildcfg}"
 
 includedir = {}
 
-includedir["spdlog"] = "ThirdParty/spdlog/include"
-includedir["GLFW"]   = "ThirdParty/GLFW/include"
-includedir["Glad"]   = "ThirdParty/Glad/include"
-includedir["ImGui"]  = "ThirdParty/imgui"
-includedir["glm"]    = "ThirdParty/glm"
-includedir["stb"]	 = "ThirdParty/stb"
+includedir["spdlog"]   = "ThirdParty/spdlog/include"
+includedir["GLFW"]     = "ThirdParty/GLFW/include"
+includedir["Glad"]     = "ThirdParty/Glad/include"
+includedir["ImGui"]    = "ThirdParty/imgui"
+includedir["glm"]      = "ThirdParty/glm"
+includedir["stb"]	   = "ThirdParty/stb"
+includedir["ImGuizmo"] = "ThirdParty/ImGuizmo"
 
 group ("Dependencies")
 
@@ -101,6 +102,8 @@ project ("Vision")
 	{
 		"%{prj.name}/src/**.h",
 		"%{prj.name}/src/**.cpp",
+		"%{includedir.ImGuizmo}/ImGuizmo.h",
+		"%{includedir.ImGuizmo}/ImGuizmo.cpp",
 	}
 
 	includedirs
@@ -111,7 +114,8 @@ project ("Vision")
 		"%{includedir.Glad}",
 		"%{includedir.ImGui}",
 		"%{includedir.glm}",
-		"%{includedir.stb}"
+		"%{includedir.stb}",
+		"%{includedir.ImGuizmo}"
 	}
 
 	links
@@ -126,6 +130,41 @@ project ("Vision")
 	{
 		"_CRT_SECURE_NO_WARNINGS",
 		"GLFW_INCLUDE_NONE"
+	}
+
+	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
+	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
+
+	filter "files:ThirdParty/ImGuizmo/**.cpp"
+	flags { "NoPch" }
+
+project ("PreBuild")
+
+	location ("PreBuild")
+	kind ("ConsoleApp")
+	language ("C++")
+	cppdialect ("C++17")
+	staticruntime ("on")
+
+	files
+	{
+		"%{prj.name}/src/**.h",
+		"%{prj.name}/src/**.cpp"
+	}
+
+	includedirs
+	{
+		"%{prj.name}/src",
+		"Vision/src",
+		"%{includedir.spdlog}",
+		"%{includedir.ImGui}",
+		"%{includedir.glm}",
+		"%{includedir.stb}",
+	}
+
+	links
+	{
+		"Vision"
 	}
 
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
@@ -149,11 +188,11 @@ project ("EagleEye")
 	{
 		"%{prj.name}/src",
 		"Vision/src",
-		"%{includedir.ImGui}",
 		"%{includedir.spdlog}",
+		"%{includedir.ImGui}",
 		"%{includedir.glm}",
-		"%{includedir.rapidjson}",
 		"%{includedir.stb}",
+		"%{includedir.ImGuizmo}"
 	}
 
 	links

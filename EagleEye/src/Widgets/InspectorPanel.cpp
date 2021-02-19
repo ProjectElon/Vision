@@ -30,11 +30,11 @@ namespace Vision
             {
                 auto& transform = ComponentCast<TransformComponent>(component);
 
-                ImGuiWidgets::DrawFloat3("Position", transform.Position, 78.0f);
+                ImGuiWidgets::DrawFloat3("Position", transform.Position, 78.0f, 0);
 
                 glm::vec3 rotation = glm::degrees(transform.Rotation);
 
-                ImGuiWidgets::DrawFloat3("Rotation", rotation, 78.0f);
+                ImGuiWidgets::DrawFloat3("Rotation", rotation, 78.0f, 0);
 
                 transform.Rotation = glm::radians(rotation);
 
@@ -106,11 +106,11 @@ namespace Vision
                 if (changed)
                 {
                     camera.Projection = glm::ortho(-camera.AspectRatio * camera.Size,
-                        camera.AspectRatio * camera.Size,
-                        -camera.Size,
-                        camera.Size,
-                        camera.Near,
-                        camera.Far);
+                                                    camera.AspectRatio * camera.Size,
+                                                   -camera.Size,
+                                                    camera.Size,
+                                                    camera.Near,
+                                                    camera.Far);
                 }
 
             });
@@ -334,7 +334,7 @@ namespace Vision
                 auto& tagComponent = scene->GetComponent<TagComponent>(seletedEntity);
                 std::string oldTag = tagComponent.Tag;
 
-                char buffer[256];
+                char buffer[MaxEntityNameCount];
                 memset(buffer, 0, sizeof(buffer));
                 strcpy(buffer, tagComponent.Tag);
 
@@ -345,9 +345,10 @@ namespace Vision
                                      ImGui::IsItemDeactivated())
                 {
                     std::string newTag = std::string(buffer);
+
                     bool isNewTagAvailable = scene->QueryEntity(newTag) == entity::null;
 
-                    if (!newTag.empty() && isNewTagAvailable)
+                    if (!newTag.empty() && newTag != "none" && isNewTagAvailable)
                     {
                         Entity entity = scene->QueryEntity(editorState.SelectedEntityTag);
 
@@ -365,6 +366,7 @@ namespace Vision
                         }
 
                         strcpy(tagComponent.Tag, buffer);
+                        // tagComponent.Tag = newTag;
                     }
                 }
 
@@ -438,11 +440,11 @@ namespace Vision
             ComponentState& state = m_ComponentState[{ tag, componentID }];
             const char* name = info.Name.c_str();
 
-            const ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen |
-                                             ImGuiTreeNodeFlags_Framed |
-                                             ImGuiTreeNodeFlags_FramePadding |
-                                             ImGuiTreeNodeFlags_SpanAvailWidth |
-                                             ImGuiTreeNodeFlags_AllowItemOverlap;
+            ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen |
+                                       ImGuiTreeNodeFlags_Framed |
+                                       ImGuiTreeNodeFlags_FramePadding |
+                                       ImGuiTreeNodeFlags_SpanAvailWidth |
+                                       ImGuiTreeNodeFlags_AllowItemOverlap;
 
             ImVec2 contentRegionAvail = ImGui::GetContentRegionAvail();
 

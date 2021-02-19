@@ -17,11 +17,12 @@ namespace Vision
 
 	struct QuadVertex
 	{
-		glm::vec2 Position;
+		glm::vec3 Position;
 		glm::vec4 Color;
 		glm::vec2 TextureCoord;
-		float32   TextureIndex;
-		float32	  EntityIndex;
+
+		uint32 TextureIndex;
+		int32 EntityIndex;
 	};
 
 	struct QuadData
@@ -60,11 +61,11 @@ namespace Vision
 							 float32 rotationAngle,
 							 const glm::vec2& scale,
 							 const glm::vec4& color = { 1.0f, 1.0f, 1.0f, 1.0f },
-							 uint32 entityIndex = 0);
+							 int32 entityIndex = 0);
 
 		static void DrawQuad(const glm::mat4& transform,
 							 const glm::vec4& color = { 1.0f, 1.0f, 1.0f, 1.0f },
-							 uint32 entityIndex = 0);
+							 int32 entityIndex = 0);
 
 		static void DrawTexture(const glm::vec3& position,
 								float32 rotationAngle,
@@ -73,27 +74,40 @@ namespace Vision
 								const glm::vec4& color = { 1.0f, 1.0f, 1.0f, 1.0f },
 								const glm::vec2& bottomLeftUV = { 0.0f, 0.0f },
 								const glm::vec2& topRightUV = { 1.0f, 1.0f },
-								uint32 entityIndex = 0);
+								int32 entityIndex = 0);
+
+		static void DrawTexture(const glm::vec3& position,
+								const glm::vec3& rotation,
+								const glm::vec3& scale,
+								const Texture* texture,
+								const glm::vec4& color,
+								const glm::vec2& bottomLeftUV,
+								const glm::vec2& topRightUV,
+								int32 entityIndex);
 
 		static void DrawTexture(const glm::mat4& transform,
 								const Texture* texture,
 								const glm::vec4& color = { 1.0f, 1.0f, 1.0f, 1.0f },
 								const glm::vec2& bottomLeftUV = { 0.0f, 0.0f },
 								const glm::vec2& topRightUV = { 1.0f, 1.0f },
-								uint32 entityIndex = 0);
+								int32 entityIndex = 0);
 
 		static void DrawString(BitmapFont* font,
 		                       const std::string& text,
 		                       glm::vec2 position,
 		                       const glm::vec4& color = { 1.0f, 1.0f, 1.0f, 1.0f },
-							   uint32 entityIndex = 0);
+							   int32 entityIndex = 0);
 
 	private:
 		static uint32 AssginTextureSlot(const Texture* texture);
 
-		inline static glm::mat4 CreateQuadTransform(const glm::vec3& position,
+		static glm::mat4 CreateQuadTransform(const glm::vec3& position,
 										  		    float32 rotationAngle,
 										  		    const glm::vec2& scale);
+
+		static glm::mat4 CreateQuadTransform(const glm::vec3& position,
+		                                     const glm::vec3& rotation,
+		                                     const glm::vec3& scale);
 
 		static void SubmitQuadVertex(const QuadVertex& vertex);
 

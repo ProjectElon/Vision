@@ -4,11 +4,9 @@
 
 namespace Vision
 {
-	using MouseCode = uint32;
-
 	namespace Mouse
 	{
-		enum : MouseCode
+		enum : uint8
 		{
 			Button0 = 0,
 			Button1 = 1,

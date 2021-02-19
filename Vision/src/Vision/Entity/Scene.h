@@ -38,7 +38,21 @@ namespace Vision
                 return entity::null;
             }
 
-            if (QueryEntity(tag) != entity::null)
+            if (tag.empty())
+            {
+                VnCoreInfo("Can't create an entity with an empty tag");
+                return entity::null;
+            }
+
+            if (tag == "none")
+            {
+                VnCoreInfo("Can't create an entity with an tag: none which is reserved");
+                return entity::null;
+            }
+
+            bool isTagTaken = QueryEntity(tag) != entity::null;
+
+            if (isTagTaken)
             {
                 VnCoreInfo("Can't create an entity with a taken tag : {0}", tag);
                 return entity::null;
@@ -110,8 +124,9 @@ namespace Vision
             if (componentStorage.Data == nullptr)
             {
                 componentStorage.SizeInBytes = sizeof(Component);
+                componentStorage.Alignment = alignof(Component);
 
-                componentStorage.Data     = (uint8*)new Component[MaxEntityCount];
+                componentStorage.Data     = (uint8*)_mm_malloc(MaxEntityCount * sizeof(Component), alignof(Component));
                 componentStorage.Entities = new Entity[MaxEntityCount];
             }
 

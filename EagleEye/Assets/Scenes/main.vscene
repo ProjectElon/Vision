@@ -1,40 +1,43 @@
 MaxEntityCount 100
-PrimaryCamera Entity1
-SelectedEntity Entity0
-CameraPosition 0 0 0
-CameraMovementSpeed 2.5
-CameraOrthographicSize 2.5
-CameraNear -1
-CameraFar 1
+PrimaryCamera none
+SelectedEntity Entity1
+CameraPosition 0.566171 0.289091 0.829979
 Entity Entity0
 Component 1066925509535886804 Transform
-Position 1 1 0
-Rotation 0 0 0
-Scale 1 1 1
+Position 0.29472 0.479554 0.706709
+Rotation -1.5708 0 0
+Scale 1 0.999762 0.999762
 Component 13080639714729183211 Sprite Renderer
-Texture Path Assets/Textures/cotton_red.png
+Texture Path Assets/Textures/wood.png
 Texture Wrap X 0
 Texture Wrap Y 0
 Texture Fliter Mode 0
-Color 1 0.99999 0.99999 1
+Color 1 1 1 1
 Bottom Left Point 0 0
 Top Right Point 1 1
 Entity Entity1
 Component 1066925509535886804 Transform
-Position -1 -1 0
+Position 0.294199 0 0.200313
 Rotation 0 0 0
-Scale 1 1 1
+Scale 1 1 2
 Component 13080639714729183211 Sprite Renderer
-Texture Path Assets/Textures/leaves_orange.png
+Texture Path Assets/Textures/wood.png
 Texture Wrap X 0
 Texture Wrap Y 0
 Texture Fliter Mode 0
-Color 0.999993 1 0.99999 1
+Color 1 1 1 1
 Bottom Left Point 0 0
 Top Right Point 1 1
-Component 1734294881175729993 Orthographic Camera
-Aspect Ratio 0
-Size 1
-Near -1
-Far 1
-Static 0
+Entity Entity2
+Component 1066925509535886804 Transform
+Position -0.203416 -9.49949e-08 0.694477
+Rotation 1.60864e-11 -1.55666 3.14159
+Scale 1.00002 0.999992 0.999989
+Component 13080639714729183211 Sprite Renderer
+Texture Path Assets/Textures/wood.png
+Texture Wrap X 0
+Texture Wrap Y 0
+Texture Fliter Mode 0
+Color 1 1 1 1
+Bottom Left Point 0 0
+Top Right Point 1 1

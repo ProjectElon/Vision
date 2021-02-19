@@ -2,18 +2,18 @@
 
 #version 410 core
 
-layout (location = 0) in vec2  a_Position;
+layout (location = 0) in vec3  a_Position;
 layout (location = 1) in vec4  a_Color;
 layout (location = 2) in vec2  a_TextureCoord;
-layout (location = 3) in float a_TextureIndex;
-layout (location = 4) in float a_EntityIndex;
+layout (location = 3) in uint a_TextureIndex;
+layout (location = 4) in int a_EntityIndex;
 
 out VertexOutput
 {
     vec4  Color;
     vec2  TextureCoord;
-    float TextureIndex;
-    float EntityIndex;
+    flat uint TextureIndex;
+    flat int EntityIndex;
 }
 vertexOuput;
 
@@ -26,22 +26,22 @@ void main()
     vertexOuput.TextureIndex = a_TextureIndex;
     vertexOuput.EntityIndex  = a_EntityIndex;
 
-    gl_Position = u_ViewProj * vec4(a_Position, 0.0f, 1.0f);
+    gl_Position = u_ViewProj * vec4(a_Position, 1.0f);
 }
 
 #type fragment
 
 #version 410 core
 
-layout (location = 0) out vec4 color;
-layout (location = 1) out int entityIndex;
+layout (location = 0) out vec4 color0;
+layout (location = 1) out int  color1;
 
 in VertexOutput
 {
-    vec4  Color;
-    vec2  TextureCoord;
-    float  TextureIndex;
-    float  EntityIndex;
+    vec4      Color;
+    vec2      TextureCoord;
+    flat uint TextureIndex;
+    flat int  EntityIndex;
 }
 fragmentInput;
 
@@ -54,10 +54,10 @@ void main()
         if (fragmentInput.TextureIndex == i)
         {
             vec4 font_texel = texture(u_Textures[i], fragmentInput.TextureCoord);
-            color = vec4(1.0f, 1.0f, 1.0f, font_texel.a) * fragmentInput.Color;
+            color0 = vec4(1.0f, 1.0f, 1.0f, font_texel.a) * fragmentInput.Color;
             break;
         }
     }
 
-    entityIndex = int(fragmentInput.EntityIndex);
+    color1 = fragmentInput.EntityIndex;
 }

@@ -4,6 +4,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/matrix_transform_2d.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
+#include <glm/gtx/quaternion.hpp>
 
 namespace Vision
 {
@@ -29,11 +30,11 @@ namespace Vision
 
 		VertexLayout quadVertexlayout(
 		{
-			{ ShaderDataType::Float2, "a_Position",     false },
+			{ ShaderDataType::Float3, "a_Position",     false },
 			{ ShaderDataType::Float4, "a_Color", 	    false },
 			{ ShaderDataType::Float2, "a_TextureCoord", false },
-			{ ShaderDataType::Float,  "a_TextureIndex", false },
-			{ ShaderDataType::Float,  "a_EntityIndex",  false }
+			{ ShaderDataType::UInt32, "a_TextureIndex", false },
+			{ ShaderDataType::Int32,  "a_EntityIndex",  false },
 		});
 
 		s_QuadData.VertexBase = new QuadVertex[4 * s_QuadData.MaxCount];
@@ -77,12 +78,11 @@ namespace Vision
 		delete[] s_QuadData.VertexBase;
 	}
 
-	void Renderer2D::BeginScene(const glm::mat4& cameraTransform,
+	void Renderer2D::BeginScene(const glm::mat4& cameraView,
 								const glm::mat4& cameraProjection,
 								Shader* quadShader)
 	{
-		s_SceneData.CameraPosition = cameraTransform[3];
-		s_SceneData.ViewProjection = cameraProjection * glm::inverse(cameraTransform);
+		s_SceneData.ViewProjection = cameraProjection * cameraView;
 
 		BindShader(quadShader);
 		SetShaderUniformIntArray(quadShader,
@@ -97,7 +97,7 @@ namespace Vision
 
 	void Renderer2D::DrawQuad(const glm::mat4& transform,
 						      const glm::vec4& color,
-						      uint32 entityIndex)
+						      int32 entityIndex)
 	{
 		DrawTexture(transform,
 					&s_QuadData.WhitePixel,
@@ -111,7 +111,7 @@ namespace Vision
 							  float32 rotationAngle,
 							  const glm::vec2& scale,
 							  const glm::vec4& color,
-							  uint32 entityIndex)
+							  int32 entityIndex)
 	{
 		glm::mat4 transform = CreateQuadTransform(position,
 												  rotationAngle,
@@ -126,7 +126,7 @@ namespace Vision
 								 const glm::vec4& color,
 								 const glm::vec2& bottomLeftUV,
 								 const glm::vec2& topRightUV,
-								 uint32 entityIndex)
+								 int32 entityIndex)
 	{
 		glm::mat4 transform = CreateQuadTransform(position,
 											      rotationAngle,
@@ -140,12 +140,33 @@ namespace Vision
 					entityIndex);
 	}
 
+	void Renderer2D::DrawTexture(const glm::vec3& position,
+								 const glm::vec3& rotation,
+								 const glm::vec3& scale,
+								 const Texture* texture,
+								 const glm::vec4& color,
+								 const glm::vec2& bottomLeftUV,
+								 const glm::vec2& topRightUV,
+								 int32 entityIndex)
+	{
+		glm::mat4 transform = CreateQuadTransform(position,
+												  rotation,
+												  scale);
+
+		DrawTexture(transform,
+					texture,
+					color,
+					bottomLeftUV,
+					topRightUV,
+					entityIndex);
+	}
+
 	void Renderer2D::DrawTexture(const glm::mat4& transform,
 								 const Texture* texture,
 								 const glm::vec4& color,
 								 const glm::vec2& bottomLeftUV,
 								 const glm::vec2& topRightUV,
-								 uint32 entityIndex)
+								 int32 entityIndex)
 	{
 		if (s_QuadData.Count >= s_QuadData.MaxCount)
 		{
@@ -154,20 +175,20 @@ namespace Vision
 
 		uint32 textureIndex = AssginTextureSlot(texture);
 
-		glm::vec3 v0 = transform * glm::vec4(-0.5f, -0.5f, 1.0f, 1.0f);
-		glm::vec3 v1 = transform * glm::vec4( 0.5f, -0.5f, 1.0f, 1.0f);
-		glm::vec3 v2 = transform * glm::vec4( 0.5f,  0.5f, 1.0f, 1.0f);
-		glm::vec3 v3 = transform * glm::vec4(-0.5f,  0.5f, 1.0f, 1.0f);
+		glm::vec3 v0 = transform * glm::vec4(-0.5f, -0.5f, 0.0f, 1.0f);
+		glm::vec3 v1 = transform * glm::vec4( 0.5f, -0.5f, 0.0f, 1.0f);
+		glm::vec3 v2 = transform * glm::vec4( 0.5f,  0.5f, 0.0f, 1.0f);
+		glm::vec3 v3 = transform * glm::vec4(-0.5f,  0.5f, 0.0f, 1.0f);
 
 		glm::vec2 uv0 = bottomLeftUV;
 		glm::vec2 uv1 = glm::vec2(topRightUV.x, bottomLeftUV.y);
 		glm::vec2 uv2 = topRightUV;
 		glm::vec2 uv3 = glm::vec2(bottomLeftUV.x, topRightUV.y);
 
-		SubmitQuadVertex({ v0, color, uv0, (float32)textureIndex, (float32)entityIndex });
-		SubmitQuadVertex({ v1, color, uv1, (float32)textureIndex, (float32)entityIndex });
-		SubmitQuadVertex({ v2, color, uv2, (float32)textureIndex, (float32)entityIndex });
-		SubmitQuadVertex({ v3, color, uv3, (float32)textureIndex, (float32)entityIndex });
+		SubmitQuadVertex({ v0, color, uv0, textureIndex, entityIndex });
+		SubmitQuadVertex({ v1, color, uv1, textureIndex, entityIndex });
+		SubmitQuadVertex({ v2, color, uv2, textureIndex, entityIndex });
+		SubmitQuadVertex({ v3, color, uv3, textureIndex, entityIndex });
 
 		s_QuadData.Count++;
 	}
@@ -176,7 +197,7 @@ namespace Vision
 	                            const std::string& text,
 	                            glm::vec2 position,
 	                            const glm::vec4& color,
-	                            uint32 entityIndex)
+	                            int32 entityIndex)
 	{
 		for (size_t characterIndex = 0; characterIndex < text.length(); characterIndex++)
 		{
@@ -271,6 +292,18 @@ namespace Vision
 		glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)   *
 							  glm::rotate(glm::mat4(1.0f), rotationAngle, glm::vec3(0.0f, 0.0f, 1.0f)) *
 							  glm::scale(glm::mat4(1.0f), glm::vec3(scale.x, scale.y, 1.0f));
+
+		return transform;
+	}
+
+	glm::mat4 Renderer2D::CreateQuadTransform(const glm::vec3& position,
+	                                          const glm::vec3& rotation,
+	                                          const glm::vec3& scale)
+	{
+		glm::quat rot  = glm::quat(rotation);
+		glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) *
+							  glm::toMat4(rot) *
+							  glm::scale(glm::mat4(1.0f), scale);
 
 		return transform;
 	}

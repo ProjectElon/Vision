@@ -37,7 +37,7 @@ namespace Vision
         static std::string ReadContents(const FileStream& fileStream);
         static void WriteContents(const FileStream& fileStream, const std::string& contents);
 
-        // @(Note): Is there is a way to set a good value for chuckSize ?
+        // @(Harlequin): Is there is a way to set a good value for chuckSize ?
         static bool ReadLine(const FileStream& fileStream, std::string& line, uint32 chunkSize = 1024);
 
         static void Seek(const FileStream& fileStream, uint32 position);

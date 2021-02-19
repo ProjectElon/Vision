@@ -19,23 +19,6 @@ namespace Vision
 										   const void* userParam);
 #endif
 
-	uint32 InternalTypeMap[] =
-	{
-		GL_BOOL,
-		GL_BYTE,
-		GL_UNSIGNED_BYTE,
-		GL_SHORT,
-		GL_UNSIGNED_SHORT,
-		GL_INT,
-		GL_UNSIGNED_INT,
-		GL_FLOAT,
-		GL_FLOAT,
-		GL_FLOAT,
-		GL_FLOAT,
-		GL_FLOAT,
-		GL_FLOAT
-	};
-
 	Window* Renderer::RenderTargetWindow;
 
 	void Renderer::Init(Window* renderTargetWindow)
@@ -156,12 +139,10 @@ namespace Vision
 	{
 		switch (severity)
 		{
-			case GL_DEBUG_SEVERITY_HIGH:		 VnCoreCritical(message);  break;
-		 	/*
-		 	case GL_DEBUG_SEVERITY_MEDIUM:       VnCoreError(message);     break;
-			case GL_DEBUG_SEVERITY_LOW:			 VnCoreWarn(message);      break;
-			case GL_DEBUG_SEVERITY_NOTIFICATION: VnCoreTrace(message);     break;
-		 	*/
+			case GL_DEBUG_SEVERITY_HIGH:			VnCoreCritical(message);  break;
+		 	case GL_DEBUG_SEVERITY_MEDIUM:			VnCoreError(message);     break;
+			// case GL_DEBUG_SEVERITY_LOW:			VnCoreWarn(message);      break;
+			// case GL_DEBUG_SEVERITY_NOTIFICATION: VnCoreTrace(message);     break;
 		}
 	}
 

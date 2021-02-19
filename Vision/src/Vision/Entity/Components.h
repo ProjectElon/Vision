@@ -26,35 +26,38 @@ namespace Vision
     {
         uint32 SizeInBytes = 0;
         uint32 Count       = 0;
+        uint32 Alignment   = 0;
 
-        uint8*  Data    = nullptr;
+        uint8*  Data     = nullptr;
         uint32* Entities = nullptr;
 
-        void ReConstruct(uint32 MaxEntityCount);
+        void ReConstruct(uint32 MaxEntityCount, uint32 alignment);
 
         ~ComponentStorage();
     };
 
+    #define MaxEntityNameCount 256
+
     struct TagComponent
     {
         // std::string Tag;
-        char Tag[256];
+        char Tag[MaxEntityNameCount];
     };
 
     struct TransformComponent
     {
-        glm::vec3 Position = { 0.0f, 0.0f, 0.0f };
+        glm::vec3 Position = { 0.0f, 0.0f, 1.0f };
         glm::vec3 Rotation = { 0.0f, 0.0f, 0.0f };
         glm::vec3 Scale    = { 1.0f, 1.0f, 1.0f };
     };
 
     struct OrthographicCameraComponent
     {
-        float AspectRatio =  1.0f;
-        float Size        =  1.0f;
+        float32 AspectRatio =  1.7778f;
+        float32 Size        =  1.0f;
 
-        float Near = -1.0f;
-        float Far  =  1.0f;
+        float32 Near = -1.0f;
+        float32 Far  =  1.0f;
 
         glm::mat4 Projection = glm::mat4(1);
 
@@ -63,13 +66,13 @@ namespace Vision
 
     struct PerspectiveCameraComponent
     {
-        float AspectRatio = 1.0f;
-        float FieldOfView = 45.0f;
+        float32 AspectRatio = 1.7778f;
+        float32 FieldOfView = 45.0f;
 
-        float Near = 0.1f;
-        float Far  = 1000.0f;
+        float32 Near = 0.1f;
+        float32 Far  = 1000.0f;
 
-        glm::mat4 Projection = glm::mat4(1);
+        glm::mat4 Projection = glm::mat4(1.0f);
 
         bool Static = false;
     };
@@ -77,7 +80,7 @@ namespace Vision
     struct SpriteRendererComponent
     {
         // @(Harlequin): move a default texture to a local directory for now we use wood.png
-        AssetID Texture = Assets::RequestAsset("Assets/Textures/wood.png");
+        uint32 Texture = Assets::RequestAsset("Assets/Textures/wood.png");
 
         glm::vec4 Color = { 1.0f, 1.0f, 1.0f, 1.0f };
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Vision/Renderer/OrthographicCamera.h"
+#include "Vision/Renderer/PerspectiveCamera.h"
 #include "Vision/Entity/Entity.h"
 #include "Vision/Entity/Components.h"
 
@@ -36,7 +37,7 @@ namespace Vision
         std::string      SelectedEntityTag;
         ComponentMetaMap ComponentMeta;
 
-        OrthographicCamera SceneCamera;
+        PerspectiveCamera SceneCamera;
     };
 
     template<typename Component, bool Removable = true>

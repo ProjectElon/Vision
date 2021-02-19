@@ -156,7 +156,7 @@ namespace Vision
         }
     };
 
-#define RewindScope(stackAllocator) StackAllocator::StackScope _##__LINE__##scope(stackAllocator);
+#define RewindScope(stackAllocator) StackAllocator::StackScope vision__##__LINE__##scope_stack(stackAllocator);
 
     struct StackAllocator
     {

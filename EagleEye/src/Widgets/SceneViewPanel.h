@@ -1,33 +1,28 @@
 #pragma once
 
+#include "Vision/Core/Common.h"
+
 #include <glm/glm.hpp>
 
 namespace Vision
 {
 	struct FrameBuffer;
 
-	class SceneViewPanel
+	struct SceneViewPanel
 	{
 	public:
-		SceneViewPanel();
+		FrameBuffer* FrameBuffer = nullptr;
+		uint32 ActiveScene = 0;
+		int32 GizmoType = -1;
 
-		void SetFrameBuffer(FrameBuffer* SceneFrameBuffer);
+		glm::vec2 ViewportSize = { 0.0f, 0.0f };
+		glm::vec2 ViewportBounds[2] = { { 0.0f, 0.0f }, { 0.0f, 0.0f } };
+
+		bool IsInteractable = false;
+		bool IsViewportResized = false;
+
+		SceneViewPanel() = default;
 
 		void OnImGuiRender();
-
-		inline bool IsIntractable() { return m_IsInteractable; }
-		inline bool IsViewportResized() { return m_IsViewportResized; }
-
-		inline const glm::vec2& GetViewportSize() { return m_ViewportSize; }
-		inline const glm::vec2* GetViewportBounds() { return m_ViewportBounds; }
-
-	private:
-		bool m_IsInteractable;
-		bool m_IsViewportResized;
-
-		glm::vec2 m_ViewportSize;
-		glm::vec2 m_ViewportBounds[2];
-
-		FrameBuffer* m_FrameBuffer;
 	};
 }
