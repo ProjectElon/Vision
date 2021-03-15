@@ -34,7 +34,7 @@ namespace Vision
         const PerspectiveCamera& sceneCamera = editorState.SceneCamera;
         stringStream << "CameraPosition "
                      << sceneCamera.FocalPoint.x << " " << sceneCamera.FocalPoint.y << " " << sceneCamera.FocalPoint.z << "\n";
-        
+
         for (uint32 entity = 1; entity <= scene->EntityCount; entity++)
         {
             const auto& tagComponent = scene->GetComponent<TagComponent>(entity);

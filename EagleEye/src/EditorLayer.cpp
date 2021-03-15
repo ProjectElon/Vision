@@ -380,8 +380,8 @@ namespace Vision
 
 			case Key::Escape:
 			{
-				Application& app = Application::Get();
-				app.Close();
+				Application& application = Application::Get();
+				application.Close();
 			}
 			break;
 
@@ -418,7 +418,6 @@ namespace Vision
 				{
 					SceneViewPanel.GizmoType = ImGuizmo::OPERATION::SCALE;
 				}
-
 			}
 			break;
 		}
