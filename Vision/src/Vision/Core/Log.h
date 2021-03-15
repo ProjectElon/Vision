@@ -15,17 +15,17 @@ namespace Vision
 
 		inline static std::shared_ptr<spdlog::logger>& GetCoreLogger()
 		{ 
-			return s_CoreLogger;
+			return CoreLogger;
 		}
 
 		inline static std::shared_ptr<spdlog::logger>& GetClientLogger()
 		{ 
-			return s_ClientLogger;
+			return ClientLogger;
 		}
 
 	private:
-		static std::shared_ptr<spdlog::logger> s_CoreLogger;
-		static std::shared_ptr<spdlog::logger> s_ClientLogger;
+		static std::shared_ptr<spdlog::logger> CoreLogger;
+		static std::shared_ptr<spdlog::logger> ClientLogger;
 	};
 }
 

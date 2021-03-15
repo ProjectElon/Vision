@@ -12,40 +12,86 @@
 
 namespace Vision
 {
-	void InitTexture(Texture* texture,
-					   void* data,
+	Texture::Texture(void* pixels, uint32 width, uint32 height, PixelFormat format)
+	{
+		Init(pixels, width, height, format);
+	}
+
+	Texture::~Texture()
+	{
+		Uninit();
+	}
+
+	void Texture::Init(void* pixels,
 					   uint32 width,
 					   uint32 height,
-					   PixelFormat pixelFormat)
+					   PixelFormat format)
 	{
-		texture->Width  = width;
-		texture->Height = height;
+		Width  = width;
+		Height = height;
+		Format = format;
 
-		GLenum internalFormat = GLInternalFormat(pixelFormat);
-		GLenum textureFormat  = GLTextureFormat(pixelFormat);
+		GLenum internalFormat = GLInternalFormat(format);
+		GLenum textureFormat  = GLTextureFormat(format);
 
-		glCreateTextures(GL_TEXTURE_2D, 1, &texture->RendererID);
-		glTextureStorage2D(texture->RendererID,
+		glCreateTextures(GL_TEXTURE_2D, 1, &RendererID);
+		glTextureStorage2D(RendererID,
 		                   1,
 		                   internalFormat,
-		                   texture->Width,
-		                   texture->Height);
+		                   Width,
+		                   Height);
 
-		glTextureParameteri(texture->RendererID, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTextureParameteri(texture->RendererID, GL_TEXTURE_MAG_FILTER, GLFilterMode(texture->FilterMode));
+		glTextureParameteri(RendererID, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTextureParameteri(RendererID, GL_TEXTURE_MAG_FILTER, GLFilterMode(Filter));
 
-		glTextureParameteri(texture->RendererID, GL_TEXTURE_WRAP_S, GLWrapMode(texture->WrapX));
-		glTextureParameteri(texture->RendererID, GL_TEXTURE_WRAP_T, GLWrapMode(texture->WrapY));
+		glTextureParameteri(RendererID, GL_TEXTURE_WRAP_S, GLWrapMode(WrapX));
+		glTextureParameteri(RendererID, GL_TEXTURE_WRAP_T, GLWrapMode(WrapY));
 
-		glTextureSubImage2D(texture->RendererID,
+		glTextureSubImage2D(RendererID,
 							0,
 							0,
 							0,
-							texture->Width,
-							texture->Height,
+							Width,
+							Height,
 							textureFormat,
 							GL_UNSIGNED_BYTE,
-							data);
+							pixels);
+	}
+
+	void Texture::Uninit()
+	{
+		glDeleteTextures(1, &RendererID);
+
+		RendererID = 0;
+		Width  = 0;
+		Height = 0;
+	}
+
+	void Texture::Bind(uint32 textureSlot) const
+	{
+		glBindTextureUnit(textureSlot, RendererID);
+	}
+
+	void Texture::UnBind()
+	{
+		glBindTextures(GL_TEXTURE_2D, 1, 0);
+	}
+
+	void Texture::SetWrapMode(WrapMode wrapModeX, WrapMode wrapModeY)
+	{
+		WrapX = wrapModeX;
+		WrapY = wrapModeY;
+
+		glTextureParameteri(RendererID, GL_TEXTURE_WRAP_S, GLWrapMode(wrapModeX));
+		glTextureParameteri(RendererID, GL_TEXTURE_WRAP_T, GLWrapMode(wrapModeY));
+	}
+
+	void Texture::SetFilterMode(FilterMode filter)
+	{
+		Filter = filter;
+		glTextureParameteri(RendererID,
+							GL_TEXTURE_MAG_FILTER,
+							GLFilterMode(filter));
 	}
 
 	AssetLoadingData LoadTexture(const std::string& texturepath)
@@ -57,19 +103,14 @@ namespace Vision
 		int32 channelCount;
 
 		stbi_set_flip_vertically_on_load(true);
-		stbi_uc* data = stbi_load(texturepath.c_str(),
-								  &width,
-								  &height,
-								  &channelCount,
-								  0);
+		stbi_uc* pixels = stbi_load(texturepath.c_str(),
+								    &width,
+								    &height,
+								    &channelCount,
+								    0);
 
-		if (data)
+		if (pixels)
 		{
-			Texture* texture = new Texture;
-
-			texture->Width = width;
-			texture->Height = height;
-
 			PixelFormat pixelFormat;
 
 			if (channelCount == 1)
@@ -85,17 +126,13 @@ namespace Vision
 				pixelFormat = PixelFormat::RGBA;
 			}
 
-			InitTexture(texture,
-						  data,
-						  width,
-						  height,
-						  pixelFormat);
+			Texture* texture = new Texture(pixels, width, height, pixelFormat);
 
 			textureAsset.Memory = texture;
 			textureAsset.SizeInBytes = sizeof(Texture);
 			textureAsset.TotalSizeInBytes = sizeof(Texture) + (width * height * channelCount);
 
-			stbi_image_free(data);
+			stbi_image_free(pixels);
 		}
 
 		return textureAsset;
@@ -104,49 +141,6 @@ namespace Vision
 	void UnloadTexture(Asset* textureAsset)
 	{
 		Texture* texture = (Texture*)textureAsset->Memory;
-		UninitTexture(texture);
 		delete texture;
-	}
-
-	void UninitTexture(Texture* texture)
-	{
-		glDeleteTextures(1, &texture->RendererID);
-
-		// @(Harlequin): not sure if 0 is invalid in opnegl land or not
-		texture->RendererID = 0;
-		texture->Width  = 0;
-		texture->Height = 0;
-	}
-
-	void SetTextureWrapMode(Texture* texture, WrapMode wrapModeX, WrapMode wrapModeY)
-	{
-		texture->WrapX = wrapModeX;
-		texture->WrapY = wrapModeY;
-
-		glTextureParameteri(texture->RendererID,
-							GL_TEXTURE_WRAP_S,
-							GLWrapMode(wrapModeX));
-
-		glTextureParameteri(texture->RendererID,
-							GL_TEXTURE_WRAP_T,
-							GLWrapMode(wrapModeY));
-	}
-
-	void SetTextureFilterMode(Texture* texture, FilterMode filterMode)
-	{
-		texture->FilterMode = filterMode;
-		glTextureParameteri(texture->RendererID,
-							GL_TEXTURE_MAG_FILTER,
-							GLFilterMode(filterMode));
-	}
-
-	void BindTexture(const Texture* texture, uint32 textureSlot)
-	{
-		glBindTextureUnit(textureSlot, texture->RendererID);
-	}
-
-	void UnBindTexture(const Texture* texture)
-	{
-		glBindTextures(GL_TEXTURE_2D, 1, 0);
 	}
 }

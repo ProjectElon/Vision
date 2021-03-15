@@ -1,21 +1,18 @@
 #pragma once
 
+#include "Vision/Core/Common.h"
+#include "Vision/Entity/Scene.h"
+#include "Vision/IO/Assets.h"
+
 namespace Vision
 {
-    struct Scene;
-
     class SceneHierarchyPanel
     {
     public:
-        void SetActiveScene(AssetID scene);
+        AssetID ActiveSceneID = 0;
+        bool IsInteractable = false;
 
         void OnImGuiRender();
-
-        inline bool IsInteractable() { return m_IsInteractable; }
-
-    private:
-        AssetID m_ActiveScene = 0;
-        bool m_IsInteractable = false;
 
     private:
         void DrawEntity(Scene* scene, Entity entity);

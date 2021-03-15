@@ -1,52 +1,66 @@
 #include <cstdio>
-#include <Vision.h>
+#include <vector>
+#include <string>
+#include <fstream>
+#include <sstream>
 
 #include "Lexer.h"
 
-using namespace Vision;
-
-static std::vector<std::string> ParseMetaFiles(const char* metaFilesPath)
+struct InspectableParams
 {
-    FileStream handle = File::Open(metaFilesPath, FileMode::Read);
+    std::string Category     = "none";
+    bool HandleTypeSwitchCase = true;
+};
 
-    std::vector<std::string> metaFiles;
-
-    if (handle.IsOpen())
-    {
-        std::string line;
-
-        while (File::ReadLine(handle, line))
-        {
-            metaFiles.push_back(line);
-        }
-
-        File::Close(handle);
-    }
-    else
-    {
-        printf("unable to open file: %s\n", metaFilesPath);
-    }
-
-    return metaFiles;
-}
-
-std::vector<std::string> structNames;
-
-static void ParseMember(Lexer* lexer, Token* structName, Token* memberType)
+struct StructInfo
 {
+    std::string Name;
+    InspectableParams Params;
+};
+
+std::vector<StructInfo> structs;
+
+static void ParseMember(Lexer* lexer, Token* structName, Token* firstToken)
+{
+    bool isConst = false;
+    bool isStatic = false;
     bool isPointer = false;
     bool hasEqual = false;
     bool hasOpenBracket = false;
     bool hasCloseBracket = false;
 
+    Token memberType;
     Token arrayCountToken;
     Token identifierToken;
+
+    Token token = *firstToken;
+
+    while (true)
+    {
+        if (token.IsEquals("const"))
+        {
+            isConst = true;
+            memberType = lexer->GetNextToken();
+        }
+        else if (token.IsEquals("static"))
+        {
+            isStatic = true;
+            memberType = lexer->GetNextToken();
+        }
+        else
+        {
+            memberType = token;
+            break;
+        }
+
+        token = lexer->GetNextToken();
+    }
 
     bool parsing = true;
 
     while (parsing)
     {
-        Token token = GetNextToken(lexer);
+        Token token = lexer->GetNextToken();
 
         switch (token.Type)
         {
@@ -107,12 +121,11 @@ static void ParseMember(Lexer* lexer, Token* structName, Token* memberType)
         }
     }
 
-
     printf("\t{ \"%.*s\", MetaType_%.*s, offsetof(Vision::%.*s, %.*s), %.*s, %d, %d },\n",
            identifierToken.TextLength,
            identifierToken.Text,
-           memberType->TextLength,
-           memberType->Text,
+           memberType.TextLength,
+           memberType.Text,
            structName->TextLength,
            structName->Text,
            identifierToken.TextLength,
@@ -123,15 +136,19 @@ static void ParseMember(Lexer* lexer, Token* structName, Token* memberType)
            (hasOpenBracket && hasCloseBracket));
 }
 
-static void ParseStruct(Lexer* lexer)
+static void ParseStruct(Lexer* lexer, InspectableParams* params)
 {
-    Token structName = GetNextToken(lexer);
+    Token structName = lexer->GetNextToken();
 
-    structNames.push_back(std::string(structName.Text, structName.TextLength));
+    StructInfo structInfo;
+    structInfo.Name = std::string(structName.Text, structName.TextLength);
+    structInfo.Params = *params;
+
+    structs.push_back(structInfo);
 
     while (true)
     {
-        Token token = GetNextToken(lexer);
+        Token token = lexer->GetNextToken();
 
         if (token.Type == TokenType::OpenBrace)
         {
@@ -139,16 +156,16 @@ static void ParseStruct(Lexer* lexer)
         }
     }
 
-    printf("StructMember %.*sMembers[] = \n",
+    printf("static StructMember %.*sMembers[] = \n",
             structName.TextLength,
             structName.Text);
     printf("{\n");
 
     while (true)
     {
-        Token token = GetNextToken(lexer);
+        Token token = lexer->GetNextToken();
 
-        if (token.Type == TokenType::CloseBrace)
+        if (token.Type == TokenType::CloseBrace || token.IsEquals("Ignore"))
         {
             break;
         }
@@ -161,78 +178,129 @@ static void ParseStruct(Lexer* lexer)
     printf("};\n\n");
 }
 
-static void ParseInspectableParams(Lexer* lexer)
+static InspectableParams ParseInspectableParams(Lexer* lexer)
 {
+    InspectableParams params;
+
+    bool hasCategory = false;
+    bool hasHandleTypeSwitchCase = false;
+
     while (true)
     {
-        Token token = GetNextToken(lexer);
+        Token token = lexer->GetNextToken();
+
+        if (token.IsEquals("category"))
+        {
+            hasCategory = true;
+        }
+        else if (token.IsEquals("handle"))
+        {
+            hasHandleTypeSwitchCase = true;
+        }
+        else
+        {
+            switch (token.Type)
+            {
+                case TokenType::String:
+                {
+                    params.Category = std::string(token.Text, token.TextLength);
+                }
+                break;
+
+                case TokenType::Bool:
+                {
+                    std::stringstream ss(std::string(token.Text, token.TextLength));
+                    ss >> params.HandleTypeSwitchCase;
+                }
+                break;
+            }
+        }
 
         if (token.Type == TokenType::CloseParen || token.Type == TokenType::EndOfStream)
         {
             break;
         }
     }
+
+    return params;
 }
 
 static void ParseInspectable(Lexer* lexer)
 {
-    Token token = GetNextToken(lexer);
+    Token token = lexer->GetNextToken();
 
     if (token.Type == TokenType::OpenParen)
     {
-        ParseInspectableParams(lexer);
+        InspectableParams params = ParseInspectableParams(lexer);
 
-        token = GetNextToken(lexer);
+        token = lexer->GetNextToken();
 
-        if (IsTokenEquals(&token, "struct"))
+        if (token.IsEquals("struct"))
         {
-            ParseStruct(lexer);
+            ParseStruct(lexer, &params);
         }
         else
         {
-            printf("unsupported type");
             lexer->At -= token.TextLength;
         }
     }
-    else
-    {
-        printf("missing parentheses. \n");
-    }
 }
 
-int main()
+std::string GetFileName(const std::string& filepath, bool includeExtension)
 {
-    using namespace Vision;
+    int dotIndex = filepath.rfind(".");
 
-    const char* metaFilesPath = "../meta_files.txt";
-    std::string metaOutputPath = "../Vision/src/Vision/Meta/";
-
-    std::vector<std::string> metaFiles = ParseMetaFiles(metaFilesPath);
-
-    for (uint32 fileIndex = 0; fileIndex < metaFiles.size(); ++fileIndex)
+    // not a path to a file
+    if (dotIndex == -1)
     {
-        FileStream handle = File::Open("../" + metaFiles[fileIndex], FileMode::Read);
+        return std::string();
+    }
+
+    int lastSlash = filepath.find_last_of("/\\");
+
+    int start = lastSlash + 1;
+    int count = filepath.length() - lastSlash + 1;
+
+    if (!includeExtension)
+    {
+        count = dotIndex - lastSlash - 1;
+    }
+
+    return filepath.substr(start, count);
+}
+
+int main(int argCount, char* args[])
+{
+    std::string metaOutputPath = std::string(args[1]);
+
+    for (unsigned int fileIndex = 2; fileIndex < argCount; ++fileIndex)
+    {
+        std::string path = std::string(args[fileIndex]);
+        FILE* handle = fopen((std::string("Vision/src/") + path).c_str(), "r");
 
         std::string contents;
 
-        if (handle.IsOpen())
+        if (handle)
         {
-            printf("parsing file: %s\n", metaFiles[fileIndex].c_str());
-            contents = File::ReadContents(handle);
-            File::Close(handle);
-        }
-        else
-        {
-            printf("unable to open file: %s\n", metaFiles[fileIndex].c_str());
+            fseek(handle, 0, SEEK_END);
+            size_t sizeInBytes = ftell(handle);
+            fseek(handle, 0, SEEK_SET);
+
+            contents.resize(sizeInBytes + 1);
+            fread(contents.data(), sizeInBytes, 1, handle);
+            contents[sizeInBytes] = '\0';
+
+            fclose(handle);
         }
 
-        std::string outputFileName = FileSystem::GetFileName(metaFiles[fileIndex], false);
+        std::string outputFileName = GetFileName(path, false);
         std::string outputFilePath = metaOutputPath + outputFileName + "Meta.h";
 
         freopen(outputFilePath.c_str(), "w", stdout);
 
         printf("#pragma once\n\n");
         printf("#include \"Vision/Meta/Meta.h\"\n\n");
+        printf("#include \"%s\"\n\n", path.c_str());
 
         Lexer lexer;
         lexer.At = &contents[0];
@@ -241,13 +309,13 @@ int main()
 
         while (parsing)
         {
-            Token token = GetNextToken(&lexer);
+            Token token = lexer.GetNextToken();
 
             switch (token.Type)
             {
                 case TokenType::Identifier:
                 {
-                    if (IsTokenEquals(&token, "Inspect"))
+                    if (token.IsEquals("Inspect"))
                     {
                         ParseInspectable(&lexer);
                     }
@@ -263,7 +331,8 @@ int main()
         }
     }
 
-    freopen("../Vision/src/Vision/Meta/Meta.h", "w", stdout);
+    std::string outputFilePath = metaOutputPath + std::string("Meta.h");
+    FILE* handle = fopen(outputFilePath.c_str(), "w");
 
     const char* basicTypes[] =
     {
@@ -281,22 +350,22 @@ int main()
         "float64"
     };
 
-    printf("#pragma once\n\n");
-    printf("#include \"Vision/Core/Common.h\"\n\n");
+    fprintf(handle, "#pragma once\n\n");
+    fprintf(handle, "#include \"Vision/Core/Common.h\"\n\n");
 
-    printf("enum MetaType\n{\n");
+    fprintf(handle, "enum MetaType\n{\n");
 
-    for (uint32 typeIndex = 0; typeIndex < VnArrayCount(basicTypes); ++typeIndex)
+    for (int typeIndex = 0; typeIndex < sizeof(basicTypes) / sizeof(basicTypes[0]); ++typeIndex)
     {
-        printf("\tMetaType_%s,\n", basicTypes[typeIndex]);
+        fprintf(handle, "\tMetaType_%s,\n", basicTypes[typeIndex]);
     }
 
-    for (auto& structName : structNames)
+    for (auto& structInfo : structs)
     {
-        printf("\tMetaType_%.*s,\n", structName.length(), structName.c_str());
+        fprintf(handle, "\tMetaType_%.*s,\n", structInfo.Name.length(), structInfo.Name.c_str());
     }
 
-    printf("};\n\n");
+    fprintf(handle, "};\n\n");
 
     const char* structMemberString = "struct StructMember\n"
                                      "{\n"
@@ -307,5 +376,30 @@ int main()
                                      "\tbool        IsPointer;\n"
                                      "\tbool        IsArray;\n"
                                      "};\n";
-    printf("%s\n", structMemberString);
+
+    fprintf(handle, "%s\n", structMemberString);
+
+    for (int fileIndex = 2; fileIndex < argCount; ++fileIndex)
+    {
+        std::string filePath = args[fileIndex];
+        std::string fileName = GetFileName(filePath, false);
+        fprintf(handle, "#include \"Vision/Meta/%sMeta.h\"\n", fileName.c_str());
+    }
+
+    fprintf(handle, "\n#define HandleMetaTypeCases(MemberPointer) \\\n");
+
+    for (auto& structInfo : structs)
+    {
+        if (structInfo.Params.HandleTypeSwitchCase)
+        {
+            fprintf(handle, "\tcase MetaType_%.*s: InspectStruct(%.*sMembers, (sizeof(%.*sMembers) / sizeof(%.*sMembers[0])), (%.*s*)MemberPointer, member->Name, memberFn, depth + 1); break; \\\n",
+                structInfo.Name.length(), structInfo.Name.c_str(),
+                structInfo.Name.length(), structInfo.Name.c_str(),
+                structInfo.Name.length(), structInfo.Name.c_str(),
+                structInfo.Name.length(), structInfo.Name.c_str(),
+                structInfo.Name.length(), structInfo.Name.c_str());
+        }
+    }
+
+    return 0;
 }

@@ -63,10 +63,9 @@ namespace Vision
 
             Tags.insert_or_assign(tag, entity);
 
-            TagComponent tagComponent;
-            strcpy(tagComponent.Tag, tag.c_str());
-
-            AddComponents(entity, tagComponent, components...);
+            TagComponent t;
+            strcpy(t.Tag, tag.c_str());
+            AddComponents(entity, t, components...);
 
             return entity;
         }

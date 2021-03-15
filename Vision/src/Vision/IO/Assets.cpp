@@ -9,8 +9,6 @@
 
 namespace Vision
 {
-    AssetsStorage Assets::AssetsStorage;
-
     void Assets::Init()
     {
         AssetsStorage.Assets.resize(1);
@@ -365,4 +363,6 @@ namespace Vision
             }
         }
     }
+
+    AssetsStorage Assets::AssetsStorage;
 }

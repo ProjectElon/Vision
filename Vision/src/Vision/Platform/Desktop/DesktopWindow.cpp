@@ -4,6 +4,8 @@
 #include "Vision/Events/ApplicationEvent.h"
 #include "Vision/Events/KeyEvent.h"
 #include "Vision/Events/MouseEvent.h"
+#include "Vision/Core/Application.h"
+#include "Vision/Core/Vars.h"
 
 #include <GLFW/glfw3.h>
 
@@ -17,26 +19,25 @@ namespace Vision
 		VnCoreError("GLFW Error {0} : {1}", error, description);
 	}
 
-	void OpenWindow(Window* window,
-					const std::string& title,
-					uint32 width,
-					uint32 height,
-					EventCallbackFn eventCallback,
-					WindowMode mode,
-					int32 windowX,
-					int32 windowY)
+	void Window::Open(const char* title,
+					  uint32 width,
+					  uint32 height,
+					  EventCallbackFn eventCallback,
+					  bool fullScreen,
+					  int32 windowX,
+					  int32 windowY)
 	{
-		window->Title = title;
+		Vision::Settings& settings = Application::Get().Vars.Settings;
 
-		window->Width  = width;
-		window->Height = height;
+		settings.WindowTitle  = title;
+		settings.WindowWidth  = width;
+		settings.WindowHeight = height;
+		settings.WindowX 	  = windowX;
+		settings.WindowY 	  = windowY;
+		settings.FullScreen   = fullScreen;
 
-		window->WindowX = windowX;
-		window->WindowY = windowY;
-
-		window->Mode = mode;
-
-		window->EventCallback = eventCallback;
+		EventCallback = eventCallback;
+		Settings 	  = &settings;
 
 		if (InternalWindowCount == 0)
 		{
@@ -71,57 +72,50 @@ namespace Vision
 							   &monitorWidth,
 							   &monitorHeight);
 
-		switch (mode)
+		if (fullScreen)
 		{
-			case WindowMode::Windowed:
-			{
-				window->Handle = glfwCreateWindow((int32)width,
-												  (int32)height,
-												  title.c_str(),
-												  nullptr,
-												  nullptr);
+			Handle = glfwCreateWindow(static_cast<int32>(width),
+											  static_cast<int32>(height),
+											  title,
+											  primaryMonitor,
+											  nullptr);
+		}
+		else
+		{
+			Handle = glfwCreateWindow(static_cast<int32>(width),
+											  static_cast<int32>(height),
+											  title,
+											  nullptr,
+											  nullptr);
 
-				int32 centerX = montiorX + (monitorWidth - width) / 2;
-				int32 centerY = montiorY + (monitorHeight - height) / 2;
+			int32 centerX = montiorX + (monitorWidth - width) / 2;
+			int32 centerY = montiorY + (monitorHeight - height) / 2;
 
-				SetWindowPosition(window, centerX, centerY);
-			}
-			break;
-
-			case WindowMode::Fullscreen:
-			{
-				window->Handle = glfwCreateWindow((int32)width,
-												  (int32)height,
-												  title.c_str(),
-												  primaryMonitor,
-												  nullptr);
-			}
-			break;
+			SetPosition(centerX, centerY);
 		}
 
 		++InternalWindowCount;
 
-		glfwSetWindowUserPointer((GLFWwindow*)(window->Handle), window);
+		glfwSetWindowUserPointer((GLFWwindow*)(Handle), this);
 
-		glfwSetWindowCloseCallback((GLFWwindow*)(window->Handle), [](GLFWwindow* window)
+		glfwSetWindowCloseCallback((GLFWwindow*)(Handle), [](GLFWwindow* window)
 		{
 			Window& userWindow = *(Window*)glfwGetWindowUserPointer(window);
 			WindowCloseEvent event;
 			userWindow.EventCallback(event);
 		});
 
-		glfwSetWindowSizeCallback((GLFWwindow*)(window->Handle), [](GLFWwindow* window, int32 width, int32 height)
+		glfwSetWindowSizeCallback((GLFWwindow*)(Handle), [](GLFWwindow* window, int32 width, int32 height)
 		{
 			Window& userWindow = *(Window*)glfwGetWindowUserPointer(window);
-
-			userWindow.Width  = width;
-			userWindow.Height = height;
+			userWindow.Settings->WindowWidth = width;
+			userWindow.Settings->WindowHeight = height;
 
 			WindowResizeEvent event(width, height);
 			userWindow.EventCallback(event);
 		});
 
-		glfwSetWindowFocusCallback((GLFWwindow*)window->Handle, [](GLFWwindow* window, int32 focused)
+		glfwSetWindowFocusCallback((GLFWwindow*)Handle, [](GLFWwindow* window, int32 focused)
 		{
 			Window& userWindow = *(Window*)glfwGetWindowUserPointer(window);
 
@@ -137,21 +131,21 @@ namespace Vision
 			}
 		});
 
-		glfwSetWindowPosCallback((GLFWwindow*)(window->Handle), [](GLFWwindow* window, int32 windowX, int32 windowY)
+		glfwSetWindowPosCallback((GLFWwindow*)(Handle), [](GLFWwindow* window, int32 windowX, int32 windowY)
 		{
 			Window& userWindow = *(Window*)glfwGetWindowUserPointer(window);
 
-			userWindow.WindowX = windowX;
-			userWindow.WindowY = windowY;
+			userWindow.Settings->WindowX = windowX;
+			userWindow.Settings->WindowY = windowY;
 
 			WindowMovedEvent event(windowX, windowY);
 			userWindow.EventCallback(event);
 		});
 
-		glfwSetWindowIconifyCallback((GLFWwindow*)(window->Handle), [](GLFWwindow* window, int32 iconified)
+		glfwSetWindowIconifyCallback((GLFWwindow*)(Handle), [](GLFWwindow* window, int32 iconified)
 		{
 			Window& userWindow = *(Window*)glfwGetWindowUserPointer(window);
-			userWindow.Maximized = !iconified;
+			userWindow.Settings->IsWindowMaximized = !iconified;
 
 			if (iconified)
 			{
@@ -165,10 +159,10 @@ namespace Vision
 			}
 		});
 
-		glfwSetWindowMaximizeCallback((GLFWwindow*)window->Handle, [](GLFWwindow* window, int32 maximized)
+		glfwSetWindowMaximizeCallback((GLFWwindow*)Handle, [](GLFWwindow* window, int32 maximized)
 		{
 			Window& userWindow = *(Window*)glfwGetWindowUserPointer(window);
-			userWindow.Maximized = maximized;
+			userWindow.Settings->IsWindowMaximized = maximized;
 
 			if (maximized)
 			{
@@ -182,7 +176,7 @@ namespace Vision
 			}
 		});
 
-		glfwSetKeyCallback((GLFWwindow*)window->Handle, [](GLFWwindow* window, int32 key, int32 scancode, int32 action, int32 mods)
+		glfwSetKeyCallback((GLFWwindow*)Handle, [](GLFWwindow* window, int32 key, int32 scancode, int32 action, int32 mods)
 		{
 			Window& userWindow = *(Window*)(glfwGetWindowUserPointer(window));
 
@@ -211,7 +205,7 @@ namespace Vision
 			}
 		});
 
-		glfwSetCharCallback((GLFWwindow*)window->Handle, [](GLFWwindow* window, uint32 codepoint)
+		glfwSetCharCallback((GLFWwindow*)Handle, [](GLFWwindow* window, uint32 codepoint)
 		{
 			Window& userWindow = *(Window*)glfwGetWindowUserPointer(window);
 
@@ -219,7 +213,7 @@ namespace Vision
 			userWindow.EventCallback(event);
 		});
 
-		glfwSetMouseButtonCallback((GLFWwindow*)window->Handle, [](GLFWwindow* window, int32 button, int32 action, int32 mods)
+		glfwSetMouseButtonCallback((GLFWwindow*)Handle, [](GLFWwindow* window, int32 button, int32 action, int32 mods)
 		{
 			Window& userWindow = *(Window*)glfwGetWindowUserPointer(window);
 
@@ -241,7 +235,7 @@ namespace Vision
 			}
 		});
 
-		glfwSetCursorPosCallback((GLFWwindow*)window->Handle, [](GLFWwindow* window, double xpos, double ypos)
+		glfwSetCursorPosCallback((GLFWwindow*)Handle, [](GLFWwindow* window, double xpos, double ypos)
 		{
 			Window& userWindow = *(Window*)glfwGetWindowUserPointer(window);
 
@@ -249,7 +243,7 @@ namespace Vision
 			userWindow.EventCallback(event);
 		});
 
-		glfwSetScrollCallback((GLFWwindow*)window->Handle, [](GLFWwindow* window, double xoffset, double yoffset)
+		glfwSetScrollCallback((GLFWwindow*)Handle, [](GLFWwindow* window, double xoffset, double yoffset)
 		{
 			Window& userWindow = *(Window*)glfwGetWindowUserPointer(window);
 
@@ -257,7 +251,7 @@ namespace Vision
 			userWindow.EventCallback(event);
 		});
 
-		glfwSetCursorEnterCallback((GLFWwindow*)window->Handle, [](GLFWwindow* window, int entered)
+		glfwSetCursorEnterCallback((GLFWwindow*)Handle, [](GLFWwindow* window, int entered)
 		{
 			Window& userWindow = *(Window*)glfwGetWindowUserPointer(window);
 
@@ -274,9 +268,9 @@ namespace Vision
 		});
 	}
 
-	void CloseWindow(Window* window)
+	void Window::Close()
 	{
-		glfwDestroyWindow((GLFWwindow*)window->Handle);
+		glfwDestroyWindow((GLFWwindow*)Handle);
 
 		--InternalWindowCount;
 
@@ -286,104 +280,99 @@ namespace Vision
 		}
 	}
 
-	void PollEvents()
+	void Window::PollEvents()
 	{
 		glfwPollEvents();
 	}
 
-	void SetWindowTitle(Window* window,
-						const std::string& title)
+	void Window::SetTitle(const char* title)
 	{
-		glfwSetWindowTitle((GLFWwindow*)window->Handle,
-						   title.c_str());
+		glfwSetWindowTitle((GLFWwindow*)Handle, title);
+		Settings->WindowTitle = title;
 	}
 
-	void SetWindowSize(Window* window,
-					   uint32 width,
-					   uint32 height)
+	void Window::SetSize(uint32 width,
+					     uint32 height)
 	{
-		VnCoreAssert(width > 0 && height > 0, "invalid window size");
-		glfwSetWindowSize((GLFWwindow*)window->Handle,
+		VnCoreAssert(width != 0 && height != 0, "invalid window size");
+
+		Settings->WindowWidth = width;
+		Settings->WindowHeight = height;
+
+		glfwSetWindowSize((GLFWwindow*)Handle,
 						  (int32)width,
 						  (int32)height);
 	}
 
-	void SetWindowPosition(Window* window,
-						   int32 windowX,
-						   int32 windowY)
+	void Window::SetPosition(int32 windowX,
+						     int32 windowY)
 	{
-		window->WindowX = windowX;
-		window->WindowY = windowY;
-		glfwSetWindowPos((GLFWwindow*)window->Handle,
+		Settings->WindowX = windowX;
+		Settings->WindowY = windowY;
+
+		glfwSetWindowPos((GLFWwindow*)Handle,
 						 windowX,
 						 windowY);
 	}
 
-	void MaximizeWindow(Window* window)
+	void Window::Maximize()
 	{
-		glfwMaximizeWindow((GLFWwindow*)window->Handle);
+		glfwMaximizeWindow((GLFWwindow*)Handle);
 	}
 
-	void MinimizeWindow(Window* window)
+	void Window::Minimize()
 	{
-		glfwIconifyWindow((GLFWwindow*)window->Handle);
+		glfwIconifyWindow((GLFWwindow*)Handle);
 	}
 
-	void SetWindowMode(Window* window, WindowMode mode)
+	void Window::SetMode(bool fullScreen)
 	{
-		if (window->Mode == mode)
+		if (Settings->FullScreen == fullScreen)
 		{
-			VnCoreInfo("window mode is already set to {0}", (mode == WindowMode::Windowed) ? "Windowed" : "Fullscreen");
+			VnCoreInfo("window mode is already set to {0}", (fullScreen) ? "fullscreen" : "windowed");
 			return;
 		}
 
-		window->Mode = mode;
+		Settings->FullScreen = fullScreen;
 
 		GLFWmonitor* monitor = glfwGetPrimaryMonitor();
 		const GLFWvidmode* videoMode = glfwGetVideoMode(monitor);
 
-		switch (mode)
+		if (fullScreen)
 		{
-			case WindowMode::Windowed:
-			{
-				glfwSetWindowMonitor((GLFWwindow*)window->Handle,
-									 nullptr,
-									 0,
-									 0,
-									 window->Width,
-									 window->Height,
-									 videoMode->refreshRate);
+			glfwSetWindowMonitor((GLFWwindow*)Handle,
+								 monitor,
+								 0,
+								 0,
+								 Settings->WindowWidth,
+								 Settings->WindowHeight,
+								 videoMode->refreshRate);
+		}
+		else
+		{
+			glfwSetWindowMonitor((GLFWwindow*)Handle,
+								 nullptr,
+								 0,
+								 0,
+								 Settings->WindowWidth,
+								 Settings->WindowHeight,
+								 videoMode->refreshRate);
 
-				int32 montiorX;
-				int32 montiorY;
-				int32 monitorWidth;
-				int32 monitorHeight;
+			int32 montiorX;
+			int32 montiorY;
+			int32 monitorWidth;
+			int32 monitorHeight;
 
-				glfwGetMonitorWorkarea(monitor,
-									   &montiorX,
-									   &montiorY,
-									   &monitorWidth,
-									   &monitorHeight);
+			glfwGetMonitorWorkarea(monitor,
+								   &montiorX,
+								   &montiorY,
+								   &monitorWidth,
+								   &monitorHeight);
 
-				int32 centerX = montiorX + (monitorWidth - window->Width) / 2;
-				int32 centerY = montiorY + (monitorHeight - window->Height) / 2;
+			int32 centerX = montiorX + (monitorWidth - Settings->WindowWidth) / 2;
+			int32 centerY = montiorY + (monitorHeight - Settings->WindowHeight) / 2;
 
-				SetWindowPosition(window, centerX, centerY);
-			}
-			break;
-
-			case WindowMode::Fullscreen:
-			{
-				glfwSetWindowMonitor((GLFWwindow*)window->Handle,
-									 monitor,
-									 0,
-									 0,
-									 window->Width,
-									 window->Height,
-									 videoMode->refreshRate);
-
-			}
-			break;
+			SetPosition(centerX, centerY);
 		}
 	}
 }

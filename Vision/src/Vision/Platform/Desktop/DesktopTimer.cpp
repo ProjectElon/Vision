@@ -9,20 +9,20 @@ namespace Vision
 {
 	void Timer::Start()
 	{
-		if (Ticking == false)
+		if (!Ticking)
 		{
 			Ticking = true;
-			m_StartTimePoint = glfwGetTime();
+			StartTimePoint = glfwGetTime();
 		}
 	}
-	
+
 	void Timer::Stop()
 	{
 		if (Ticking)
 		{
 			Ticking = false;
-			m_EndTimePoint = glfwGetTime();
-			ElapsedTime = m_EndTimePoint - m_StartTimePoint;
+			EndTimePoint = glfwGetTime();
+			ElapsedTime = EndTimePoint - StartTimePoint;
 		}
 	}
 }

@@ -98,6 +98,12 @@ namespace Vision
 		                       const glm::vec4& color = { 1.0f, 1.0f, 1.0f, 1.0f },
 							   int32 entityIndex = 0);
 
+		static void DrawString(BitmapFont* font,
+		                       const std::string& text,
+		                       const glm::vec3& position,
+		                       const glm::vec4& color = { 1.0f, 1.0f, 1.0f, 1.0f },
+		                       int32 entityIndex = 0);
+
 	private:
 		static uint32 AssginTextureSlot(const Texture* texture);
 

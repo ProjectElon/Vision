@@ -6,6 +6,8 @@
 #include "Vision/Core/Application.h"
 #include "Vision/Core/Layer.h"
 #include "Vision/Core/LayerStack.h"
+#include "Vision/Core/Vars.h"
+#include "Vision/Core/Lexer.h"
 /*--------------------------------*/
 
 /*----------   Events   ----------*/

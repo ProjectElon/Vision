@@ -19,8 +19,6 @@ namespace Vision
 										   const void* userParam);
 #endif
 
-	Window* Renderer::RenderTargetWindow;
-
 	void Renderer::Init(Window* renderTargetWindow)
 	{
 		RenderTargetWindow = renderTargetWindow;
@@ -72,6 +70,8 @@ namespace Vision
 							   uint32 width,
 							   uint32 height)
 	{
+		ViewportWidth = width;
+		ViewportHeight = height;
 		glViewport(x, y, width, height);
 	}
 
@@ -145,6 +145,10 @@ namespace Vision
 			// case GL_DEBUG_SEVERITY_NOTIFICATION: VnCoreTrace(message);     break;
 		}
 	}
+
+	Window* Renderer::RenderTargetWindow;
+	uint32 Renderer::ViewportWidth;
+	uint32 Renderer::ViewportHeight;
 
 #endif
 }

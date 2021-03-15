@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Vision/Events/Event.h"
+#include "Vision/Core/Vars.h"
 #include "Vision/Events/ApplicationEvent.h"
 #include "Vision/Events/KeyEvent.h"
 #include "Vision/Events/MouseEvent.h"
@@ -14,9 +15,20 @@ namespace Vision
 	class Application
 	{
 	public:
+		Vision::Window Window;
+		Vision::Vars Vars;
+
+		Vision::ImGuiLayer ImGuiLayer;
+
+		Vision::LayerStack LayerStack;
+		Timer FrameTimer;
+
+		bool Running   = true;
+		bool Minimized = false;
+
 		Application();
 		virtual ~Application();
-		
+
 		void Run();
 
 		void OnEvent(Event& e);
@@ -25,11 +37,11 @@ namespace Vision
 
 		void Close();
 
-		inline Window& GetWindow() { return m_Window; }
-		inline bool IsRunning() const { return m_Running; }
+		inline static Application& Get()
+		{
+			return *Instance;
+		}
 
-		inline static Application& Get() { return *s_Instance; }
-				
 	private:
 		bool OnWindowResize(WindowResizeEvent& e);
 		bool OnWindowClose(WindowCloseEvent& e);
@@ -37,18 +49,7 @@ namespace Vision
 		bool OnWindowRestored(WindowRestoredEvent& e);
 
 	private:
-		Window m_Window;
-
-		ImGuiLayer* m_ImGuiLayer;
-
-		LayerStack m_LayerStack;
-		Timer m_FrameTimer;
-
-		bool m_Running   = true;
-		bool m_Minimized = false;
-
-	private:
-		static Application* s_Instance;
+		static Application* Instance;
 	};
 
 	/* To be defined in Client */

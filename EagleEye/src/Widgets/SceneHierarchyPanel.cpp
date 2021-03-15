@@ -1,25 +1,22 @@
-#include <Vision.h>
 #include "SceneHierarchyPanel.h"
+#include "Vision/IO/FileSystem.h"
+
+
 #include <imgui.h>
 
 namespace Vision
 {
-	void SceneHierarchyPanel::SetActiveScene(AssetID scene)
-	{
-		m_ActiveScene = scene;
-	}
-
 	void SceneHierarchyPanel::OnImGuiRender()
 	{
 		EditorState& editorState = Scene::EditorState;
 
 		ImGui::Begin("Scene Hierarchy");
 
-		m_IsInteractable = ImGui::IsWindowFocused() && ImGui::IsWindowHovered();
+		IsInteractable = ImGui::IsWindowFocused() && ImGui::IsWindowHovered();
 
-		if (m_ActiveScene)
+		if (ActiveSceneID)
 		{
-			Scene* scene = Assets::GetScene(m_ActiveScene);
+			Scene* scene = Assets::GetScene(ActiveSceneID);
 
 			// Deselect Entity
 			{
@@ -54,7 +51,7 @@ namespace Vision
 
 			// Drawing Entites
 			{
-				const Asset& sceneAsset = Assets::GetAsset(m_ActiveScene);
+				const Asset& sceneAsset = Assets::GetAsset(ActiveSceneID);
 				std::string sceneName = FileSystem::GetFileName(sceneAsset.Path, false);
 				std::string sceneText = sceneName + " (" + std::to_string(scene->EntityCount) + "/" + std::to_string(scene->MaxEntityCount) + ")";
 

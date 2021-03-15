@@ -5,7 +5,6 @@
 #include <imgui.h>
 #include <glm/gtc/matrix_transform.hpp>
 
-
 #include <algorithm>
 #include <ImGuizmo.h>
 
@@ -13,9 +12,9 @@ namespace Vision
 {
 	EditorLayer::EditorLayer()
 		: Layer("Editor")
+		, Menubar(this)
+		, Dialog(this)
 	{
-		Window& window = Application::Get().GetWindow();
-		SetWindowTitle(&window, "Eagle Eye");
 		Renderer::SetVSync(true);
 	}
 
@@ -25,11 +24,34 @@ namespace Vision
 
 	void EditorLayer::OnAttach()
 	{
-		LoadSettings();
-
 		using namespace Vision;
 
+		Vars& vars = Application::Get().Vars;
+		vars.Load();
+
+		std::string scenePath = vars.Settings.ScenePath.Text;
+
+		if (scenePath != "none" && FileSystem::FileExists(scenePath))
+		{
+			ActiveSceneID = Assets::RequestAsset(scenePath);
+			SceneHierarchyPanel.ActiveSceneID = ActiveSceneID;
+			InspectorPanel.ActiveSceneID = ActiveSceneID;
+			SceneViewPanel.ActiveSceneID = ActiveSceneID;
+		}
+
+		Window& window = Application::Get().Window;
+
+		window.SetTitle(vars.Settings.WindowTitle.Text);
+		window.SetPosition(vars.Settings.WindowX, vars.Settings.WindowY);
+		window.SetSize(vars.Settings.WindowWidth, vars.Settings.WindowHeight);
+
+		if (vars.Settings.IsWindowMaximized)
+		{
+			window.Maximize();
+		}
+
 		FrameBufferAttachmentSpecification SceneBufferSpecification;
+
 		SceneBufferSpecification.Attachments =
 		{
 			FrameBufferTextureFormat::RGBA8,
@@ -37,36 +59,54 @@ namespace Vision
 			FrameBufferTextureFormat::Depth24Stencil8
 		};
 
-		InitFrameBuffer(&m_SceneFrameBuffer, SceneBufferSpecification, 1280, 720);
-		m_SceneViewPanel.FrameBuffer = &m_SceneFrameBuffer;
+		SceneFrameBuffer.Init(SceneBufferSpecification,
+							  vars.Settings.ViewportWidth,
+							  vars.Settings.ViewportHeight);
+
+		SceneViewPanel.FrameBuffer = &SceneFrameBuffer;
 
 		EditorState& editorState = Scene::EditorState;
-		m_SceneCamera = &editorState.SceneCamera;
+		SceneCamera = &editorState.SceneCamera;
 
-		float32 aspectRatio = 1.778f;
-		m_SceneCamera->Init(aspectRatio, 45.0f);
+		float32 aspectRatio = static_cast<float32>(vars.Settings.ViewportWidth) /
+							  static_cast<float32>(vars.Settings.ViewportHeight);
 
-		m_SpriteShader = Assets::RequestAsset("Assets/Shaders/Sprite.glsl");
-		m_FontShader = Assets::RequestAsset("Assets/Shaders/Font.glsl");
+		SceneCamera->Init(aspectRatio, 45.0f);
 
-		m_FiraCodeFont = Assets::RequestAsset("Assets/Fonts/FiraCode-Regular.ttf");
-		BitmapFont* firaCodeFont = Assets::GetBitmapFont(m_FiraCodeFont);
-		SetFontSize(firaCodeFont, 72);
+		SpriteShaderID = Assets::RequestAsset("Assets/Shaders/Sprite.glsl");
+		FontShaderID = Assets::RequestAsset("Assets/Shaders/Font.glsl");
+
+		FiraCodeFontID = Assets::RequestAsset("Assets/Fonts/FiraCode-Regular.ttf");
+		DebugFontID = Assets::RequestAsset("Assets/Fonts/TitilliumWeb-Regular.ttf");
+
+		BitmapFont* firaCodeFont = Assets::GetBitmapFont(FiraCodeFontID);
+		firaCodeFont->SetSize(vars.Settings.FontSize);
+
+		BitmapFont* debugFont = Assets::GetBitmapFont(DebugFontID);
+		debugFont->SetSize(vars.Settings.DebugFontSize);
 
 		WatchDirectory("Assets", VnBindWatcherFn(EditorLayer::OnFileChanged));
-
-		m_Menubar.SetEditor(this);
-		m_Dialog.SetEditor(this);
 	}
 
 	void EditorLayer::OnDetach()
 	{
-		SaveSettings();
+		Vars& vars = Application::Get().Vars;
 
-		if (m_ActiveScene)
+		std::string activeScenePath = "none";
+
+		if (ActiveSceneID)
 		{
 			SaveActiveScene();
+
+			const Asset& activeSceneAsset = Assets::GetAsset(ActiveSceneID);
+			activeScenePath = activeSceneAsset.Path;
 		}
+
+		vars.Settings.ScenePath = activeScenePath.c_str();
+		vars.Settings.ViewportWidth = static_cast<uint32>(SceneViewPanel.ViewportSize.x);
+		vars.Settings.ViewportHeight = static_cast<uint32>(SceneViewPanel.ViewportSize.y);
+
+		vars.Save();
 	}
 
 	void EditorLayer::OnFileChanged(FileWatcherAction action,
@@ -112,32 +152,32 @@ namespace Vision
 	{
 		using namespace Vision;
 
-		if (m_SceneViewPanel.IsInteractable)
+		if (SceneViewPanel.IsInteractable)
 		{
 			bool isControlDown = Input::IsKeyDown(Key::LeftControl) ||
 								 Input::IsKeyDown(Key::RightControl);
 
-			if (m_ActiveScene && !isControlDown)
+			if (ActiveSceneID && !isControlDown)
 			{
-				m_SceneCamera->OnUpdate(deltaTime);
+				SceneCamera->OnUpdate(deltaTime);
 			}
 		}
 
-		BindFrameBuffer(&m_SceneFrameBuffer);
+		SceneFrameBuffer.Bind();
 
-		if (m_ActiveScene)
+		if (ActiveSceneID)
 		{
 			float32 values[] = { 0.1f, 0.1f, 0.1f, 1.0f };
-			ClearColorAttachment(&m_SceneFrameBuffer, 0, values);
+			SceneFrameBuffer.ClearColorAttachment(0, values);
 
 			int value = -1;
-			ClearColorAttachment(&m_SceneFrameBuffer, 1, &value);
+			SceneFrameBuffer.ClearColorAttachment(1, &value);
 
-			Renderer2D::BeginScene(m_SceneCamera->View,
-								   m_SceneCamera->Projection,
-								   Assets::GetShader(m_SpriteShader));
+			Renderer2D::BeginScene(SceneCamera->View,
+								   SceneCamera->Projection,
+								   Assets::GetShader(SpriteShaderID));
 
-			Scene* scene = Assets::GetScene(m_ActiveScene);
+			Scene* scene = Assets::GetScene(ActiveSceneID);
 
 			scene->EachGroup<TransformComponent, SpriteRendererComponent>([](Entity entity, auto& transform, auto& sprite)
 			{
@@ -152,46 +192,58 @@ namespace Vision
 			});
 
 			Renderer2D::EndScene();
-			
+
 			glm::mat4 ortho = glm::ortho(0.0f,
-			                             (float32)m_SceneFrameBuffer.Width,
-									     (float32)m_SceneFrameBuffer.Height,
+			                             static_cast<float32>(SceneFrameBuffer.Width),
+									     static_cast<float32>(SceneFrameBuffer.Height),
 									     0.0f);
 
 			Renderer2D::BeginScene(glm::mat4(1.0f),
 								   ortho,
-								   Assets::GetShader(m_FontShader));
+								   Assets::GetShader(FontShaderID));
 
-			Renderer2D::DrawString(Assets::GetBitmapFont(m_FiraCodeFont),
+			Renderer2D::DrawString(Assets::GetBitmapFont(FiraCodeFontID),
 								   "Vision Engine!",
-									glm::vec2(10.0f, 50.0f),
-			                        glm::vec4(0.9f, 0.3f, 0.0f, 1.0f),
-									0);
+								   glm::vec2(10.0f, 50.0f),
+								   glm::vec4(0.9f, 0.8f, 0.2f, 1.0f),
+								   0);
+
+			scene->EachGroup<TagComponent, TransformComponent>([this](Entity entity, auto& tag, auto& transform)
+			{
+				Renderer2D::DrawString(Assets::GetBitmapFont(DebugFontID),
+								   	   std::string(tag.Tag),
+									   transform.Position,
+			                           glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
+									   entity);
+			});
 
 			Renderer2D::EndScene();
-			
-			glm::vec2 minBound = m_SceneViewPanel.ViewportBounds[0];
-			glm::vec2 maxBound = m_SceneViewPanel.ViewportBounds[1];
 
-			auto [mx, my] = ImGui::GetMousePos();
-
-			mx -= minBound.x;
-			my -= minBound.y;
+			const glm::vec2& minBound = SceneViewPanel.ViewportBounds[0];
+			const glm::vec2& maxBound = SceneViewPanel.ViewportBounds[1];
 
 			glm::vec2 viewportSize = maxBound - minBound;
 
-			my = viewportSize.y - my;
+			auto [mouseXf, mouseYf] = ImGui::GetMousePos();
 
-			int32 mouseX = (int32)mx;
-			int32 mouseY = (int32)my;
+			mouseXf -= minBound.x;
+			mouseYf -= minBound.y;
+
+			mouseYf = viewportSize.y - mouseYf;
+
+			auto mouseX = static_cast<int32>(mouseXf);
+			auto mouseY = static_cast<int32>(mouseYf);
 
 			EditorState& editorState = Scene::EditorState;
 
-			if (mouseX >= 0 && mouseX < (int32)viewportSize.x && mouseY >= 0 && mouseY < (int32)viewportSize.y)
+			if (mouseX >= 0 && mouseX < static_cast<int32>(viewportSize.x) &&
+			    mouseY >= 0 && mouseY < static_cast<int32>(viewportSize.y))
 			{
-				if (Input::IsMouseButtonDown(Mouse::ButtonLeft) && !ImGuizmo::IsUsing() && !ImGuizmo::IsOver())
+				if (Input::IsMouseButtonDown(Mouse::ButtonLeft) &&
+				    !ImGuizmo::IsUsing() &&
+				    !ImGuizmo::IsOver())
 				{
-					int32 pixel = ReadPixel(&m_SceneFrameBuffer, 1, mouseX, mouseY);
+					int32 pixel = SceneFrameBuffer.ReadPixel(1, mouseX, mouseY);
 
 					if (pixel > 0)
 					{
@@ -207,7 +259,7 @@ namespace Vision
 
 							if (tagIt != scene->Tags.end())
 							{
-								uint32 seletedEntity = tagIt->second;
+								Entity seletedEntity = tagIt->second;
 
 								if (seletedEntity != pixel)
 								{
@@ -229,8 +281,13 @@ namespace Vision
 				}
 			}
 		}
+		else
+		{
+			float32 values[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+			SceneFrameBuffer.ClearColorAttachment(0, values);
+		}
 
-		UnBindFrameBuffer(&m_SceneFrameBuffer);
+		SceneFrameBuffer.Unbind();
  	}
 
 	void EditorLayer::OnEvent(Event& e)
@@ -244,21 +301,17 @@ namespace Vision
 	{
 		using namespace Vision;
 
-		if (m_SceneViewPanel.IsViewportResized)
+		if (SceneViewPanel.IsViewportResized)
 		{
-
-			if (m_ActiveScene)
-			{
-				m_SceneCamera->SetViewportSize(m_SceneViewPanel.ViewportSize.x,
-											   m_SceneViewPanel.ViewportSize.y);
-			}
+			SceneCamera->SetViewportSize(SceneViewPanel.ViewportSize.x,
+										 SceneViewPanel.ViewportSize.y);
 		}
 
-		m_Menubar.OnImGuiRender();
-		m_SceneHierarchyPanel.OnImGuiRender();
-		m_InspectorPanel.OnImGuiRender();
-		m_SceneViewPanel.OnImGuiRender();
-		m_Dialog.OnImGuiRender();
+		Menubar.OnImGuiRender();
+		SceneHierarchyPanel.OnImGuiRender();
+		InspectorPanel.OnImGuiRender();
+		SceneViewPanel.OnImGuiRender();
+		Dialog.OnImGuiRender();
 	}
 
 	bool EditorLayer::OnKeyPressed(KeyPressedEvent& e)
@@ -286,14 +339,14 @@ namespace Vision
 			{
 				if (isControlDown && isShiftDown)
 				{
-					if (m_ActiveScene)
+					if (ActiveSceneID)
 					{
 						SaveActiveSceneAs();
 					}
 				}
 				else if (isControlDown)
 				{
-					if (m_ActiveScene)
+					if (ActiveSceneID)
 					{
 						SaveActiveScene();
 					}
@@ -312,9 +365,9 @@ namespace Vision
 
 			case Key::Delete:
 			{
-				if (m_ActiveScene && m_SceneHierarchyPanel.IsInteractable())
+				if (ActiveSceneID && SceneHierarchyPanel.IsInteractable)
 				{
-					Scene* scene = Assets::GetScene(m_ActiveScene);
+					Scene* scene = Assets::GetScene(ActiveSceneID);
 
 					if (!scene->EditorState.SelectedEntityTag.empty())
 					{
@@ -334,36 +387,36 @@ namespace Vision
 
 			case Key::Q:
 			{
-				if (m_SceneViewPanel.IsInteractable && !ImGuizmo::IsUsing())
+				if (SceneViewPanel.IsInteractable && !ImGuizmo::IsUsing())
 				{
-					m_SceneViewPanel.GizmoType = -1; // cancel gizmos
+					SceneViewPanel.GizmoType = -1; // cancel gizmos
 				}
 			}
 			break;
 
 			case Key::E:
 			{
-				if (m_SceneViewPanel.IsInteractable && !ImGuizmo::IsUsing())
+				if (SceneViewPanel.IsInteractable && !ImGuizmo::IsUsing())
 				{
-					m_SceneViewPanel.GizmoType = ImGuizmo::OPERATION::TRANSLATE;
+					SceneViewPanel.GizmoType = ImGuizmo::OPERATION::TRANSLATE;
 				}
 			}
 			break;
 
 			case Key::R:
 			{
-				if (m_SceneViewPanel.IsInteractable && !ImGuizmo::IsUsing())
+				if (SceneViewPanel.IsInteractable && !ImGuizmo::IsUsing())
 				{
-					m_SceneViewPanel.GizmoType = ImGuizmo::OPERATION::ROTATE;
+					SceneViewPanel.GizmoType = ImGuizmo::OPERATION::ROTATE;
 				}
 			}
 			break;
 
 			case Key::T:
 			{
-				if (m_SceneViewPanel.IsInteractable && !ImGuizmo::IsUsing())
+				if (SceneViewPanel.IsInteractable && !ImGuizmo::IsUsing())
 				{
-					m_SceneViewPanel.GizmoType = ImGuizmo::OPERATION::SCALE;
+					SceneViewPanel.GizmoType = ImGuizmo::OPERATION::SCALE;
 				}
 
 			}
@@ -375,105 +428,24 @@ namespace Vision
 
 	bool EditorLayer::OnMouseWheelScrolled(MouseWheelScrolledEvent& e)
 	{
-		if (m_SceneViewPanel.IsInteractable)
+		if (SceneViewPanel.IsInteractable)
 		{
 			float32 mouseWheelDelta = -e.GetYOffset() * 0.1f;
-			m_SceneCamera->Zoom(mouseWheelDelta);
+			SceneCamera->Zoom(mouseWheelDelta);
 		}
 
 		return false;
 	}
 
-	void EditorLayer::LoadSettings()
-	{
-		using namespace Vision;
-
-		FileStream handle = File::Open("Settings.vars", FileMode::Read);
-
-		std::string line;
-		std::string contents;
-
-		while (File::ReadLine(handle, line))
-		{
-			contents += line + " ";
-		}
-
-		std::string prop;
-		std::stringstream stringStream(contents);
-
-		int windowX;
-		int windowY;
-		int windowWidth;
-		int windowHeight;
-		bool maximized;
-		std::string scenePath;
-
-		stringStream >> prop >> windowX;
-		stringStream >> prop >> windowY;
-		stringStream >> prop >> windowWidth;
-		stringStream >> prop >> windowHeight;
-		stringStream >> prop >> maximized;
-		stringStream >> prop >> scenePath; // @(Harlequin): not right because the path may contain spaces
-
-		Window& window = Application::Get().GetWindow();
-
-		SetWindowPosition(&window, windowX, windowY);
-		SetWindowSize(&window, windowWidth, windowHeight);
-
-		if (maximized)
-		{
-			MaximizeWindow(&window);
-		}
-
-		if (scenePath != "none" && FileSystem::FileExists(scenePath))
-		{
-			m_ActiveScene = Assets::RequestAsset(scenePath);
-			m_SceneHierarchyPanel.SetActiveScene(m_ActiveScene);
-			m_InspectorPanel.SetActiveScene(m_ActiveScene);
-			m_SceneViewPanel.ActiveScene = m_ActiveScene;
-		}
-
-		File::Close(handle);
-	}
-
-	void EditorLayer::SaveSettings()
-	{
-		using namespace Vision;
-
-		FileStream handle = File::Open("Settings.vars", FileMode::Write);
-
-		Window& window = Application::Get().GetWindow();
-
-		std::stringstream stringstream;
-		stringstream << "WindowX " << window.WindowX << "\n";
-		stringstream << "WindowY " << window.WindowY << "\n";
-		stringstream << "WindowWidth " << window.Width << "\n";
-		stringstream << "WindowHeight " << window.Height << "\n";
-		stringstream << "WindowMaximized " << window.Maximized << "\n";
-
-		std::string activeScenePath = "none";
-
-		if (m_ActiveScene)
-		{
-			const Asset& activeSceneAsset = Assets::GetAsset(m_ActiveScene);
-			activeScenePath = activeSceneAsset.Path;
-		}
-
-		stringstream << "ScenePath " << activeScenePath << "\n";
-
-		File::WriteContents(handle, stringstream.str());
-		File::Close(handle);
-	}
-
 	void EditorLayer::NewScene(const std::string& filepath, uint32 maxEntityCount)
 	{
-		if (m_ActiveScene)
+		if (ActiveSceneID)
 		{
 			SaveActiveScene();
-			Assets::ReleaseAsset(m_ActiveScene);
+			Assets::ReleaseAsset(ActiveSceneID);
 		}
 
-		m_SceneCamera->Reset();
+		SceneCamera->Reset();
 
 		Scene* tempScene = new Scene;
 		CreateScene(tempScene, maxEntityCount);
@@ -482,10 +454,10 @@ namespace Vision
 		DestroyScene(tempScene);
 		delete tempScene;
 
-		m_ActiveScene = Assets::RequestAsset(filepath);
-		m_SceneHierarchyPanel.SetActiveScene(m_ActiveScene);
-		m_InspectorPanel.SetActiveScene(m_ActiveScene);
-		m_SceneViewPanel.ActiveScene = m_ActiveScene;
+		ActiveSceneID = Assets::RequestAsset(filepath);
+		SceneHierarchyPanel.ActiveSceneID = ActiveSceneID;
+		InspectorPanel.ActiveSceneID = ActiveSceneID;
+		SceneViewPanel.ActiveSceneID = ActiveSceneID;
 	}
 
 	void EditorLayer::OpenScene()
@@ -494,16 +466,16 @@ namespace Vision
 
 		if (!filepath.empty())
 		{
-			if (m_ActiveScene)
+			if (ActiveSceneID)
 			{
 				SaveActiveScene();
-				Assets::ReleaseAsset(m_ActiveScene);
+				Assets::ReleaseAsset(ActiveSceneID);
 			}
 
-			m_ActiveScene = Assets::RequestAsset(filepath);
-			m_SceneHierarchyPanel.SetActiveScene(m_ActiveScene);
-			m_InspectorPanel.SetActiveScene(m_ActiveScene);
-			m_SceneViewPanel.ActiveScene = m_ActiveScene;
+			ActiveSceneID = Assets::RequestAsset(filepath);
+			SceneHierarchyPanel.ActiveSceneID = ActiveSceneID;
+			InspectorPanel.ActiveSceneID = ActiveSceneID;
+			SceneViewPanel.ActiveSceneID = ActiveSceneID;
 		}
 	}
 
@@ -513,25 +485,25 @@ namespace Vision
 
 		if (!filepath.empty())
 		{
-			Scene* activeScene = Assets::GetScene(m_ActiveScene);
+			Scene* activeScene = Assets::GetScene(ActiveSceneID);
 			SerializeScene(filepath, activeScene);
 		}
 	}
 
 	void EditorLayer::SaveActiveScene()
 	{
-		const Asset& activeSceneAsset = Assets::GetAsset(m_ActiveScene);
-		Scene* activeScene = Assets::GetScene(m_ActiveScene);
+		const Asset& activeSceneAsset = Assets::GetAsset(ActiveSceneID);
+		Scene* activeScene = Assets::GetScene(ActiveSceneID);
 		SerializeScene(activeSceneAsset.Path, activeScene);
 	}
 
 	void EditorLayer::CloseActiveScene()
 	{
 		SaveActiveScene();
-		Assets::ReleaseAsset(m_ActiveScene);
-		m_ActiveScene = 0;
-		m_SceneHierarchyPanel.SetActiveScene(0);
-		m_InspectorPanel.SetActiveScene(0);
-		m_ActiveScene = 0;
+		Assets::ReleaseAsset(ActiveSceneID);
+		ActiveSceneID = 0;
+		SceneHierarchyPanel.ActiveSceneID = 0;
+		InspectorPanel.ActiveSceneID = 0;
+		SceneViewPanel.ActiveSceneID = 0;
 	}
 }

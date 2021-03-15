@@ -16,11 +16,13 @@ namespace Vision
 
 	struct VertexLayout
 	{
+		std::vector<VertexAttribute> Attributes;
+
+		VertexLayout() = default;
+
 		VertexLayout(const std::initializer_list<VertexAttribute>& attributes)
 			: Attributes(attributes)
 		{
 		}
-
-		std::vector<VertexAttribute> Attributes;
 	};
 }

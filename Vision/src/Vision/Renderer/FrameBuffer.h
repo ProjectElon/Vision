@@ -49,29 +49,39 @@ namespace Vision
 
     struct FrameBuffer
     {
+        uint32 RendererID = 0;
         uint32 Width = 0;
         uint32 Height = 0;
         uint32 Samples = 1;
 
-        uint32 RendererID = 0;
         std::vector<uint32> ColorAttachments;
         uint32 DepthAttachment = 0;
 
         std::vector<FrameBufferTextureSpecification> ColorAttachmentSpecification;
-        FrameBufferTextureSpecification DepthAttachmentFormat;
+        FrameBufferTextureSpecification DepthAttachmentSpecification;
 
         bool SwapChainTarget = false;
+
+        FrameBuffer() = default;
+
+        FrameBuffer(const FrameBufferAttachmentSpecification& specification,
+                    uint32 width,
+                    uint32 height);
+
+        ~FrameBuffer();
+
+        void Init(const FrameBufferAttachmentSpecification& specification,
+                  uint32 width,
+                  uint32 height);
+
+        void Uninit();
+
+        void Resize(uint32 width, uint32 height);
+
+        int32 ReadPixel(uint32 attachmentIndex, int32 x, int32 y);
+        void ClearColorAttachment(uint32 index, const void* value);
+
+        void Bind();
+        void Unbind();
     };
-
-    void InitFrameBuffer(FrameBuffer* frameBuffer, FrameBufferAttachmentSpecification Attachments, uint32 width, uint32 height);
-    void UninitFrameBuffer(FrameBuffer* frameBuffer);
-
-    void ResizeFrameBuffer(FrameBuffer* frameBuffer, uint32 width, uint32 height);
-
-    int ReadPixel(FrameBuffer* frameBuffer, uint32 attachmentIndex, int32 x, int32 y);
-
-    void ClearColorAttachment(FrameBuffer* frameBuffer, uint32 index, const void* value);
-
-    void BindFrameBuffer(FrameBuffer* frameBuffer);
-    void UnBindFrameBuffer(FrameBuffer* frameBuffer);
 }

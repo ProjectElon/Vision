@@ -73,6 +73,7 @@ typedef size_t	 memorysize;
 /* ---------------------------------------- */
 
 #define Inspect(params)
+#define Ignore()
 
 /* Note : __debugbreak() works only on windows with msvc */
 

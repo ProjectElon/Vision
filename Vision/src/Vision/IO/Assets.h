@@ -22,7 +22,6 @@ namespace Vision
         uint64 TotalSizeInBytes = 0;
     };
 
-    // @ReadOnly
     struct Asset
     {
         void* Memory = nullptr;

@@ -7,14 +7,13 @@ namespace Vision
 	class Timer
 	{
 	public:
-		double ElapsedTime = 0.0;
+		float64 ElapsedTime    = 0.0;
+		float64 StartTimePoint = 0.0;
+		float64 EndTimePoint   = 0.0;
+
 		bool Ticking = false;
 
 		void Start();
 		void Stop();
-		
-	private:
-		double m_StartTimePoint = 0.0;
-		double m_EndTimePoint = 0.0;
 	};
 }

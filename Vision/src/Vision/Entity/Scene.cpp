@@ -51,7 +51,7 @@ namespace Vision
         Entity lastEntity = EntityCount;
 
         std::string swappedEntityTag = GetComponent<TagComponent>(lastEntity).Tag;
-        const std::string& removedEntityTag = GetComponent<TagComponent>(entity).Tag;
+        std::string removedEntityTag = GetComponent<TagComponent>(entity).Tag;
 
         Tags.extract(removedEntityTag);
 

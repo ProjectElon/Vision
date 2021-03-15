@@ -1,0 +1,1 @@
+start bin/windows-x86_64-Debug/PreBuild/PreBuild.exe Vision/src/Vision/Meta/ Vision/Entity/Components.h Vision/Core/Vars.h Vision/Core/String.h

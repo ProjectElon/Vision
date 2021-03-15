@@ -53,8 +53,9 @@ namespace Vision
     std::string File::ReadContents(const FileStream& fileStream)
     {
         std::string contents;
-        contents.resize(fileStream.SizeInBytes);
+        contents.resize(fileStream.SizeInBytes + 1);
         Read(fileStream, contents.data(), fileStream.SizeInBytes);
+        contents[fileStream.SizeInBytes] = '\0';
         return contents;
     }
 

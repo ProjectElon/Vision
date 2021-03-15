@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Vision.h>
+
 #include "Widgets/Menubar.h"
 #include "Widgets/SceneHierarchyPanel.h"
 #include "Widgets/InspectorPanel.h"
@@ -12,13 +13,30 @@ namespace Vision
 	class EditorLayer : public Layer
 	{
     public:
+		Menubar             Menubar;
+		SceneHierarchyPanel SceneHierarchyPanel;
+		InspectorPanel		InspectorPanel;
+		SceneViewPanel		SceneViewPanel;
+		Dialog				Dialog;
+
+		FrameBuffer SceneFrameBuffer;
+		PerspectiveCamera* SceneCamera;
+
+		AssetID ActiveSceneID  = 0;
+
+		AssetID DebugFontID    = 0;
+		AssetID FiraCodeFontID = 0;
+
+		AssetID SpriteShaderID = 0;
+		AssetID FontShaderID   = 0;
+
 		EditorLayer();
 		~EditorLayer();
 
 		void OnAttach() override;
 		void OnDetach() override;
 
-		void OnUpdate(float deltaTime) override;
+		void OnUpdate(float32 deltaTime) override;
 		void OnEvent(Event& e) override;
 		void OnImGuiRender() override;
 
@@ -34,28 +52,5 @@ namespace Vision
 		void SaveActiveSceneAs();
 		void SaveActiveScene();
 		void CloseActiveScene();
-
-   	private:
-		friend class Menubar;
-		friend class Dialog;
-
-		Menubar             m_Menubar;
-		SceneHierarchyPanel m_SceneHierarchyPanel;
-		InspectorPanel		m_InspectorPanel;
-		SceneViewPanel		m_SceneViewPanel;
-		Dialog				m_Dialog;
-
-		FrameBuffer m_SceneFrameBuffer;
-
-		PerspectiveCamera* m_SceneCamera;
-
-		AssetID m_ActiveScene = 0;
-
-		AssetID m_FiraCodeFont;
-		AssetID m_SpriteShader = 0;
-		AssetID m_FontShader = 0;
-
-		void LoadSettings();
-		void SaveSettings();
 	};
 }

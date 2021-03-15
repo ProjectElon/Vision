@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Vision/Renderer/FrameBuffer.h"
 #include "Vision/Renderer/OpenGL/OpenGLUtils.h"
+#include "Vision/Renderer/Renderer.h"
 
 #include <glad/glad.h>
 
@@ -10,7 +11,7 @@ namespace Vision
     {
         if (frameBuffer->RendererID)
         {
-            UninitFrameBuffer(frameBuffer);
+            frameBuffer->Uninit();
         }
 
         glGenFramebuffers(1, &frameBuffer->RendererID);
@@ -74,9 +75,9 @@ namespace Vision
             glDrawBuffer(GL_NONE);
         }
 
-        if (frameBuffer->DepthAttachmentFormat.TextureFormat != FrameBufferTextureFormat::None)
+        if (frameBuffer->DepthAttachmentSpecification.TextureFormat != FrameBufferTextureFormat::None)
         {
-            auto& depthSpec = frameBuffer->DepthAttachmentFormat;
+            auto& depthSpec = frameBuffer->DepthAttachmentSpecification;
 
             glCreateTextures(GL_TEXTURE_2D, 1, &frameBuffer->DepthAttachment);
             glBindTexture(GL_TEXTURE_2D, frameBuffer->DepthAttachment);
@@ -103,89 +104,104 @@ namespace Vision
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    void InitFrameBuffer(FrameBuffer* frameBuffer, FrameBufferAttachmentSpecification Attachments, uint32 width, uint32 height)
-    {
-        frameBuffer->Width = width;
-        frameBuffer->Height = height;
-        frameBuffer->RendererID = 0;
 
-        for (auto attachment : Attachments.Attachments)
+    FrameBuffer::FrameBuffer(const FrameBufferAttachmentSpecification& specification,
+                             uint32 width,
+                             uint32 height)
+    {
+        Init(specification, width, height);
+    }
+
+    FrameBuffer::~FrameBuffer()
+    {
+        Uninit();
+    }
+
+    void FrameBuffer::Init(const FrameBufferAttachmentSpecification& specification,
+                           uint32 width,
+                           uint32 height)
+    {
+        Width  = width;
+        Height = height;
+        RendererID = 0;
+
+        for (const auto& attachment : specification.Attachments)
         {
             if (attachment.TextureFormat == FrameBufferTextureFormat::Depth24Stencil8)
             {
-                frameBuffer->DepthAttachmentFormat = FrameBufferTextureFormat::Depth24Stencil8;
+                DepthAttachmentSpecification = FrameBufferTextureFormat::Depth24Stencil8;
             }
             else
             {
-                frameBuffer->ColorAttachmentSpecification.push_back(attachment);
+                ColorAttachmentSpecification.push_back(attachment);
             }
         }
 
-        InvalidateFrameBuffer(frameBuffer);
+        InvalidateFrameBuffer(this);
     }
 
-    void ResizeFrameBuffer(FrameBuffer* frameBuffer, uint32 width, uint32 height)
+    void FrameBuffer::Uninit()
+    {
+        glDeleteFramebuffers(1, &RendererID);
+
+        if (!ColorAttachments.empty())
+        {
+            glDeleteTextures(ColorAttachments.size(), ColorAttachments.data());
+            memset(ColorAttachments.data(), 0, sizeof(uint32) * ColorAttachments.size());
+        }
+
+        if (DepthAttachment)
+        {
+            glDeleteTextures(1, &DepthAttachment);
+            DepthAttachment = 0;
+        }
+    }
+
+    void FrameBuffer::Resize(uint32 width, uint32 height)
     {
         if (width <= 0 || height <= 0)
         {
-            VnCoreWarn("invalid framebuffer size ({}, {})", width, height);
+            VnCoreWarn("invalid framebuffer size ({0}, {1})", width, height);
             return;
         }
 
-        frameBuffer->Width = width;
-        frameBuffer->Height = height;
+        Width = width;
+        Height = height;
 
-        InvalidateFrameBuffer(frameBuffer);
+        InvalidateFrameBuffer(this);
     }
 
-    int32 ReadPixel(FrameBuffer* frameBuffer, uint32 attachmentIndex, int32 x, int32 y)
+    int32 FrameBuffer::ReadPixel(uint32 attachmentIndex, int32 x, int32 y)
     {
-        VnCoreAssert(attachmentIndex < frameBuffer->ColorAttachments.size(), "out of bounds");
+        VnCoreAssert(attachmentIndex < ColorAttachments.size(), "out of bounds");
         glReadBuffer(GL_COLOR_ATTACHMENT0 + attachmentIndex);
-        int pixel;
+        int32 pixel;
         glReadPixels(x, y, 1, 1, GL_RED_INTEGER, GL_INT, &pixel);
         return pixel;
     }
 
-    void UninitFrameBuffer(FrameBuffer* frameBuffer)
+    void FrameBuffer::ClearColorAttachment(uint32 index, const void* value)
     {
-        glDeleteFramebuffers(1, &frameBuffer->RendererID);
-
-        if (!frameBuffer->ColorAttachments.empty())
-        {
-            glDeleteTextures(frameBuffer->ColorAttachments.size(), frameBuffer->ColorAttachments.data());
-            memset(frameBuffer->ColorAttachments.data(), 0, sizeof(uint32) * frameBuffer->ColorAttachments.size());
-        }
-
-        if (frameBuffer->DepthAttachment)
-        {
-            glDeleteTextures(1, &frameBuffer->DepthAttachment);
-            frameBuffer->DepthAttachment = 0;
-        }
-    }
-
-    void BindFrameBuffer(FrameBuffer* frameBuffer)
-    {
-        glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer->RendererID);
-        glViewport(0, 0, frameBuffer->Width, frameBuffer->Height);
-    }
-
-    void ClearColorAttachment(FrameBuffer* frameBuffer, uint32 index, const void* value)
-    {
-        auto& spec = frameBuffer->ColorAttachmentSpecification[index];
+        auto& spec = ColorAttachmentSpecification[index];
 
         GLenum type = (spec.TextureFormat == FrameBufferTextureFormat::RedInt32) ? GL_INT : GL_FLOAT;
 
         GLenum textureFormat = GLTextureFormat(spec.TextureFormat);
 
-        glClearTexImage(frameBuffer->ColorAttachments[index],
+        glClearTexImage(ColorAttachments[index],
                         0,
                         textureFormat,
                         type,
                         value);
     }
 
-    void UnBindFrameBuffer(FrameBuffer* frameBuffer)
+    void FrameBuffer::Bind()
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, RendererID);
+        Renderer::SetViewport(0, 0, Width, Height);
+    }
+
+    void FrameBuffer::Unbind()
     {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }

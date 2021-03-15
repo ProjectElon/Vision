@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Vision/Renderer/Renderer.h"
+#include "Vision/Renderer/Buffers.h"
 #include "Vision/Renderer/FrameBuffer.h"
 #include "Vision/Renderer/Texture.h"
 
@@ -20,4 +21,6 @@ namespace Vision
 
     GLenum GLWrapMode(WrapMode wrapMode);
     GLenum GLFilterMode(FilterMode filterMode);
+
+    GLenum GLBufferUsage(BufferUsage usage);
 }

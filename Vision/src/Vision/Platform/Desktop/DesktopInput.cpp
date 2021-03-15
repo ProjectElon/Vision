@@ -14,7 +14,7 @@ namespace Vision
 	void Input::Init()
 	{
 		Application& app = Application::Get();
-		window = (GLFWwindow*)app.GetWindow().Handle;
+		window = static_cast<GLFWwindow*>(app.Window.Handle);
 	}
 
 	void Input::Shutdown()

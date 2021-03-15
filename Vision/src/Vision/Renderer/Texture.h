@@ -51,22 +51,23 @@ namespace Vision
         WrapMode WrapX = WrapMode::Repeat;
         WrapMode WrapY = WrapMode::Repeat;
 
-        FilterMode FilterMode = FilterMode::Point;
+        FilterMode  Filter = FilterMode::Point;
+        PixelFormat Format = PixelFormat::RGBA;
+
+        Texture() = default;
+        Texture(void* pixels, uint32 width, uint32 height, PixelFormat format);
+
+        ~Texture();
+
+        void Init(void* pixels, uint32 width, uint32 height, PixelFormat format);
+        void Uninit();
+
+        void Bind(uint32 textureSlot) const;
+        void UnBind();
+
+        void SetWrapMode(WrapMode wrapModeX, WrapMode wrapModeY);
+        void SetFilterMode(FilterMode filter);
     };
-
-    void InitTexture(Texture* texture,
-                       void* data,
-                       uint32 width,
-                       uint32 height,
-                       PixelFormat pixelFormat);
-
-    void UninitTexture(Texture* texture);
-
-    void BindTexture(const Texture* texture, uint32 textureSlot);
-    void UnBindTexture(const Texture* texture);
-
-    void SetTextureWrapMode(Texture* texture, WrapMode wrapModeX, WrapMode wrapModeY);
-    void SetTextureFilterMode(Texture* texture, FilterMode filterMode);
 
     AssetLoadingData LoadTexture(const std::string& texturepath);
     void UnloadTexture(Asset* textureAsset);

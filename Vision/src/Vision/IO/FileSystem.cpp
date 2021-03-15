@@ -6,21 +6,21 @@ namespace Vision
 {
     std::string FileSystem::GetPath(const std::string& filepath)
     {
-        uint32 dotIndex = filepath.rfind(".");
+        int32 dotIndex = filepath.rfind(".");
 
         if (dotIndex == -1)
         {
             return filepath;
         }
 
-        uint32 lastSlash = filepath.find_last_of("/\\");
-        
+        int32 lastSlash = filepath.find_last_of("/\\");
+
         return filepath.substr(0, lastSlash);
     }
 
     std::string FileSystem::GetFileName(const std::string& filepath, bool includeExtension)
     {
-        uint32 dotIndex = filepath.rfind(".");
+        int32 dotIndex = filepath.rfind(".");
 
         // not a path to a file
         if (dotIndex == -1)
@@ -28,10 +28,10 @@ namespace Vision
             return std::string();
         }
 
-        uint32 lastSlash = filepath.find_last_of("/\\");
+        int32 lastSlash = filepath.find_last_of("/\\");
 
-        uint32 start = lastSlash + 1;
-        uint32 count = filepath.length() - lastSlash + 1;
+        int32 start = lastSlash + 1;
+        int32 count = filepath.length() - lastSlash + 1;
 
         if (!includeExtension)
         {
@@ -43,7 +43,7 @@ namespace Vision
 
     std::string FileSystem::GetFileExtension(const std::string& filepath, bool includeDot)
     {
-        uint32 dotIndex = filepath.rfind(".");
+        int32 dotIndex = filepath.rfind(".");
 
         // not a path to a file
         if (dotIndex == -1)
@@ -66,7 +66,7 @@ namespace Vision
             return false;
         }
 
-        // @Note: Double Check if this support mobile platforms
+        // @Note: check if this supports mobile platforms as well
         // unix
         if (path[0] == '/')
         {

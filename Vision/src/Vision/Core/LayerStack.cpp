@@ -4,27 +4,13 @@
 
 namespace Vision
 {
-	LayerStack::LayerStack()
-		: m_LayerInsertIndex(0)
-	{
-	}
-
-	LayerStack::~LayerStack()
-	{
-		for (Layer* layer : m_Layers)
-		{
-			layer->OnDetach();
-			delete layer;
-		}
-	}
-
 	Layer* LayerStack::FindLayerByName(const std::string& name) const
 	{
-		for (auto it = begin(); it != end(); ++it)
+		for (auto layerIt = begin(); layerIt != end(); ++layerIt)
 		{
-			if ((*it)->GetName() == name)
+			if ((*layerIt)->Name == name)
 			{
-				return (*it);
+				return (*layerIt);
 			}
 		}
 
@@ -33,11 +19,11 @@ namespace Vision
 
 	bool LayerStack::RemoveLayerByName(const std::string& name)
 	{
-		for (auto it = begin(); it != end(); ++it)
+		for (auto layerIt = begin(); layerIt != end(); ++layerIt)
 		{
-			if ((*it)->GetName() == name)
+			if ((*layerIt)->Name == name)
 			{
-				m_Layers.erase(it);
+				Layers.erase(layerIt);
 				return true;
 			}
 		}
@@ -47,34 +33,34 @@ namespace Vision
 
 	void LayerStack::PushLayer(Layer* layer)
 	{
-		m_Layers.emplace(begin() + m_LayerInsertIndex, layer);
+		Layers.emplace(begin() + InsertIndex, layer);
 	}
 
 	void LayerStack::PopLayer(Layer* layer) 
 	{
-		auto it = std::find(begin(), begin() + m_LayerInsertIndex, layer);
+		auto layerIt = std::find(begin(), begin() + InsertIndex, layer);
 		
-		if (it != begin() + m_LayerInsertIndex)
+		if (layerIt != begin() + InsertIndex)
 		{
 			layer->OnDetach();
-			m_Layers.erase(it);
-			m_LayerInsertIndex--;
+			Layers.erase(layerIt);
+			InsertIndex--;
 		}
 	}
 
 	void LayerStack::PushOverlay(Layer* overlay)
 	{
-		m_Layers.emplace_back(overlay);
+		Layers.emplace_back(overlay);
 	}
 	
 	void LayerStack::PopOverlay(Layer* overlay)
 	{
-		auto it = std::find(begin() + m_LayerInsertIndex, end(), overlay);
+		auto LayerIt = std::find(begin() + InsertIndex, end(), overlay);
 		
-		if (it != end())
+		if (LayerIt != end())
 		{
 			overlay->OnDetach();
-			m_Layers.erase(it);
+			Layers.erase(LayerIt);
 		}
 	}
 }

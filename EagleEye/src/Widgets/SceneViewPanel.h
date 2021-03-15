@@ -12,11 +12,12 @@ namespace Vision
 	{
 	public:
 		FrameBuffer* FrameBuffer = nullptr;
-		uint32 ActiveScene = 0;
+		uint32 ActiveSceneID = 0;
 		int32 GizmoType = -1;
 
 		glm::vec2 ViewportSize = { 0.0f, 0.0f };
-		glm::vec2 ViewportBounds[2] = { { 0.0f, 0.0f }, { 0.0f, 0.0f } };
+		glm::vec2 ViewportBounds[2] = { { 0.0f, 0.0f },
+										{ 0.0f, 0.0f } };
 
 		bool IsInteractable = false;
 		bool IsViewportResized = false;

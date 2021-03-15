@@ -51,7 +51,7 @@ namespace Vision
 			style.Colors[ImGuiCol_WindowBg].w = 1.0f;
 		}
 
-		const Window& window = Application::Get().GetWindow();
+		const Window& window = Application::Get().Window;
 
 		ImGui_ImplGlfw_InitForOpenGL((GLFWwindow*)window.Handle, true);
 		ImGui_ImplOpenGL3_Init("#version 450");
@@ -137,8 +137,9 @@ namespace Vision
 
 		ImGuiIO& io = ImGui::GetIO();
 
-		const Window& window = Application::Get().GetWindow();
-		io.DisplaySize = ImVec2((float)window.Width, (float)window.Height);
+		const Settings& settings = Application::Get().Vars.Settings;
+		io.DisplaySize = ImVec2(static_cast<float>(settings.WindowWidth),
+								static_cast<float>(settings.WindowHeight));
 
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

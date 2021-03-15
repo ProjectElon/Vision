@@ -18,6 +18,7 @@
 
 namespace Vision
 {
+	// From thecherno
 	static bool DecomposeTransform(const glm::mat4& transform, glm::vec3& translation, glm::vec3& rotation, glm::vec3& scale)
 	{
 		// From glm::decompose in matrix_decompose.inl
@@ -124,12 +125,13 @@ namespace Vision
 		{
 			IsViewportResized = true;
 			ViewportSize = { currentViewportSize.x, currentViewportSize.y };
-			ResizeFrameBuffer(FrameBuffer, (uint32)currentViewportSize.x, (uint32)currentViewportSize.y);
+			FrameBuffer->Resize((uint32)currentViewportSize.x,
+								(uint32)currentViewportSize.y);
 		}
 
 		EditorState editorState = Scene::EditorState;
 
-		if (ActiveScene && !editorState.SelectedEntityTag.empty() && GizmoType != -1)
+		if (ActiveSceneID && !editorState.SelectedEntityTag.empty() && GizmoType != -1)
 		{
 			ImGuizmo::SetOrthographic(false);
 			ImGuizmo::SetDrawlist();
@@ -141,7 +143,7 @@ namespace Vision
 
 			auto& sceneCamera = editorState.SceneCamera;
 
-			Scene* scene = Assets::GetScene(ActiveScene);
+			Scene* scene = Assets::GetScene(ActiveSceneID);
 			Entity selectedEntity = scene->QueryEntity(editorState.SelectedEntityTag);
 
 			if (selectedEntity != entity::null)
@@ -152,9 +154,9 @@ namespace Vision
 
 					glm::mat4 rotation = glm::toMat4(glm::quat(tc.Rotation));
 
-					glm::mat4 transform = glm::translate(glm::mat4(1.0f), tc.Position) *
+					glm::mat4 transform = glm::translate(glm::mat4(1.0f), (glm::vec3)tc.Position) *
 							  rotation *
-							  glm::scale(glm::mat4(1.0f), tc.Scale);
+							  glm::scale(glm::mat4(1.0f), (glm::vec3)tc.Scale);
 
 					bool snap = Input::IsKeyDown(Key::LeftControl);
 
@@ -184,8 +186,8 @@ namespace Vision
 						if (DecomposeTransform(transform, position, rotation, scale))
 						{
 							tc.Position = position;
-							glm::vec3 deltaRotation = rotation - tc.Rotation;
-							tc.Rotation += deltaRotation;
+							glm::vec3 deltaRotation = rotation - (glm::vec3)tc.Rotation;
+							tc.Rotation = (glm::vec3)tc.Rotation + deltaRotation;
 							tc.Scale = scale;
 						}
 					}

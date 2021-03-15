@@ -1,8 +1,11 @@
 #include "InspectorPanel.h"
 
 #include "Vision/Entity/EditorState.h"
-#include "Vision/IO/Assets.h"
-#include "Vision/Entity/Scene.h"
+#include "Vision/IO/FileSystem.h"
+#include "Vision/Platform/PlatformUtils.h"
+#include "Vision/Entity/Components.h"
+#include "Vision/ImGui/ImGuiWidgets.h"
+#include "Vision/Renderer/Texture.h"
 
 #include <sstream>
 
@@ -30,24 +33,24 @@ namespace Vision
             {
                 auto& transform = ComponentCast<TransformComponent>(component);
 
-                ImGuiWidgets::DrawFloat3("Position", transform.Position, 78.0f, 0);
+                ImGuiWidgets::DrawFloat3("Position", (glm::vec3)transform.Position, 78.0f, 0);
 
-                glm::vec3 rotation = glm::degrees(transform.Rotation);
+                glm::vec3 rotation = glm::degrees((glm::vec3)transform.Rotation);
 
                 ImGuiWidgets::DrawFloat3("Rotation", rotation, 78.0f, 0);
 
                 transform.Rotation = glm::radians(rotation);
 
-                ImGuiWidgets::DrawFloat3("Scale", transform.Scale, 78.0f, 1.0f);
+                ImGuiWidgets::DrawFloat3("Scale", (glm::vec3)transform.Scale, 78.0f, 1.0f);
             });
 
             SerializeComponent<TransformComponent>([&](void* component)
             {
                 const auto& transform = ComponentCast<TransformComponent>(component);
 
-                const glm::vec3& p = transform.Position;
-                const glm::vec3& r = transform.Rotation;
-                const glm::vec3& s = transform.Scale;
+                const Vector3& p = transform.Position;
+                const Vector3& r = transform.Rotation;
+                const Vector3& s = transform.Scale;
 
                 std::stringstream stringStream;
 
@@ -62,9 +65,9 @@ namespace Vision
             {
                 auto& transform = ComponentCast<TransformComponent>(component);
 
-                glm::vec3& p = transform.Position;
-                glm::vec3& r = transform.Rotation;
-                glm::vec3& s = transform.Scale;
+                Vector3& p = transform.Position;
+                Vector3& r = transform.Rotation;
+                Vector3& s = transform.Scale;
 
                 std::string prop;
                 std::string newline;
@@ -196,9 +199,9 @@ namespace Vision
                         "Bilinear"
                     };
 
-                    int32 seletedWrapXMode = (int32)texture->WrapX;
-                    int32 seletedWrapYMode = (int32)texture->WrapY;
-                    int32 seletedFilterMode = (int32)texture->FilterMode;
+                    int32 seletedWrapXMode  = static_cast<int32>(texture->WrapX);
+                    int32 seletedWrapYMode  = static_cast<int32>(texture->WrapY);
+                    int32 seletedFilterMode = static_cast<int32>(texture->Filter);
 
                     ImGui::Text("Wrap X");
                     ImGui::SameLine();
@@ -206,11 +209,10 @@ namespace Vision
                     // @CleanUp: Add Combo to ImGui Widgets
                     if (ImGui::Combo("##Wrap X", &seletedWrapXMode, WrapModeStrings, 2))
                     {
-                        if (seletedWrapXMode != (int32)texture->WrapX)
+                        if (seletedWrapXMode != static_cast<int32>(texture->WrapX))
                         {
-                            SetTextureWrapMode(texture,
-                                               (WrapMode)seletedWrapXMode,
-                                               (WrapMode)seletedWrapYMode);
+                            texture->SetWrapMode(static_cast<WrapMode>(seletedWrapXMode),
+                                                 static_cast<WrapMode>(seletedWrapYMode));
                         }
                     }
 
@@ -220,11 +222,10 @@ namespace Vision
                     // @CleanUp: Add Combo to ImGui Widgets
                     if (ImGui::Combo("##Wrap Y", &seletedWrapYMode, WrapModeStrings, 2))
                     {
-                        if (seletedWrapYMode != (int32)texture->WrapY)
+                        if (seletedWrapYMode != static_cast<int32>(texture->WrapY))
                         {
-                            SetTextureWrapMode(texture,
-                                               (WrapMode)seletedWrapXMode,
-                                               (WrapMode)seletedWrapYMode);
+                            texture->SetWrapMode(static_cast<WrapMode>(seletedWrapXMode),
+                                                 static_cast<WrapMode>(seletedWrapYMode));
                         }
                     }
 
@@ -234,9 +235,9 @@ namespace Vision
                     // @CleanUp: Add Combo to ImGui Widgets
                     if (ImGui::Combo("##Filter Mode", &seletedFilterMode, FilterModeStrings, 2))
                     {
-                        if (seletedFilterMode != (int32)texture->FilterMode)
+                        if (seletedFilterMode != static_cast<int32>(texture->Filter))
                         {
-                            SetTextureFilterMode(texture, (FilterMode)seletedFilterMode);
+                            texture->SetFilterMode(static_cast<FilterMode>(seletedFilterMode));
                         }
                     }
                 }
@@ -245,12 +246,12 @@ namespace Vision
 
                 ImGui::Text("\n");
 
-                ImGuiWidgets::DrawColor("Color", sprite.Color);
+                ImGuiWidgets::DrawColor("Color", (glm::vec4)sprite.Color);
 
                 ImGui::Text("\n");
 
-                ImGuiWidgets::DrawFloat2("Top Right UV", sprite.TopRightUV, 120.0f, 1.0f);
-                ImGuiWidgets::DrawFloat2("Bottom Left UV", sprite.BottomLeftUV, 120.0f, 0.0f);
+                ImGuiWidgets::DrawFloat2("Top Right UV", (glm::vec2)sprite.TopRightUV, 120.0f, 1.0f);
+                ImGuiWidgets::DrawFloat2("Bottom Left UV", (glm::vec2)sprite.BottomLeftUV, 120.0f, 0.0f);
             });
 
             SerializeComponent<SpriteRendererComponent>([&](void* component)
@@ -265,13 +266,13 @@ namespace Vision
                 stringStream << "Texture Path " << textureAsset.Path << "\n";
                 stringStream << "Texture Wrap X " << (uint32)texture->WrapX << "\n";
                 stringStream << "Texture Wrap Y " << (uint32)texture->WrapY << "\n";
-                stringStream << "Texture Fliter Mode " << (uint32)texture->FilterMode << "\n";
+                stringStream << "Texture Fliter Mode " << (uint32)texture->Filter << "\n";
 
-                const glm::vec4& c = sprite.Color;
-                const glm::vec2& bl = sprite.BottomLeftUV;
-                const glm::vec2& tr = sprite.TopRightUV;
+                const Vector4& c = sprite.Color;
+                const Vector2& bl = sprite.BottomLeftUV;
+                const Vector2& tr = sprite.TopRightUV;
 
-                stringStream << "Color " << c.r << " " << c.g << " " << c.b << " " << c.a << "\n";
+                stringStream << "Color " << c.x << " " << c.y << " " << c.z << " " << c.w << "\n";
                 stringStream << "Bottom Left Point " << bl.x << " " << bl.y << "\n";
                 stringStream << "Top Right Point " << tr.x << " " << tr.y  << "\n";
 
@@ -292,28 +293,29 @@ namespace Vision
                 sprite.Texture = Assets::RequestAsset(texturePath);
                 Texture* texture = Assets::GetTexture(sprite.Texture);
 
-                stringStream >> prop >> prop >> prop >> (uint32&)texture->WrapX;
-                stringStream >> prop >> prop >> prop >> (uint32&)texture->WrapY;
-                stringStream >> prop >> prop >> prop >> (uint32&)texture->FilterMode;
+                uint32 wrapX;
+                uint32 wrapY;
+                uint32 filter;
 
-                SetTextureWrapMode(texture, texture->WrapX, texture->WrapY);
-                SetTextureFilterMode(texture, texture->FilterMode);
+                stringStream >> prop >> prop >> prop >> wrapX;
+                stringStream >> prop >> prop >> prop >> wrapY;
+                stringStream >> prop >> prop >> prop >> filter;
 
-                glm::vec4& c = sprite.Color;
-                glm::vec2& bl = sprite.BottomLeftUV;
-                glm::vec2& tr = sprite.TopRightUV;
+                texture->SetWrapMode(static_cast<WrapMode>(wrapX),
+                                     static_cast<WrapMode>(wrapY));
 
-                stringStream >> prop >> c.r  >> c.g  >> c.b  >> c.a;
+                texture->SetFilterMode(static_cast<FilterMode>(filter));
+
+                Vector4& c = sprite.Color;
+                Vector2& bl = sprite.BottomLeftUV;
+                Vector2& tr = sprite.TopRightUV;
+
+                stringStream >> prop >> c.x  >> c.y  >> c.z  >> c.w;
                 stringStream >> prop >> prop >> prop >> bl.x >> bl.y;
                 stringStream >> prop >> prop >> prop >> tr.x >> tr.y;
             });
         }
 	}
-
-    void InspectorPanel::SetActiveScene(AssetID scene)
-    {
-        m_ActiveScene = scene;
-    }
 
 	void InspectorPanel::OnImGuiRender()
 	{
@@ -321,9 +323,9 @@ namespace Vision
 
 		ImGui::Begin("Inspector");
 
-        if (m_ActiveScene)
+        if (ActiveSceneID)
         {
-            Scene* scene = Assets::GetScene(m_ActiveScene);
+            Scene* scene = Assets::GetScene(ActiveSceneID);
 
             Entity seletedEntity = scene->QueryEntity(editorState.SelectedEntityTag);
 
@@ -352,8 +354,8 @@ namespace Vision
                     {
                         Entity entity = scene->QueryEntity(editorState.SelectedEntityTag);
 
-                        scene->Tags.emplace(newTag, entity);
                         scene->Tags.erase(oldTag);
+                        scene->Tags.emplace(newTag, entity);
 
                         if (oldTag == editorState.SelectedEntityTag)
                         {
@@ -365,8 +367,7 @@ namespace Vision
                             scene->PrimaryCameraTag = newTag;
                         }
 
-                        strcpy(tagComponent.Tag, buffer);
-                        // tagComponent.Tag = newTag;
+                        strcpy(tagComponent.Tag, newTag.c_str());
                     }
                 }
 
@@ -430,14 +431,14 @@ namespace Vision
             entityStorageIter++;
 
             const ComponentInfo& info = editorState.ComponentMeta[componentID];
-            const std::string& tag = scene->GetComponent<TagComponent>(entity).Tag;
+            std::string tag = scene->GetComponent<TagComponent>(entity).Tag;
 
             if (!info.InspectFn)
             {
                 continue;
             }
 
-            ComponentState& state = m_ComponentState[{ tag, componentID }];
+            Vision::ComponentState& state = ComponentState[{ tag, componentID }];
             const char* name = info.Name.c_str();
 
             ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen |
@@ -469,7 +470,7 @@ namespace Vision
             {
                 if (ImGui::Selectable("Remove Component"))
                 {
-                    m_ComponentState[std::make_pair(tag, componentID)] = ComponentState();
+                    ComponentState[std::make_pair(tag, componentID)] = Vision::ComponentState();
                     scene->RemoveComponent(entity, componentID);
                 }
 

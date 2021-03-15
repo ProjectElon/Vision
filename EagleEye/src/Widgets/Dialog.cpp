@@ -7,28 +7,27 @@
 
 namespace Vision
 {
-	void Dialog::SetEditor(EditorLayer* editor)
-	{
-		m_Editor = editor;
-	}
-
-    void Dialog::Open(DialogType type)
+	Dialog::Dialog(EditorLayer* editor)
+        : Editor(editor)
     {
-		s_Type = type;
+    }
+
+    void Dialog::Open(Vision::DialogType dialogType)
+    {
+		DialogType = dialogType;
     }
 
     void Dialog::OnImGuiRender()
     {
-        switch (s_Type)
+        switch (DialogType)
         {
             case DialogType::CreateScene:
             {
                 ImGui::OpenPopup("Create Scene");
+                CreateSceneDialog();
                 break;
             }
         }
-
-        CreateSceneDialog();
     }
 
     void Dialog::CreateSceneDialog()
@@ -36,7 +35,9 @@ namespace Vision
 		static std::string filepath = "";
 		static int32 maxEntityCount = 1;
 
-		ImGuiWindowFlags flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDocking;
+		ImGuiWindowFlags flags = ImGuiWindowFlags_NoMove |
+                                 ImGuiWindowFlags_AlwaysAutoResize |
+                                 ImGuiWindowFlags_NoDocking;
 
 		bool open = true;
 
@@ -60,7 +61,7 @@ namespace Vision
 			{
 				if (ImGui::Button("Create"))
 				{
-					m_Editor->NewScene(filepath, maxEntityCount);
+					Editor->NewScene(filepath, maxEntityCount);
 					ImGui::CloseCurrentPopup();
 					open = false;
 				}
@@ -79,11 +80,11 @@ namespace Vision
 
 		if (!open)
 		{
-			s_Type = DialogType::None;
+			DialogType = DialogType::None;
 			filepath = "";
 			maxEntityCount = 1;
 		}
     }
 
-	DialogType Dialog::s_Type = DialogType::None;
+	DialogType Dialog::DialogType = DialogType::None;
 }

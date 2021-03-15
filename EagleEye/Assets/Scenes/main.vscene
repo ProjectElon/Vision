@@ -1,12 +1,12 @@
 MaxEntityCount 100
 PrimaryCamera none
-SelectedEntity Entity1
-CameraPosition 0.566171 0.289091 0.829979
+SelectedEntity none
+CameraPosition 0.714911 0.25368 -0.171093
 Entity Entity0
 Component 1066925509535886804 Transform
-Position 0.29472 0.479554 0.706709
+Position 0.330946 0.470966 0.668376
 Rotation -1.5708 0 0
-Scale 1 0.999762 0.999762
+Scale 1.01 1.00902 1.00902
 Component 13080639714729183211 Sprite Renderer
 Texture Path Assets/Textures/wood.png
 Texture Wrap X 0
@@ -17,9 +17,9 @@ Bottom Left Point 0 0
 Top Right Point 1 1
 Entity Entity1
 Component 1066925509535886804 Transform
-Position 0.294199 0 0.200313
-Rotation 0 0 0
-Scale 1 1 2
+Position -0.158046 -0.0305575 0.668078
+Rotation 2.41296e-11 -1.55666 3.14159
+Scale 1.00002 0.999992 0.999989
 Component 13080639714729183211 Sprite Renderer
 Texture Path Assets/Textures/wood.png
 Texture Wrap X 0
@@ -30,9 +30,9 @@ Bottom Left Point 0 0
 Top Right Point 1 1
 Entity Entity2
 Component 1066925509535886804 Transform
-Position -0.203416 -9.49949e-08 0.694477
-Rotation 1.60864e-11 -1.55666 3.14159
-Scale 1.00002 0.999992 0.999989
+Position 0.330482 -0.0302687 1.16333
+Rotation 0 0 0
+Scale 1 1 1
 Component 13080639714729183211 Sprite Renderer
 Texture Path Assets/Textures/wood.png
 Texture Wrap X 0

@@ -5,6 +5,17 @@
 
 namespace Vision
 {
+    GLenum GLBufferUsage(BufferUsage usage)
+    {
+        switch (usage)
+        {
+            case BufferUsage::Static:  return GL_STATIC_DRAW;
+            case BufferUsage::Dynamic: return GL_DYNAMIC_DRAW;
+        }
+
+        VnCoreAssert(false, "unsupported buffser usage");
+    }
+
      GLenum ShaderDataTypeToOpenGLType(ShaderDataType dataType)
      {
         switch (dataType)

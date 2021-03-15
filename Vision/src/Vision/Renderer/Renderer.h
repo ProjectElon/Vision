@@ -40,6 +40,9 @@ namespace Vision
 	class Renderer
 	{
 	public:
+		static uint32 ViewportWidth;
+		static uint32 ViewportHeight;
+
 		static Window* RenderTargetWindow;
 
 		static void Init(Window* renderTargetWindow);

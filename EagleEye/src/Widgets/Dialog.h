@@ -13,15 +13,18 @@ namespace Vision
     class Dialog
     {
     public:
-        void SetEditor(EditorLayer* editor);
+        EditorLayer* Editor;
+
+        Dialog() = default;
+        Dialog(EditorLayer* editor);
+
         void OnImGuiRender();
 
         static void Open(DialogType type);
 
     private:
-        void CreateSceneDialog();
+        static DialogType DialogType;
 
-        static DialogType s_Type;
-        EditorLayer* m_Editor;
+        void CreateSceneDialog();
     };
 }

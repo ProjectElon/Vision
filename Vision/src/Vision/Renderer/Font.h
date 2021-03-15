@@ -19,17 +19,24 @@ namespace Vision
 
         char FirstCharacter = ' ';
         char LastCharacter = '~';
+
+        BitmapFont() = default;
+        BitmapFont(uint8* fontBuffer,
+                   uint32 SizeInPixels,
+                   char firstCharacter = ' ',
+                   char lastCharacter = '~');
+
+        ~BitmapFont();
+
+        void Init(uint8* fontBuffer,
+                  uint32 SizeInPixels,
+                  char firstCharacter = ' ',
+                  char lastCharacter = '~');
+
+        void Uninit();
+
+        void SetSize(uint32 sizeInPixels);
     };
-
-    void InitBitmapFont(BitmapFont* font,
-                        uint8* fontBuffer,
-                        uint32 SizeInPixels,
-                        char firstCharacter = ' ',
-                        char lastCharacter = '~');
-
-    void UninitBitmapFont(BitmapFont* font);
-
-    void SetFontSize(BitmapFont* font, uint32 SizeInPixels);
 
     AssetLoadingData LoadBitmapFont(const std::string& fontpath);
     void UnloadBitmapFont(Asset* fontAsset);

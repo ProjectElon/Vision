@@ -162,9 +162,9 @@ project ("PreBuild")
 		"%{includedir.stb}",
 	}
 
-	links
+	defines
 	{
-		"Vision"
+		"_CRT_SECURE_NO_WARNINGS"
 	}
 
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")

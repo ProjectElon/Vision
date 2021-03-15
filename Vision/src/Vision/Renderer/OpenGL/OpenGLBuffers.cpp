@@ -6,73 +6,71 @@
 
 namespace Vision
 {
-	void CreateVertexBuffer(VertexBuffer* vertexBuffer,
-							const float32* data,
+
+	VertexBuffer::VertexBuffer(const void* data,
+				 	 		   uint32 sizeInBytes,
+				  	 		   BufferUsage usage)
+	{
+		Init(data, sizeInBytes, usage);
+	}
+
+	VertexBuffer::~VertexBuffer()
+	{
+		Uninit();
+	}
+
+	void VertexBuffer::Init(const void* data,
 							uint32 sizeInBytes,
 							BufferUsage usage)
 	{
-		vertexBuffer->SizeInBytes = sizeInBytes;
-		vertexBuffer->Usage = usage;
+		SizeInBytes = sizeInBytes;
+		Usage = usage;
 
-		glCreateVertexArrays(1, &vertexBuffer->BufferLayoutID);
-		glBindVertexArray(vertexBuffer->BufferLayoutID);
+		glCreateVertexArrays(1, &RendererLayoutID);
+		glBindVertexArray(RendererLayoutID);
 
-		glCreateBuffers(1, &vertexBuffer->BufferID);
-		glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer->BufferID);
+		glCreateBuffers(1, &RendererID);
+		glBindBuffer(GL_ARRAY_BUFFER, RendererID);
 
-		uint32_t glUsage = GL_NONE;
-
-		switch (usage)
-		{
-			case BufferUsage::Static:
-			{
-				glUsage = GL_STATIC_DRAW;
-			}
-			break;
-
-			case BufferUsage::Dynamic:
-			{
-				glUsage = GL_DYNAMIC_DRAW;
-			}
-			break;
-		}
-
-		glBufferData(GL_ARRAY_BUFFER, sizeInBytes, data, glUsage);
+		glBufferData(GL_ARRAY_BUFFER, sizeInBytes, data, GLBufferUsage(usage));
 		glBindVertexArray(0);
 	}
 
-	void DestroyVertexBuffer(VertexBuffer* buffer)
+	void VertexBuffer::Uninit()
 	{
-		glDeleteBuffers(1, &buffer->BufferID);
-		glDeleteVertexArrays(1, &buffer->BufferLayoutID);
+		glDeleteBuffers(1, &RendererID);
+		glDeleteVertexArrays(1, &RendererLayoutID);
 	}
 
-	void BindVertexBuffer(VertexBuffer* vertexBuffer)
+	void VertexBuffer::Bind()
 	{
-		glBindVertexArray(vertexBuffer->BufferLayoutID);
+		glBindVertexArray(RendererLayoutID);
 	}
 
-	void UnBindVertexBuffer(VertexBuffer* vertexBuffer)
+	void VertexBuffer::Unbind()
 	{
 		glBindVertexArray(0);
 	}
 
-	void SetVertexBufferData(VertexBuffer* vertexBuffer, const float* data, uint32 sizeInBytes, uint32 offset)
+	void VertexBuffer::SetData(const void* data,
+	                           uint32 sizeInBytes,
+	                           uint32 offset)
 	{
-		VnCoreAssert(vertexBuffer->Usage == BufferUsage::Dynamic, "can't set data to a static buffer");
-		glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer->BufferID);
+		VnCoreAssert(Usage == BufferUsage::Dynamic, "can't set data to a static buffer");
+		glBindBuffer(GL_ARRAY_BUFFER, RendererID);
 		glBufferSubData(GL_ARRAY_BUFFER, offset, sizeInBytes, data);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
-	void SetVertexBufferLayout(VertexBuffer* vertexBuffer,
-							   const VertexLayout* vertexLayout)
+	void VertexBuffer::SetLayout(const VertexLayout& layout)
 	{
 		// @(Harlequin): Note that this code will fail
 		// if the alignment of the vertex layout is not 4 bytes
 		// to solve this we need meta programming
 
-		const auto& attributes = vertexLayout->Attributes;
+		Layout = layout;
+
+		const auto& attributes = layout.Attributes;
 
 		uint32 offset = 0;
 		uint32 stride = 0; // vertex size in bytes
@@ -82,7 +80,7 @@ namespace Vision
 			stride += GLTypeSize(attributes[vertexIndex].Type);
 		}
 
-		glBindVertexArray(vertexBuffer->BufferLayoutID);
+		glBindVertexArray(RendererLayoutID);
 
 		for (uint32 vertexIndex = 0; vertexIndex < attributes.size(); ++vertexIndex)
 		{
@@ -130,28 +128,45 @@ namespace Vision
 		glBindVertexArray(0);
 	}
 
-	void CreateIndexBuffer(IndexBuffer* indexBuffer,
-						   const uint32* data,
-						   uint32 sizeInBytes)
-	{
-		glCreateBuffers(1, &indexBuffer->BufferID);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer->BufferID);
 
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeInBytes, data, GL_STATIC_DRAW);
+
+	IndexBuffer::IndexBuffer(const uint32* data,
+							 uint32 sizeInBytes,
+							 BufferUsage usage)
+	{
+		Init(data, sizeInBytes, usage);
+	}
+
+	IndexBuffer::~IndexBuffer()
+	{
+		Uninit();
+	}
+
+	void IndexBuffer::Init(const uint32* data,
+						   uint32 sizeInBytes,
+						   BufferUsage usage)
+	{
+		SizeInBytes = sizeInBytes;
+		Usage = usage;
+
+		glCreateBuffers(1, &RendererID);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RendererID);
+
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeInBytes, data, GLBufferUsage(usage));
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	}
 
-	void DestroyIndexBuffer(IndexBuffer* indexBuffer)
+	void IndexBuffer::Uninit()
 	{
-		glDeleteBuffers(1, &indexBuffer->BufferID);
+		glDeleteBuffers(1, &RendererID);
 	}
 
-	void BindIndexBuffer(IndexBuffer* indexBuffer)
+	void IndexBuffer::Bind()
 	{
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer->BufferID);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RendererID);
 	}
 
-	void UnBindIndexBuffer(IndexBuffer* vertexBuffer)
+	void IndexBuffer::Unbind()
 	{
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	}

@@ -3,14 +3,15 @@
 namespace Vision
 {
 	class EditorLayer;
-	
+
 	class Menubar
 	{
 	public:
-		void SetEditor(EditorLayer* editor);
-		void OnImGuiRender();
+		EditorLayer* Editor;
 
-	private:
-		EditorLayer* m_Editor;
+		Menubar() = default;
+		Menubar(EditorLayer* editor);
+
+		void OnImGuiRender();
 	};
 }

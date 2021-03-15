@@ -11,31 +11,37 @@ namespace Vision
 {
 	Application::Application()
 	{
-		VnCoreAssert(!s_Instance, "Application already exists");
+		VnCoreAssert(!Instance, "Application already exists");
 
-		s_Instance = this;
+		Instance = this;
 
-		OpenWindow(&m_Window,
-				   "Vision",
-					1280,
-					720,
+		Window.Open(Vars.Settings.WindowTitle.Text,
+					Vars.Settings.WindowWidth,
+					Vars.Settings.WindowHeight,
 					VnBindEventFn(Application::OnEvent));
 
-		Renderer::Init(&m_Window);
+		Renderer::Init(&Window);
 		Renderer2D::Init();
 		Assets::Init();
 		Input::Init();
 
-		m_ImGuiLayer = new ImGuiLayer();
-		PushOverlay(m_ImGuiLayer);
+		PushOverlay(&ImGuiLayer);
 
-		m_FrameTimer.Start();
+		FrameTimer.Start();
 
-		Renderer::SetViewport(0, 0, m_Window.Width, m_Window.Height);
+		Renderer::SetViewport(0,
+							  0,
+							  Vars.Settings.WindowWidth,
+							  Vars.Settings.WindowHeight);
 	}
 
 	Application::~Application()
 	{
+		for (auto* layer : LayerStack)
+		{
+			layer->OnDetach();
+		}
+
 		Input::Shutdown();
 		Assets::Shutdown();
 		Renderer2D::Shutdown();
@@ -44,30 +50,31 @@ namespace Vision
 
 	void Application::Run()
 	{
-		while (m_Running)
+		while (Running)
 		{
-			m_FrameTimer.Stop();
-			float deltaTime = (float)m_FrameTimer.ElapsedTime;
-			m_FrameTimer.Start();
+			FrameTimer.Stop();
+			float deltaTime = static_cast<float>(FrameTimer.ElapsedTime);
+			FrameTimer.Start();
 
-			if (!m_Minimized)
+			if (!Minimized)
 			{
- 				for (Layer* layer : m_LayerStack)
+ 				for (Layer* layer : LayerStack)
 				{
 					layer->OnUpdate(deltaTime);
 				}
 
-				m_ImGuiLayer->Begin();
+				ImGuiLayer.Begin();
 
-				for (Layer* layer : m_LayerStack)
+				for (Layer* layer : LayerStack)
 				{
 					layer->OnImGuiRender();
 				}
 
-				m_ImGuiLayer->End();
+				ImGuiLayer.End();
 			}
 
-			PollEvents();
+			Window.PollEvents();
+
 			Renderer::SwapBuffers();
 
 #ifdef VN_PLATFORM_WINDOWS
@@ -92,9 +99,9 @@ namespace Vision
 		dispatcher.Dispatch<WindowRestoredEvent>(VnBindEventFn(Application::OnWindowRestored));
 		dispatcher.Dispatch<WindowCloseEvent>(VnBindEventFn(Application::OnWindowClose));
 
-		for (auto it = m_LayerStack.rbegin(); it != m_LayerStack.rend(); ++it)
+		for (auto layerIt = LayerStack.rbegin(); layerIt != LayerStack.rend(); ++layerIt)
 		{
-			(*it)->OnEvent(e);
+			(*layerIt)->OnEvent(e);
 
 			if (e.Handled)
 			{
@@ -105,19 +112,19 @@ namespace Vision
 
 	void Application::PushLayer(Layer* layer)
 	{
-		m_LayerStack.PushLayer(layer);
+		LayerStack.PushLayer(layer);
 		layer->OnAttach();
 	}
 
 	void Application::PushOverlay(Layer* overlay)
 	{
-		m_LayerStack.PushOverlay(overlay);
+		LayerStack.PushOverlay(overlay);
 		overlay->OnAttach();
 	}
 
 	void Application::Close()
 	{
-		m_Running = false;
+		Running = false;
 	}
 
 	bool Application::OnWindowResize(WindowResizeEvent& e)
@@ -131,21 +138,21 @@ namespace Vision
 
 	bool Application::OnWindowMinimized(WindowMinimizedEvent& e)
 	{
-		m_Minimized = true;
+		Minimized = true;
 		return false;
 	}
 
 	bool Application::OnWindowRestored(WindowRestoredEvent& e)
 	{
-		m_Minimized = false;
+		Minimized = false;
 		return false;
 	}
 
 	bool Application::OnWindowClose(WindowCloseEvent& e)
 	{
-		m_Running = false;
+		Running = false;
 		return true;
 	}
 
-	Application* Application::s_Instance = nullptr;
+	Application* Application::Instance = nullptr;
 }

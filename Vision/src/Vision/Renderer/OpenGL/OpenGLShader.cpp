@@ -11,81 +11,9 @@
 
 namespace Vision
 {
-	static int32 GetShaderUniformLocation(Shader* shader, const std::string& uniformName)
+	static GLenum StringToOpenGLShaderType(const std::string& type)
 	{
-		auto it = shader->UniformLocations.find(uniformName);
-
-		if (it == shader->UniformLocations.end())
-		{
-			int32 uniformLocation = glGetUniformLocation(shader->RendererID, uniformName.c_str());
-
-			if (uniformLocation == -1)
-			{
-				// Warn Message
-			}
-			else
-			{
-				shader->UniformLocations.emplace(uniformName, uniformLocation);
-			}
-
-			return uniformLocation;
-		}
-		else
-		{
-			return it->second;
-		}
-	}
-
-	static void CompileAndLinkSubShaders(Shader* shader)
-	{
-		shader->RendererID = glCreateProgram();
-
-		int32 success;
-		char logInfo[512];
-
-		for (auto& subShader : shader->SubShaders)
-		{
-			auto& [type, data] = subShader;
-			data.RendererID = glCreateShader(type);
-
-			const char* cStringSource = data.Source.c_str();
-			glShaderSource(data.RendererID, 1, &cStringSource, nullptr);
-			glCompileShader(data.RendererID);
-
-			glGetShaderiv(data.RendererID, GL_COMPILE_STATUS, &success);
-
-			if (success)
-			{
-				glAttachShader(shader->RendererID, data.RendererID);
-			}
-			else
-			{
-				glGetShaderInfoLog(data.RendererID, 512, nullptr, logInfo);
-				VnCoreInfo("unable to compile {0} shader: {1}", type, logInfo);
-
-				data.RendererID = 0;
-				shader->RendererID = 0;
-			}
-		}
-
-		glLinkProgram(shader->RendererID);
-		glGetProgramiv(shader->RendererID, GL_LINK_STATUS, &success);
-
-		if (success)
-		{
-			VnCoreInfo("shader compiled");
-		}
-		else
-		{
-			glGetProgramInfoLog(shader->RendererID, 512, nullptr, logInfo);
-			VnCoreInfo("unable to link program : {0}", logInfo);
-			shader->RendererID = 0;
-		}
-	}
-
-	static GLenum GetShaderTypeFromString(const std::string& type)
-	{
-		if (type == "vertex" || type == "point")
+		if (type == "vertex")
 		{
 			return GL_VERTEX_SHADER;
 		}
@@ -101,17 +29,68 @@ namespace Vision
 		{
 			return GL_COMPUTE_SHADER;
 		}
+
+		VnCoreAssert(false, "unsupported shader type: {0}", type);
 	}
 
-	void CreateShader(Shader* shader, const std::string& filepath)
+	static std::string OpenGLShaderTypeToString(GLenum shaderType)
+	{
+		switch (shaderType)
+		{
+			case GL_VERTEX_SHADER: 	 return "vertex";
+			case GL_FRAGMENT_SHADER: return "pixel";
+			case GL_GEOMETRY_SHADER: return "geometry";
+			case GL_COMPUTE_SHADER:  return "compute";
+		}
+
+		VnCoreAssert(false, "unsupported shader type");
+	}
+
+	static int32 GetShaderUniformLocation(Shader* shader, const std::string& uniformName)
+	{
+		auto it = shader->UniformLocations.find(uniformName);
+
+		if (it == shader->UniformLocations.end())
+		{
+			int32 uniformLocation = glGetUniformLocation(shader->RendererID, uniformName.c_str());
+
+			if (uniformLocation == -1)
+			{
+				VnCoreInfo("opengl: unable to find uniform: {0}", uniformName);
+			}
+			else
+			{
+				shader->UniformLocations.emplace(uniformName, uniformLocation);
+			}
+
+			return uniformLocation;
+		}
+		else
+		{
+			return it->second;
+		}
+	}
+
+	Shader::Shader(const std::string& filePath)
+	{
+		Init(filePath);
+	}
+
+	Shader::~Shader()
+	{
+		Uninit();
+	}
+
+	bool Shader::Init(const std::string& filePath)
 	{
 		//@(Harlequin): Use the engine's file api
 
-		std::ifstream ifs(filepath, std::ios::in);
+		std::ifstream ifs(filePath, std::ios::in);
 
 		if (!ifs.is_open())
 		{
-			return;
+			VnCoreInfo("unable to open shader file: {0}", filePath);
+			return false;
 		}
 
 		std::string line;
@@ -133,116 +112,162 @@ namespace Vision
 				typeSignature.erase(0, typeSignature.find_first_not_of(" \t\n"));
 				typeSignature.erase(typeSignature.find_last_not_of(" \t\n") + 1);
 
-				currentShaderType = GetShaderTypeFromString(typeSignature);
+				currentShaderType = StringToOpenGLShaderType(typeSignature);
 			}
 			else
 			{
-				shader->SubShaders[currentShaderType].Source += line + '\n';
+				SubShaders[currentShaderType].Source += line + '\n';
 			}
 		}
 
 		ifs.close();
 
-		CompileAndLinkSubShaders(shader);
+		RendererID = glCreateProgram();
+
+		int32 success;
+		char logInfo[512];
+
+		for (auto& subShader : SubShaders)
+		{
+			auto& [type, data] = subShader;
+			data.RendererID = glCreateShader(type);
+
+			const char* cStringSource = data.Source.c_str();
+			glShaderSource(data.RendererID, 1, &cStringSource, nullptr);
+			glCompileShader(data.RendererID);
+
+			glGetShaderiv(data.RendererID, GL_COMPILE_STATUS, &success);
+
+			if (success)
+			{
+				glAttachShader(RendererID, data.RendererID);
+			}
+			else
+			{
+				glGetShaderInfoLog(data.RendererID, 512, nullptr, logInfo);
+
+				VnCoreInfo("unable to compile {0} shader in shader file: {1}\n{2}",
+				           OpenGLShaderTypeToString(type),
+				           filePath,
+				           logInfo);
+
+				return false;
+			}
+		}
+
+		glLinkProgram(RendererID);
+		glGetProgramiv(RendererID, GL_LINK_STATUS, &success);
+
+		if (!success)
+		{
+			glGetProgramInfoLog(RendererID, 512, nullptr, logInfo);
+			VnCoreInfo("unable to link shader program : {0}", logInfo);
+			return false;
+		}
+
+		return true;
 	}
 
-	void DestroyShader(Shader* shader)
+	void Shader::Uninit()
 	{
-		for (const auto& subShader : shader->SubShaders)
+		for (const auto& subShader : SubShaders)
 		{
 			const auto& [type, data] = subShader;
-			glDetachShader(shader->RendererID, data.RendererID);
+			glDetachShader(RendererID, data.RendererID);
 			glDeleteShader(data.RendererID);
 		}
 
-		glDeleteProgram(shader->RendererID);
-		shader->SubShaders.clear();
+		glDeleteProgram(RendererID);
+		SubShaders.clear();
 	}
 
-	void BindShader(Shader* shader)
+	void Shader::Bind()
 	{
-		glUseProgram(shader->RendererID);
+		glUseProgram(RendererID);
 	}
 
-	void UnBindShader(Shader* shader)
+	void Shader::Unbind()
 	{
 		glUseProgram(0);
 	}
 
-	void SetShaderUniformInt(Shader* shader,
-							 const std::string& uniformName,
-							 int32 value)
+	void Shader::SetUniformInt(const std::string& uniformName,
+							   int32 value)
 	{
-		glUniform1i(GetShaderUniformLocation(shader, uniformName), value);
+		glUniform1i(GetShaderUniformLocation(this, uniformName), value);
 	}
 
-	void SetShaderUniformIntArray(Shader* shader,
-								  const std::string& uniformName,
-								  const int32* values,
-								  uint32 count)
+	void Shader::SetUniformIntArray(const std::string& uniformName,
+								    const int32* values,
+								    uint32 count)
 	{
-		glUniform1iv(GetShaderUniformLocation(shader, uniformName), count, values);
+		glUniform1iv(GetShaderUniformLocation(this, uniformName), count, values);
 	}
 
-	void SetShaderUniformFloat(Shader* shader,
-							   const std::string& uniformName,
-							   float32 v0)
+	void Shader::SetUniformFloat(const std::string& uniformName,
+							     float32 v0)
 	{
-		glUniform1f(GetShaderUniformLocation(shader, uniformName), v0);
+		glUniform1f(GetShaderUniformLocation(this, uniformName), v0);
 	}
 
-	void SetShaderUniformFloat2(Shader* shader,
-								const std::string& uniformName,
-								float32 v0,
-								float32 v1)
+	void Shader::SetUniformFloat2(const std::string& uniformName,
+								  float32 v0,
+								  float32 v1)
 	{
-		glUniform2f(GetShaderUniformLocation(shader, uniformName), v0, v1);
+		glUniform2f(GetShaderUniformLocation(this, uniformName), v0, v1);
 	}
 
-	void SetShaderUniformFloat3(Shader* shader,
-								const std::string& uniformName,
-								float32 v0,
-								float32 v1,
-								float32 v2)
+	void Shader::SetUniformFloat3(const std::string& uniformName,
+								  float32 v0,
+								  float32 v1,
+								  float32 v2)
 	{
-		glUniform3f(GetShaderUniformLocation(shader, uniformName), v0, v1, v2);
+		glUniform3f(GetShaderUniformLocation(this, uniformName), v0, v1, v2);
 	}
 
-	void SetShaderUniformFloat4(Shader* shader,
-								const std::string& uniformName,
-								float32 v0,
-								float32 v1,
-								float32 v2,
-								float32 v3)
+	void Shader::SetUniformFloat4(const std::string& uniformName,
+								  float32 v0,
+								  float32 v1,
+								  float32 v2,
+								  float32 v3)
 	{
-		glUniform4f(GetShaderUniformLocation(shader, uniformName), v0, v1, v2, v3);
+		glUniform4f(GetShaderUniformLocation(this, uniformName), v0, v1, v2, v3);
 	}
 
-	void SetShaderUniformMatrix3(Shader* shader,
-								 const std::string& uniformName,
-								 const float* matrix3)
+	void Shader::SetUniformMatrix3(const std::string& uniformName,
+								   const float* matrix3)
 	{
-		glUniformMatrix3fv(GetShaderUniformLocation(shader, uniformName), 1, GL_FALSE, matrix3);
+		glUniformMatrix3fv(GetShaderUniformLocation(this, uniformName),
+		                   1,
+		                   GL_FALSE,
+		                   matrix3);
 	}
 
-	void SetShaderUniformMatrix4(Shader* shader,
-								 const std::string& uniformName,
-								 const float* matrix4)
+	void Shader::SetUniformMatrix4(const std::string& uniformName,
+								   const float* matrix4)
 	{
-		glUniformMatrix4fv(GetShaderUniformLocation(shader, uniformName), 1, GL_FALSE, matrix4);
+		glUniformMatrix4fv(GetShaderUniformLocation(this, uniformName),
+		                   1,
+		                   GL_FALSE,
+		                   matrix4);
 	}
 
-	AssetLoadingData LoadShader(const std::string& shaderpath)
+	AssetLoadingData LoadShader(const std::string& filePath)
 	{
 		AssetLoadingData shaderAsset;
 
 		Shader* shader = new Shader;
 
-		CreateShader(shader, shaderpath);
-
-		shaderAsset.Memory = shader;
-		shaderAsset.SizeInBytes = sizeof(Shader);
-		shaderAsset.TotalSizeInBytes = sizeof(Shader);
+		if (shader->Init(filePath))
+		{
+			shaderAsset.Memory = shader;
+			shaderAsset.SizeInBytes = sizeof(Shader);
+			shaderAsset.TotalSizeInBytes = sizeof(Shader);
+		}
+		else
+		{
+			delete shader;
+		}
 
 		return shaderAsset;
 	}
@@ -250,7 +275,6 @@ namespace Vision
 	void UnloadShader(Asset* shaderAsset)
 	{
 		Shader* shader = (Shader*)shaderAsset->Memory;
-		DestroyShader(shader);
 		delete shader;
 	}
 }

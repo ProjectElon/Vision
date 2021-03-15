@@ -7,16 +7,32 @@
 
 namespace Vision
 {
-    void InitBitmapFont(BitmapFont* font,
-                        uint8* fontBuffer,
-                        uint32 SizeInPixels,
-                        char firstCharacter,
-                        char lastCharacter)
+
+    BitmapFont::BitmapFont(uint8* fontBuffer,
+                           uint32 sizeInPixels,
+                           char firstCharacter,
+                           char lastCharacter)
     {
-        font->SizeInPixels   = SizeInPixels;
-        font->FirstCharacter = firstCharacter;
-        font->LastCharacter  = lastCharacter;
-        font->Buffer         = fontBuffer;
+        Init(fontBuffer,
+             sizeInPixels,
+             firstCharacter,
+             lastCharacter);
+    }
+
+    BitmapFont::~BitmapFont()
+    {
+        Uninit();
+    }
+
+    void BitmapFont::Init(uint8* fontBuffer,
+                          uint32 sizeInPixels,
+                          char firstCharacter,
+                          char lastCharacter)
+    {
+        SizeInPixels   = sizeInPixels;
+        FirstCharacter = firstCharacter;
+        LastCharacter  = lastCharacter;
+        Buffer         = fontBuffer;
 
         uint32 characterCount = (lastCharacter - firstCharacter) + 1;
 
@@ -26,12 +42,12 @@ namespace Vision
         uint32 overSampleX = 2;
         uint32 overSampleY = 2;
 
-        uint8* AtlasBitmap = new uint8[textureAtlasWidth * textureAtlasHeight];
+        uint8* atlasBitmap = new uint8[textureAtlasWidth * textureAtlasHeight];
 
         stbtt_pack_context context;
 
         if (!stbtt_PackBegin(&context,
-                             AtlasBitmap,
+                             atlasBitmap,
                              textureAtlasWidth,
                              textureAtlasHeight,
                              0,
@@ -48,37 +64,39 @@ namespace Vision
         if (!stbtt_PackFontRange(&context,
                                  fontBuffer,
                                  0,
-                                 SizeInPixels,
+                                 sizeInPixels,
                                  firstCharacter,
                                  characterCount,
-                                 font->Glyphs))
+                                 Glyphs))
         {
             VnCoreTrace("failed to pack font");
         }
 
         stbtt_PackEnd(&context);
 
-        InitTexture(&font->Atlas,
-                      AtlasBitmap,
-                      textureAtlasWidth,
-                      textureAtlasHeight,
-                      PixelFormat::Font);
+        Atlas.Init(atlasBitmap,
+                   textureAtlasWidth,
+                   textureAtlasHeight,
+                   PixelFormat::Font);
 
-        SetTextureFilterMode(&font->Atlas, FilterMode::Bilinear);
+        Atlas.SetFilterMode(FilterMode::Bilinear);
 
-        delete[] AtlasBitmap;
+        delete[] atlasBitmap;
     }
 
-    void UninitBitmapFont(BitmapFont* font)
+    void BitmapFont::Uninit()
     {
-        UninitTexture(&font->Atlas);
-        delete[] font->Buffer;
+        Atlas.Uninit();
+        delete[] Buffer;
     }
 
-    void SetFontSize(BitmapFont* font, uint32 SizeInPixels)
+    void BitmapFont::SetSize(uint32 sizeInPixels)
     {
-        UninitTexture(&font->Atlas);
-        InitBitmapFont(font, font->Buffer, SizeInPixels);
+        Atlas.Uninit();
+        Init(Buffer,
+             sizeInPixels,
+             FirstCharacter,
+             LastCharacter);
     }
 
     AssetLoadingData LoadBitmapFont(const std::string& fontpath)
@@ -91,8 +109,7 @@ namespace Vision
         File::Read(handle, fontBuffer, handle.SizeInBytes);
         File::Close(handle);
 
-        BitmapFont* font = new BitmapFont;
-        InitBitmapFont(font, fontBuffer, 16);
+        BitmapFont* font = new BitmapFont(fontBuffer, 16);
 
         AssetLoadingData fontAsset;
         fontAsset.Memory = font;
@@ -105,6 +122,6 @@ namespace Vision
     void UnloadBitmapFont(Asset* fontAsset)
     {
         BitmapFont* font = (BitmapFont*)fontAsset->Memory;
-        UninitBitmapFont(font);
+        delete font;
     }
 }

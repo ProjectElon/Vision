@@ -8,6 +8,9 @@ namespace Vision
 	class Layer
 	{
 	public:
+		std::string Name;
+
+		Layer() = default;
 		Layer(const std::string& name);
 
 		virtual ~Layer() {}
@@ -18,10 +21,5 @@ namespace Vision
 		virtual void OnUpdate(float dt) {}
 		virtual void OnImGuiRender() {}
 		virtual void OnEvent(Event& event) {}
-
-		inline const std::string& GetName() const { return m_Name; }
-
-	protected:
-		std::string m_Name;
 	};
 }
