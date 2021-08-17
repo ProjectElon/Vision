@@ -1,4 +1,4 @@
-#include "pch.h"
+#include "pch.hpp"
 #include "Vision/IO/TextSerializer.h"
 #include "Vision/IO/File.h"
 #include <sstream>
@@ -33,7 +33,13 @@ namespace Vision
 
         const PerspectiveCamera& sceneCamera = editorState.SceneCamera;
         stringStream << "CameraPosition "
-                     << sceneCamera.FocalPoint.x << " " << sceneCamera.FocalPoint.y << " " << sceneCamera.FocalPoint.z << "\n";
+                     << sceneCamera.FocalPoint.x << " "
+                     << sceneCamera.FocalPoint.y << " "
+                     << sceneCamera.FocalPoint.z << "\n";
+
+        stringStream << "CameraPitch "     << sceneCamera.Pitch << "\n";
+        stringStream << "CameraYaw "       << sceneCamera.Yaw   << "\n";
+        stringStream << "CameraZoomLevel " << sceneCamera.Distance << "\n";
 
         for (uint32 entity = 1; entity <= scene->EntityCount; entity++)
         {

@@ -78,7 +78,7 @@ namespace Vision
 
 		auto& tagComponent = scene->GetComponent<TagComponent>(entity);
 
-		const std::string& tag = tagComponent.Tag;
+		const std::string& tag = tagComponent.Tag.Data;
 
 		ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding;
 

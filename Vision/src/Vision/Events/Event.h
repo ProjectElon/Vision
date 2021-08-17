@@ -1,7 +1,7 @@
 #pragma once
 
-#include "pch.h"
-#include "Vision/Core/Common.h"
+#include "pch.hpp"
+#include "Vision/Core/Defines.h"
 
 namespace Vision
 {
@@ -30,10 +30,10 @@ namespace Vision
 
 	enum EventCategory : uint8_t
 	{
-		EventCategoryApplication = VnBitUInt32(0),
-		EventCategoryInput		 = VnBitUInt32(1),
-		EventCategoryKeyboard    = VnBitUInt32(2),
-		EventCategoryMouse       = VnBitUInt32(3)
+		EventCategoryApplication = VnBitU32Mask(0),
+		EventCategoryInput		 = VnBitU32Mask(1),
+		EventCategoryKeyboard    = VnBitU32Mask(2),
+		EventCategoryMouse       = VnBitU32Mask(3)
 	};
 
 	class Event

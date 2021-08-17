@@ -1,8 +1,9 @@
-#include "pch.h"
-#include "Vision/Core/Common.h"
+#include "pch.hpp"
+#include "Vision/Core/Defines.h"
 
 #ifdef VN_PLATFORM_WINDOWS
 
+#include <windows.h>
 #include <commdlg.h>
 #include <GLFW/glfw3.h>
 
@@ -22,10 +23,10 @@ namespace Vision
 
 		using namespace std::literals::string_literals;
 
-    	uint32 count = extensions.size();
+    	size_t count = extensions.size();
     	std::string win32FilterFormat = filter + "\0"s;
 
-    	for (uint32 index = 0;
+    	for (size_t index = 0;
     		 index < count;
     		 index++)
     	{

@@ -1,7 +1,7 @@
-#include "pch.h"
-#include "Application.h"
-#include "Vision/Core/Common.h"
-#include "Vision/Core/Log.h"
+#include "pch.hpp"
+#include "Vision/Core/Defines.h"
+#include "Vision/Core/Application.h"
+#include "Vision/Core/Logger.h"
 #include "Vision/Platform/Input.h"
 #include "Vision/Renderer/Renderer.h"
 #include "Vision/Renderer/Renderer2D.h"
@@ -12,60 +12,66 @@ namespace Vision
 	Application::Application()
 	{
 		VnCoreAssert(!Instance, "Application already exists");
-
 		Instance = this;
+		
+		const char *windowTitle = Vars.Settings.WindowTitle.Data;
+		
+		OpenWindow(
+			&Window,
+			windowTitle,
+			0,
+			0,
+			Vars.Settings.WindowWidth,
+			Vars.Settings.WindowHeight);
 
-		Window.Open(Vars.Settings.WindowTitle.Text,
-					Vars.Settings.WindowWidth,
-					Vars.Settings.WindowHeight,
-					VnBindEventFn(Application::OnEvent));
-
-		Renderer::Init(&Window);
-		Renderer2D::Init();
-		Assets::Init();
-		Input::Init();
+		Logging::Initialize();
+		Input::Initialize();
+		Assets::Initialize();
+		Renderer::Initialize();
+		Renderer2D::Initialize();
 
 		PushOverlay(&ImGuiLayer);
 
-		FrameTimer.Start();
-
-		Renderer::SetViewport(0,
-							  0,
-							  Vars.Settings.WindowWidth,
-							  Vars.Settings.WindowHeight);
+		ViewportRect viewportRect = { 0, 0, Vars.Settings.WindowWidth, Vars.Settings.WindowHeight };
+		Renderer::API.SetViewport(&viewportRect);
 	}
 
 	Application::~Application()
 	{
-		for (auto* layer : LayerStack)
+		for (auto* layer : LayerStack.Layers)
 		{
 			layer->OnDetach();
 		}
 
-		Input::Shutdown();
-		Assets::Shutdown();
 		Renderer2D::Shutdown();
 		Renderer::Shutdown();
+		Assets::Shutdown();
+		Input::Shutdown();
+		Logging::Shutdown();
 	}
 
 	void Application::Run()
 	{
+		FrameTimer.Start();
+
 		while (Running)
 		{
 			FrameTimer.Stop();
-			float deltaTime = static_cast<float>(FrameTimer.ElapsedTime);
+			auto deltaTime = static_cast<float32>(FrameTimer.ElapsedTime);
 			FrameTimer.Start();
+
+			PumpEvents(&Window);
 
 			if (!Minimized)
 			{
- 				for (Layer* layer : LayerStack)
+ 				for (Layer* layer : LayerStack.Layers)
 				{
 					layer->OnUpdate(deltaTime);
 				}
 
 				ImGuiLayer.Begin();
 
-				for (Layer* layer : LayerStack)
+				for (Layer* layer : LayerStack.Layers)
 				{
 					layer->OnImGuiRender();
 				}
@@ -73,13 +79,11 @@ namespace Vision
 				ImGuiLayer.End();
 			}
 
-			Window.PollEvents();
-
-			Renderer::SwapBuffers();
+			Renderer::API.SwapBuffers();
 
 #ifdef VN_PLATFORM_WINDOWS
 	#ifdef VN_EDITOR
-				// @(Note): win32 file watchers
+				// @(temparary): for win32 file watchers
 				MsgWaitForMultipleObjectsEx(0,
 											NULL,
 											0,
@@ -99,7 +103,9 @@ namespace Vision
 		dispatcher.Dispatch<WindowRestoredEvent>(VnBindEventFn(Application::OnWindowRestored));
 		dispatcher.Dispatch<WindowCloseEvent>(VnBindEventFn(Application::OnWindowClose));
 
-		for (auto layerIt = LayerStack.rbegin(); layerIt != LayerStack.rend(); ++layerIt)
+		for (auto layerIt = LayerStack.Layers.rbegin();
+			 layerIt != LayerStack.Layers.rend();
+			 ++layerIt)
 		{
 			(*layerIt)->OnEvent(e);
 
@@ -129,10 +135,10 @@ namespace Vision
 
 	bool Application::OnWindowResize(WindowResizeEvent& e)
 	{
-		Renderer::SetViewport(0,
-							  0,
-							  e.GetWidth(),
-							  e.GetHeight());
+#ifndef VN_EDITOR
+		ViewportRect viewportRect = { 0, 0, e.GetWidth(), e.GetHeight() };
+		Renderer::API.SetViewport(&viewportRect);
+#endif
 		return false;
 	}
 

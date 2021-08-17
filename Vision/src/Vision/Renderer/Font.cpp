@@ -1,5 +1,9 @@
-#include "pch.h"
+#include "pch.hpp"
+#include "Vision/Core/Defines.h"
+#include "Vision/Core/Logger.h"
+
 #include "Vision/Renderer/Font.h"
+#include "Vision/Renderer/Renderer.h"
 #include "Vision/IO/File.h"
 
 #define STB_TRUETYPE_IMPLEMENTATION
@@ -7,32 +11,17 @@
 
 namespace Vision
 {
-
-    BitmapFont::BitmapFont(uint8* fontBuffer,
-                           uint32 sizeInPixels,
-                           char firstCharacter,
-                           char lastCharacter)
+    void InitBitmapFont(BitmapFont* font,
+                        uint8* fontBuffer,
+                        uint32 sizeInPixels,
+                        char firstCharacter,
+                        char lastCharacter)
     {
-        Init(fontBuffer,
-             sizeInPixels,
-             firstCharacter,
-             lastCharacter);
-    }
 
-    BitmapFont::~BitmapFont()
-    {
-        Uninit();
-    }
-
-    void BitmapFont::Init(uint8* fontBuffer,
-                          uint32 sizeInPixels,
-                          char firstCharacter,
-                          char lastCharacter)
-    {
-        SizeInPixels   = sizeInPixels;
-        FirstCharacter = firstCharacter;
-        LastCharacter  = lastCharacter;
-        Buffer         = fontBuffer;
+        font->SizeInPixels   = sizeInPixels;
+        font->FirstCharacter = firstCharacter;
+        font->LastCharacter  = lastCharacter;
+        font->Buffer         = fontBuffer;
 
         uint32 characterCount = (lastCharacter - firstCharacter) + 1;
 
@@ -42,12 +31,12 @@ namespace Vision
         uint32 overSampleX = 2;
         uint32 overSampleY = 2;
 
-        uint8* atlasBitmap = new uint8[textureAtlasWidth * textureAtlasHeight];
+        uint8* alphaBitmap = new uint8[textureAtlasWidth * textureAtlasHeight];
 
-        stbtt_pack_context context;
+        stbtt_pack_context packingContext;
 
-        if (!stbtt_PackBegin(&context,
-                             atlasBitmap,
+        if (!stbtt_PackBegin(&packingContext,
+                             alphaBitmap,
                              textureAtlasWidth,
                              textureAtlasHeight,
                              0,
@@ -57,46 +46,61 @@ namespace Vision
             VnCoreTrace("failed to initialize font");
         }
 
-        stbtt_PackSetOversampling(&context,
+        stbtt_PackSetOversampling(&packingContext,
                                   overSampleX,
                                   overSampleY);
 
-        if (!stbtt_PackFontRange(&context,
+        if (!stbtt_PackFontRange(&packingContext,
                                  fontBuffer,
                                  0,
                                  sizeInPixels,
                                  firstCharacter,
                                  characterCount,
-                                 Glyphs))
+                                 font->Glyphs))
         {
             VnCoreTrace("failed to pack font");
         }
 
-        stbtt_PackEnd(&context);
+        stbtt_PackEnd(&packingContext);
 
-        Atlas.Init(atlasBitmap,
-                   textureAtlasWidth,
-                   textureAtlasHeight,
-                   PixelFormat::Font);
+        uint32* atlasBitmap = new uint32[textureAtlasWidth * textureAtlasHeight];
 
-        Atlas.SetFilterMode(FilterMode::Bilinear);
+        for (uint32 pixelIndex = 0;
+             pixelIndex < textureAtlasWidth * textureAtlasHeight;
+             ++pixelIndex)
+        {
+            uint32 alpha = alphaBitmap[pixelIndex];
+            atlasBitmap[pixelIndex] = alpha | (alpha << 8) | (alpha << 16) | (alpha << 24);
+        }
+
+        Renderer::API.InitTexture(&font->Atlas,
+                                  atlasBitmap,
+                                  textureAtlasWidth,
+                                  textureAtlasHeight,
+                                  PixelFormat_RGBA,
+                                  WrapMode_ClampToEdge,
+                                  WrapMode_ClampToEdge,
+                                  FilterMode_Bilinear);
 
         delete[] atlasBitmap;
+        delete[] alphaBitmap;
     }
 
-    void BitmapFont::Uninit()
+    void UninitBitmapFont(BitmapFont* font)
     {
-        Atlas.Uninit();
-        delete[] Buffer;
+        Renderer::API.UninitTexture(&font->Atlas);
+        delete[] font->Buffer;
     }
 
-    void BitmapFont::SetSize(uint32 sizeInPixels)
+    void SetBitmapFontSize(BitmapFont* font, uint32 sizeInPixels)
     {
-        Atlas.Uninit();
-        Init(Buffer,
-             sizeInPixels,
-             FirstCharacter,
-             LastCharacter);
+        Renderer::API.UninitTexture(&font->Atlas);
+
+        InitBitmapFont(font,
+                       font->Buffer,
+                       sizeInPixels,
+                       font->FirstCharacter,
+                       font->LastCharacter);
     }
 
     AssetLoadingData LoadBitmapFont(const std::string& fontpath)
@@ -109,7 +113,8 @@ namespace Vision
         File::Read(handle, fontBuffer, handle.SizeInBytes);
         File::Close(handle);
 
-        BitmapFont* font = new BitmapFont(fontBuffer, 16);
+        BitmapFont* font = (BitmapFont*)_aligned_malloc(sizeof(BitmapFont), alignof(BitmapFont));
+        InitBitmapFont(font, fontBuffer, 16);
 
         AssetLoadingData fontAsset;
         fontAsset.Memory = font;
@@ -122,6 +127,7 @@ namespace Vision
     void UnloadBitmapFont(Asset* fontAsset)
     {
         BitmapFont* font = (BitmapFont*)fontAsset->Memory;
-        delete font;
+        UninitBitmapFont(font);
+        _aligned_free(font);
     }
 }

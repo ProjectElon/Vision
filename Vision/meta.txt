@@ -1,0 +1,3 @@
+src/Vision/Entity/Components.h
+src/Vision/Core/Vars.h
+src/Vision/Core/String.h

@@ -1,4 +1,4 @@
-#include "pch.h"
+#include "pch.hpp"
 
 #include "LayerStack.h"
 
@@ -6,7 +6,7 @@ namespace Vision
 {
 	Layer* LayerStack::FindLayerByName(const std::string& name) const
 	{
-		for (auto layerIt = begin(); layerIt != end(); ++layerIt)
+		for (auto layerIt = Layers.begin(); layerIt != Layers.end(); ++layerIt)
 		{
 			if ((*layerIt)->Name == name)
 			{
@@ -19,7 +19,7 @@ namespace Vision
 
 	bool LayerStack::RemoveLayerByName(const std::string& name)
 	{
-		for (auto layerIt = begin(); layerIt != end(); ++layerIt)
+		for (auto layerIt = Layers.begin(); layerIt != Layers.end(); ++layerIt)
 		{
 			if ((*layerIt)->Name == name)
 			{
@@ -33,14 +33,14 @@ namespace Vision
 
 	void LayerStack::PushLayer(Layer* layer)
 	{
-		Layers.emplace(begin() + InsertIndex, layer);
+		Layers.emplace(Layers.begin() + InsertIndex, layer);
 	}
 
 	void LayerStack::PopLayer(Layer* layer) 
 	{
-		auto layerIt = std::find(begin(), begin() + InsertIndex, layer);
+		auto layerIt = std::find(Layers.begin(), Layers.begin() + InsertIndex, layer);
 		
-		if (layerIt != begin() + InsertIndex)
+		if (layerIt != Layers.begin() + InsertIndex)
 		{
 			layer->OnDetach();
 			Layers.erase(layerIt);
@@ -55,9 +55,9 @@ namespace Vision
 	
 	void LayerStack::PopOverlay(Layer* overlay)
 	{
-		auto LayerIt = std::find(begin() + InsertIndex, end(), overlay);
+		auto LayerIt = std::find(Layers.begin() + InsertIndex, Layers.end(), overlay);
 		
-		if (LayerIt != end())
+		if (LayerIt != Layers.end())
 		{
 			overlay->OnDetach();
 			Layers.erase(LayerIt);

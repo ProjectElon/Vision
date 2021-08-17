@@ -1,4 +1,5 @@
-#include "pch.h"
+#include "pch.hpp"
+#include "Vision/Core/Logger.h"
 #include "Vision/Entity/Scene.h"
 #include "Vision/IO/TextDeserializer.h"
 
@@ -21,37 +22,16 @@ namespace Vision
         scene->Entities = nullptr;
     }
 
-    AssetLoadingData LoadScene(const std::string& scenepath)
-    {
-        AssetLoadingData sceneAsset;
-
-        Scene* scene = new Scene;
-        DeserializeScene(scenepath, scene);
-        
-        sceneAsset.Memory = scene;
-        sceneAsset.SizeInBytes = sizeof(Scene);
-        sceneAsset.TotalSizeInBytes = sizeof(Scene); // @(Harlequin): not right entites + components
-
-        return sceneAsset;
-    }
-
-    void UnloadScene(Asset* sceneAsset)
-    {
-        Scene* scene = static_cast<Scene*>(sceneAsset->Memory);
-        DestroyScene(scene);
-        delete scene;
-    }
-
     void Scene::FreeEntity(const std::string& tag)
     {
         Entity entity = QueryEntity(tag);
 
-        VnCoreAssert(entity != entity::null && entity <= EntityCount, "Can't Free an invalid Entity");
+        VnCoreAssert(entity != entity::null && entity <= EntityCount);
 
         Entity lastEntity = EntityCount;
 
-        std::string swappedEntityTag = GetComponent<TagComponent>(lastEntity).Tag;
-        std::string removedEntityTag = GetComponent<TagComponent>(entity).Tag;
+        std::string swappedEntityTag = GetComponent<TagComponent>(lastEntity).Tag.Data;
+        std::string removedEntityTag = GetComponent<TagComponent>(entity).Tag.Data;
 
         Tags.extract(removedEntityTag);
 
@@ -111,7 +91,7 @@ namespace Vision
 
     void Scene::RemoveComponent(Entity entity, ComponentID componentID, const std::string& name)
     {
-        VnCoreAssert(entity != entity::null && entity <= EntityCount, "Can't Remove a component of an invalid Entity");
+        VnCoreAssert(entity != entity::null && entity <= EntityCount);
 
         EntityStorage& entityStorage = Entities[entity];
         auto entityStorageIter = entityStorage.find(componentID);
@@ -127,10 +107,10 @@ namespace Vision
         Entity* entites = componentStorage.Entities;
 
         const ComponentIndex lastComponentIndex = componentStorage.Count - 1;
-        VnCoreAssert(lastComponentIndex >= 0, "lastComponentIndex is less than zero");
+        VnCoreAssert(lastComponentIndex >= 0);
 
         static uint8 tempStorage[1024];
-        VnCoreAssert(componentSize <= 1024, "Component Size is more than 1024 bytes");
+        VnCoreAssert(componentSize <= 1024);
 
         if (lastComponentIndex != currentComponentIndex)
         {

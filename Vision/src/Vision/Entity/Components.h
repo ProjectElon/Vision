@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vision/Core/Common.h"
+#include "Vision/Core/Defines.h"
 #include "Vision/IO/Assets.h"
 #include "Vision/Core/String.h"
 
@@ -37,14 +37,13 @@ namespace Vision
         ~ComponentStorage();
     };
 
-
-    Inspect(category : "math")
+    introspect_struct("math", true)
     struct Vector2
     {
         float32 x = 0.0f;
         float32 y = 0.0f;
 
-        Ignore()
+        ignore_methods()
 
         Vector2() = default;
 
@@ -73,14 +72,14 @@ namespace Vision
         }
     };
 
-    Inspect(category : "math")
+    introspect_struct("math", true)
     struct Vector3
     {
         float32 x = 0.0f;
         float32 y = 0.0f;
         float32 z = 0.0f;
 
-        Ignore()
+        ignore_methods()
 
         Vector3() = default;
 
@@ -112,7 +111,7 @@ namespace Vision
         }
     };
 
-    Inspect(category : "math")
+    introspect_struct("math", true)
     struct Vector4
     {
         float32 x = 0.0f;
@@ -120,7 +119,7 @@ namespace Vision
         float32 z = 0.0f;
         float32 w = 0.0f;
 
-        Ignore()
+        ignore_methods()
 
         Vector4() = default;
 
@@ -155,12 +154,12 @@ namespace Vision
         }
     };
 
-    Inspect(category : "math")
+    introspect_struct("math", true)
     struct Matrix4
     {
         float32 elements[4 * 4] = { 0.0f };
 
-        Ignore()
+        ignore_methods()
 
         Matrix4() = default;
 
@@ -204,14 +203,16 @@ namespace Vision
 
     #define MaxEntityNameCount 256
 
-    Inspect(category : "component")
+    //@(Todo): Replace Tag with tring
+    introspect_struct("component", true)
     struct TagComponent
     {
         // std::string Tag;
-        char Tag[MaxEntityNameCount];
+        // char Tag[MaxEntityNameCount];
+        String Tag;
     };
 
-    Inspect(category : "component")
+    introspect_struct("component", true)
     struct TransformComponent
     {
         Vector3 Position = { 0.0f, 0.0f, 1.0f };
@@ -219,7 +220,7 @@ namespace Vision
         Vector3 Scale    = { 1.0f, 1.0f, 1.0f };
     };
 
-    Inspect(category : "component")
+    introspect_struct("component", true)
     struct OrthographicCameraComponent
     {
         float32 AspectRatio =  1.7778f;
@@ -233,7 +234,7 @@ namespace Vision
         bool Static = false;
     };
 
-    Inspect(category : "component")
+    introspect_struct("component", true)
     struct PerspectiveCameraComponent
     {
         float32 AspectRatio = 1.7778f;
@@ -247,7 +248,7 @@ namespace Vision
         bool Static = false;
     };
 
-    Inspect(category : "component")
+    introspect_struct("component", true)
     struct SpriteRendererComponent
     {
         // @(Harlequin): move a default texture to a local directory for now we use wood.png
@@ -256,6 +257,6 @@ namespace Vision
         Vector4 Color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
         Vector2 BottomLeftUV = { 0.0f, 0.0f };
-        Vector2 TopRightUV   = { 1.0f, 1.0f };
+        Vector2 TopRightUV = { 1.0f, 1.0f };
     };
 }

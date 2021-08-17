@@ -6,7 +6,7 @@ namespace Vision
 {
     #define VnBindWatcherFn(fn) std::bind(&fn, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
 
-    enum class FileWatcherAction
+    enum class DirectoryWatcherAction
     {
         FileAdded,
         FileRemoved,
@@ -14,11 +14,11 @@ namespace Vision
         FileRenamed,
     };
 
-    using FileWatcherCallbackFn =
-    std::function<void(FileWatcherAction action, std::string path, std::string oldPath)>;
+    using DirectoryWatcherCallbackFn =
+        std::function<void(DirectoryWatcherAction action, std::string path, std::string oldPath)>;
 
     bool WatchDirectory(const std::string& path,
-                        FileWatcherCallbackFn callback,
+                        DirectoryWatcherCallbackFn callback,
                         bool recursive = true);
 
     bool UnWatchDirectory(const std::string& path);

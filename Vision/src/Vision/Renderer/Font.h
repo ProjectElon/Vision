@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vision/Core/Common.h"
+#include "Vision/Core/Defines.h"
 #include "Vision/IO/Assets.h"
 #include "Vision/Renderer/Texture.h"
 #include <stb_truetype.h>
@@ -11,7 +11,7 @@ namespace Vision
     {
         stbtt_packedchar Glyphs[256];
 
-        Texture Atlas;
+        Texture Atlas = {};
 
         uint8* Buffer = nullptr;
 
@@ -19,24 +19,16 @@ namespace Vision
 
         char FirstCharacter = ' ';
         char LastCharacter = '~';
-
-        BitmapFont() = default;
-        BitmapFont(uint8* fontBuffer,
-                   uint32 SizeInPixels,
-                   char firstCharacter = ' ',
-                   char lastCharacter = '~');
-
-        ~BitmapFont();
-
-        void Init(uint8* fontBuffer,
-                  uint32 SizeInPixels,
-                  char firstCharacter = ' ',
-                  char lastCharacter = '~');
-
-        void Uninit();
-
-        void SetSize(uint32 sizeInPixels);
     };
+
+    void InitBitmapFont(BitmapFont* font,
+                        uint8* fontBuffer,
+                        uint32 SizeInPixels,
+                        char firstCharacter = ' ',
+                        char lastCharacter = '~');
+
+    void UninitBitmapFont(BitmapFont* font);
+    void SetBitmapFontSize(BitmapFont* font, uint32 sizeInPixels);
 
     AssetLoadingData LoadBitmapFont(const std::string& fontpath);
     void UnloadBitmapFont(Asset* fontAsset);

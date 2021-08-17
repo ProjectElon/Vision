@@ -27,7 +27,7 @@ namespace Vision
 
 			if (ImGui::MenuItem("Open Scene...", "Ctrl+Shift+O"))
 			{
-				Editor->OpenScene();
+				Editor->OpenSceneDialog();
 			}
 
 			bool enabled = Editor->ActiveSceneID != 0;

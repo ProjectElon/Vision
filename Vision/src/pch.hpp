@@ -7,6 +7,7 @@
 #include <utility>
 #include <algorithm>
 #include <memory>
+#include <limits>
 
 #include <tuple>
 #include <vector>
@@ -18,5 +19,3 @@
 #include <map>
 #include <unordered_set>
 #include <unordered_map>
-
-#include "Vision\Core\Common.h"

@@ -95,7 +95,7 @@ project ("Vision")
 	cppdialect ("C++17")
 	staticruntime ("on")
 
-	pchheader ("pch.h")
+	pchheader ("pch.hpp")
 	pchsource ("Vision/src/pch.cpp")
 
 	files
@@ -138,9 +138,9 @@ project ("Vision")
 	filter "files:ThirdParty/ImGuizmo/**.cpp"
 	flags { "NoPch" }
 
-project ("PreBuild")
+project ("Inception")
 
-	location ("PreBuild")
+	location ("Inception")
 	kind ("ConsoleApp")
 	language ("C++")
 	cppdialect ("C++17")
@@ -154,12 +154,7 @@ project ("PreBuild")
 
 	includedirs
 	{
-		"%{prj.name}/src",
-		"Vision/src",
-		"%{includedir.spdlog}",
-		"%{includedir.ImGui}",
-		"%{includedir.glm}",
-		"%{includedir.stb}",
+		"%{prj.name}/src"
 	}
 
 	defines
@@ -188,6 +183,7 @@ project ("EagleEye")
 	{
 		"%{prj.name}/src",
 		"Vision/src",
+		"ThirdParty/Glad/include",
 		"%{includedir.spdlog}",
 		"%{includedir.ImGui}",
 		"%{includedir.glm}",
@@ -198,6 +194,11 @@ project ("EagleEye")
 	links
 	{
 		"Vision"
+	}
+
+	defines
+	{
+		"_CRT_SECURE_NO_WARNINGS"
 	}
 
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")

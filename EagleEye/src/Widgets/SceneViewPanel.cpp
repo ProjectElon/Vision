@@ -3,6 +3,10 @@
 #include "Vision/Renderer/FrameBuffer.h"
 #include "Vision/Entity/Scene.h"
 #include "Vision/IO/Assets.h"
+#include "Vision/Renderer/Renderer.h"
+#include "Vision/Platform/Input.h"
+#include "Vision/IO/FileSystem.h"
+#include "EditorLayer.h"
 
 #include <imgui.h>
 #include <ImGuizmo.h>
@@ -13,8 +17,6 @@
 #include <glm/gtx/matrix_decompose.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/quaternion.hpp>
-
-#include "Vision/Platform/Input.h"
 
 namespace Vision
 {
@@ -96,16 +98,35 @@ namespace Vision
 	{
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 		ImGui::Begin("Scene Viewport");
-
 		ImGui::PopStyleVar();
 
 		IsViewportResized = false;
-		IsInteractable = ImGui::IsWindowFocused() && ImGui::IsWindowHovered();
+		IsInteractable = ImGui::IsWindowHovered() && ImGui::IsWindowFocused();
 
 		ImVec2 currentViewportSize = ImGui::GetContentRegionAvail();
 
-		uint32 textureID = FrameBuffer->ColorAttachments[0];
-		ImGui::Image((void*)(intptr_t)textureID, { currentViewportSize.x, currentViewportSize.y }, ImVec2(0, 1), ImVec2(1, 0));
+		//@Incomplete: Right now we are just using opengl
+		uint32 textureID = FrameBuffer->OpenGL.ColorAttachments[0];
+		ImGui::Image((ImTextureID)textureID, { currentViewportSize.x, currentViewportSize.y }, ImVec2(0, 1), ImVec2(1, 0));
+
+		if (ImGui::BeginDragDropTarget())
+        {
+            const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Content_Browser_Item");
+
+            if (payload)
+            {
+                std::string path = std::string((const char*)payload->Data);
+                std::string extension = FileSystem::GetFileExtension(path, false);
+
+                // Todo: Add other file extensions
+                if (Assets::IsExtensionOfAssetType(extension, "Scene"))
+                {
+					EditorLayer->OpenScene(path);
+                }
+            }
+
+            ImGui::EndDragDropTarget();
+        }
 
 		auto windowSize = ImGui::GetWindowSize();
 		ImVec2 minBound = ImGui::GetWindowPos();
@@ -125,11 +146,12 @@ namespace Vision
 		{
 			IsViewportResized = true;
 			ViewportSize = { currentViewportSize.x, currentViewportSize.y };
-			FrameBuffer->Resize((uint32)currentViewportSize.x,
-								(uint32)currentViewportSize.y);
+			Renderer::API.ResizeFrameBuffer(FrameBuffer,
+											static_cast<uint32>(currentViewportSize.x),
+											static_cast<uint32>(currentViewportSize.y));
 		}
 
-		EditorState editorState = Scene::EditorState;
+		EditorState& editorState = Scene::EditorState;
 
 		if (ActiveSceneID && !editorState.SelectedEntityTag.empty() && GizmoType != -1)
 		{

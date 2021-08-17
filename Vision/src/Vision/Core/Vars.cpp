@@ -1,8 +1,11 @@
-#include "pch.h"
-#include "Vision/Meta/VarsMeta.h"
+#include "pch.hpp"
+#include "../Meta/VarsMeta.h"
+#include "Vision/Core/Logger.h"
 #include "Vision/Core/Vars.h"
 #include "Vision/Core/Lexer.h"
 #include "Vision/IO/File.h"
+
+#include <sstream>
 
 namespace Vision
 {
@@ -15,7 +18,7 @@ namespace Vision
         std::unordered_map<std::string, std::string> membersTable;
 
         std::string memberPath = "";
-        
+
         InspectStruct(VarsMembers,
                       VnArrayCount(VarsMembers),
                       &vars,
@@ -25,6 +28,7 @@ namespace Vision
                           void* memberPointer,
                           bool beginStruct,
                           bool endStruct,
+                          int32 arrayIndex,
                           uint32 depth)
         {
             if (depth == 0)
@@ -45,12 +49,11 @@ namespace Vision
                         contents = File::ReadContents(handle);
 
                         Lexer lexer;
-                        lexer.At = &contents[0];
+                        lexer.At = contents.data();
 
                         bool parsing = true;
 
-                        Token identifier;
-                        Token value;
+                        std::vector<std::string> keyTokens;
 
                         while (parsing)
                         {
@@ -66,7 +69,25 @@ namespace Vision
 
                                 case TokenType::Identifier:
                                 {
-                                    identifier = token;
+                                    keyTokens.push_back(std::string(token.Text, token.TextLength));
+                                }
+                                break;
+
+                                case TokenType::OpenBracket:
+                                {
+                                    keyTokens.push_back("[");
+                                }
+                                break;
+
+                                case TokenType::CloseBracket:
+                                {
+                                    keyTokens.push_back("]");
+                                }
+                                break;
+
+                                case TokenType::UnderScore:
+                                {
+                                    keyTokens.push_back("_");
                                 }
                                 break;
 
@@ -75,12 +96,24 @@ namespace Vision
                                 case TokenType::String:
                                 case TokenType::Bool:
                                 {
-                                    std::string key = memberPath + std::string(identifier.Text,
-                                        identifier.TextLength);
-                                    std::string value = std::string(token.Text,
-                                        token.TextLength);
+                                    if (keyTokens.back() == "[")
+                                    {
+                                        keyTokens.push_back(std::string(token.Text, token.TextLength));
+                                    }
+                                    else
+                                    {
+                                        std::string value = std::string(token.Text, token.TextLength);
+                                        std::string key;
 
-                                    membersTable[key] = value;
+                                        for (auto& token : keyTokens)
+                                        {
+                                            key = key + token;
+                                        }
+
+                                        membersTable[key] = value;
+
+                                        keyTokens.clear();
+                                    }
                                 }
                                 break;
                             }
@@ -96,7 +129,16 @@ namespace Vision
 
                 if (depth > 1)
                 {
-                    memberPath += std::string(structName) + std::string("_");
+                    std::string arraySubscript = "";
+
+                    if (arrayIndex != -1)
+                    {
+                        std::stringstream ss;
+                        ss << arrayIndex;
+                        arraySubscript = "[" + ss.str()  + "]";
+                    }
+
+                    memberPath += std::string(structName) + arraySubscript + std::string("_");
                 }
             }
             else if (endStruct)
@@ -111,12 +153,31 @@ namespace Vision
 
                 if (depth > 1)
                 {
-                    memberPath.resize(memberPath.length() - (strlen(structName) + 1));
+                    int arrayIndexDigitCount = 0;
+
+                    if (arrayIndex != -1)
+                    {
+                        std::stringstream ss;
+                        ss << arrayIndex;
+                        arrayIndexDigitCount = static_cast<uint32>(ss.str().length() + 2);
+                    }
+
+                    memberPath.resize(memberPath.length() - (strlen(structName) + 1 + arrayIndexDigitCount));
                 }
             }
             else
             {
-                auto it = membersTable.find(memberPath + member->Name);
+                std::string arraySubscript = "";
+
+                if (arrayIndex != -1)
+                {
+                    std::stringstream ss;
+                    ss << arrayIndex;
+
+                    arraySubscript = "[" + ss.str()  + "]";
+                }
+
+                auto it = membersTable.find(memberPath + member->Name + arraySubscript);
 
                 if (it != membersTable.end())
                 {
@@ -125,9 +186,16 @@ namespace Vision
 
                     switch (member->Type)
                     {
+                        case MetaType_String:
+                        {
+                            String* string = (String*)memberPointer;
+                            AssignString(string, value.data(), value.length());
+                        }
+                        break;
+
                         case MetaType_char:
                         {
-                            if (member->IsPointer)
+                            if (member->TypeInfoFlags & TypeInfo_IsPointer)
                             {
                                 char** text = (char**)(void**)memberPointer;
 
@@ -140,18 +208,11 @@ namespace Vision
                                 *text = new char[value.length() + 1];
                                 strcpy(*text, value.c_str());
                             }
-                            else if (member->IsArray)
+                            else if (member->TypeInfoFlags & TypeInfo_IsArray)
                             {
                                 char* memberPtr = (char*)memberPointer;
                                 memcpy(memberPtr, value.data(), value.length() + 1);
                             }
-                        }
-                        break;
-
-                        case MetaType_String:
-                        {
-                            String* string = (String*)memberPointer;
-                            *string = String(value.data(), value.length());
                         }
                         break;
 
@@ -222,7 +283,7 @@ namespace Vision
                 else
                 {
                     VnCoreInfo("missing value for member: {0} in {1}.vars using default value",
-                                member->Name,
+                                memberPath + member->Name + arraySubscript,
                                 structName);
                 }
             }
@@ -247,6 +308,7 @@ namespace Vision
                           void* memberPointer,
                           bool beginStruct,
                           bool endStruct,
+                          int32 arrayIndex,
                           uint32 depth)
         {
             if (depth == 0)
@@ -268,7 +330,16 @@ namespace Vision
 
                 if (depth > 1)
                 {
-                    memberPath += std::string(structName) + std::string("_");
+                    std::string arraySubscript = "";
+
+                    if (arrayIndex != -1)
+                    {
+                        std::stringstream ss;
+                        ss << arrayIndex;
+                        arraySubscript = "[" + ss.str()  + "]";
+                    }
+
+                    memberPath += std::string(structName) + arraySubscript + std::string("_");
                 }
             }
             else if (endStruct)
@@ -285,24 +356,43 @@ namespace Vision
 
                 if (depth > 1)
                 {
-                    memberPath.resize(memberPath.length() - (strlen(structName) + 1));
+                    uint32 arrayIndexDigitCount = 0;
+
+                    if (arrayIndex != -1)
+                    {
+                        std::stringstream ss;
+                        ss << arrayIndex;
+                        arrayIndexDigitCount = static_cast<uint32>(ss.str().length() + 2);
+                    }
+
+                    memberPath.resize(memberPath.length() - (strlen(structName) + 1 + arrayIndexDigitCount));
                 }
             }
             else
             {
+                std::string arraySubscript = "";
+
+                if (arrayIndex != -1)
+                {
+                    std::stringstream ss;
+                    ss << arrayIndex;
+
+                    arraySubscript = "[" + ss.str()  + "]";
+                }
+
                 switch (member->Type)
                 {
                     case MetaType_char:
                     {
                         char* memberPtr = (char*)(*(void**)(memberPointer));
 
-                        if (member->IsPointer || member->IsArray)
+                        if (member->TypeInfoFlags & TypeInfo_IsPointer || member->TypeInfoFlags & TypeInfo_IsArray)
                         {
-                            stringStream << memberPath << member->Name << " \"" << memberPtr << "\"\n";
+                            stringStream << memberPath << member->Name << arraySubscript << " \"" << memberPtr << "\"\n";
                         }
                         else
                         {
-                            stringStream << memberPath << member->Name << " \"" << *memberPtr << "\"\n";
+                            stringStream << memberPath << member->Name << arraySubscript << " \"" << *memberPtr << "\"\n";
                         }
                     }
                     break;
@@ -310,70 +400,70 @@ namespace Vision
                     case MetaType_String:
                     {
                         String* memberPtr = (String*)memberPointer;
-                        stringStream << memberPath << member->Name << " \"" << memberPtr->Text << "\"\n";
+                        stringStream << memberPath << member->Name << arraySubscript << " \"" << memberPtr->Data << "\"\n";
                     }
                     break;
 
                     case MetaType_bool:
                     {
                         bool* memberPtr = (bool*)memberPointer;
-                        stringStream << memberPath << member->Name << " " << *memberPtr << "\n";
+                        stringStream << memberPath << member->Name << arraySubscript << " " << *memberPtr << "\n";
                     }
                     break;
 
                     case MetaType_int16:
                     {
                         int16* memberPtr = (int16*)memberPointer;
-                        stringStream << memberPath << member->Name << " " << *memberPtr << "\n";
+                        stringStream << memberPath << member->Name << arraySubscript << " " << *memberPtr << "\n";
                     }
                     break;
 
                     case MetaType_uint16:
                     {
                         uint16* memberPtr = (uint16*)memberPointer;
-                        stringStream << memberPath << member->Name << " " << *memberPtr << "\n";
+                        stringStream << memberPath << member->Name << arraySubscript << " " << *memberPtr << "\n";
                     }
                     break;
 
                     case MetaType_int32:
                     {
                         int32* memberPtr = (int32*)memberPointer;
-                        stringStream << memberPath << member->Name << " " << *memberPtr << "\n";
+                        stringStream << memberPath << member->Name << arraySubscript << " " << *memberPtr << "\n";
                     }
                     break;
 
                     case MetaType_uint32:
                     {
                         uint32* memberPtr = (uint32*)memberPointer;
-                        stringStream << memberPath << member->Name << " " << *memberPtr << "\n";
+                        stringStream << memberPath << member->Name << arraySubscript << " " << *memberPtr << "\n";
                     }
                     break;
 
                     case MetaType_int64:
                     {
                         int64* memberPtr = (int64*)memberPointer;
-                        stringStream << memberPath << member->Name << " " << *memberPtr << "\n";
+                        stringStream << memberPath << member->Name << arraySubscript << " " << *memberPtr << "\n";
                     }
                     break;
 
                     case MetaType_uint64:
                     {
                         uint64* memberPtr = (uint64*)memberPointer;
-                        stringStream << memberPath << member->Name << " " << *memberPtr << "\n";
+                        stringStream << memberPath << member->Name << arraySubscript << " " << *memberPtr << "\n";
                     }
                     break;
 
                     case MetaType_float32:
                     {
                         float32* memberPtr = (float32*)memberPointer;
-                        stringStream << memberPath << member->Name << " " << *memberPtr << "\n";
+                        stringStream << memberPath << member->Name << arraySubscript << " " << *memberPtr << "\n";
                     }
                     break;
 
                     case MetaType_float64:
                     {
                         float64* memberPtr = (float64*)memberPointer;
-                        stringStream << memberPath << member->Name << " " << *memberPtr << "\n";
+                        stringStream << memberPath << member->Name << arraySubscript << " " << *memberPtr << "\n";
                     }
                     break;
                 }

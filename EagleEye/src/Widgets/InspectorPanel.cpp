@@ -2,10 +2,13 @@
 
 #include "Vision/Entity/EditorState.h"
 #include "Vision/IO/FileSystem.h"
+#include "Vision/IO/Assets.h"
 #include "Vision/Platform/PlatformUtils.h"
 #include "Vision/Entity/Components.h"
 #include "Vision/ImGui/ImGuiWidgets.h"
+#include "Vision/Renderer/Renderer.h"
 #include "Vision/Renderer/Texture.h"
+#include "Vision/Entity/Components.h"
 
 #include <sstream>
 
@@ -33,15 +36,15 @@ namespace Vision
             {
                 auto& transform = ComponentCast<TransformComponent>(component);
 
-                ImGuiWidgets::DrawFloat3("Position", (glm::vec3)transform.Position, 78.0f, 0);
+                ImGuiWidgets::DrawFloat3("Position", (glm::vec3&)transform.Position, 78.0f, 0);
 
-                glm::vec3 rotation = glm::degrees((glm::vec3)transform.Rotation);
+                glm::vec3 rotation = glm::degrees((glm::vec3&)transform.Rotation);
 
                 ImGuiWidgets::DrawFloat3("Rotation", rotation, 78.0f, 0);
 
                 transform.Rotation = glm::radians(rotation);
 
-                ImGuiWidgets::DrawFloat3("Scale", (glm::vec3)transform.Scale, 78.0f, 1.0f);
+                ImGuiWidgets::DrawFloat3("Scale", (glm::vec3&)transform.Scale, 78.0f, 1.0f);
             });
 
             SerializeComponent<TransformComponent>([&](void* component)
@@ -169,7 +172,8 @@ namespace Vision
 
                 ImGui::SetColumnWidth(0, halfWidth - 72.0f);
 
-                if (ImGui::ImageButton((void*)(intptr_t)texture->RendererID, ImVec2(72.0f, 72.0f), ImVec2(0, 1), ImVec2(1, 0)))
+                //@InComplete: we are using opengl for now
+                if (ImGui::ImageButton((void*)(intptr_t)texture->OpenGL.TextureID, ImVec2(72.0f, 72.0f), ImVec2(0, 1), ImVec2(1, 0)))
                 {
                     std::string texturepath = FileDialog::OpenFile("Texture", { "png", "jpeg", "psd", "bmp", "tga" });
 
@@ -180,6 +184,32 @@ namespace Vision
                         texture = Assets::GetTexture(sprite.Texture);
                     }
                 }
+
+                if (ImGui::BeginDragDropTarget())
+                {
+                    const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Content_Browser_Item");
+
+                    if (payload)
+                    {
+                        std::string path = std::string((const char*)payload->Data);
+                        std::string extension = FileSystem::GetFileExtension(path, false);
+
+                        if (Assets::IsExtensionOfAssetType(extension, "Texture"))
+                        {
+                            Asset textureAsset = Assets::GetAsset(sprite.Texture);
+
+                            if (textureAsset.Path != path)
+                            {
+                                Assets::ReleaseAsset(sprite.Texture);
+                                sprite.Texture = Assets::RequestAsset(path);
+                                texture = Assets::GetTexture(sprite.Texture);
+                            }
+                        }
+                    }
+
+                    ImGui::EndDragDropTarget();
+                }
+
 
                 ImGui::NextColumn();
 
@@ -199,9 +229,9 @@ namespace Vision
                         "Bilinear"
                     };
 
-                    int32 seletedWrapXMode  = static_cast<int32>(texture->WrapX);
-                    int32 seletedWrapYMode  = static_cast<int32>(texture->WrapY);
-                    int32 seletedFilterMode = static_cast<int32>(texture->Filter);
+                    auto seletedWrapXMode  = static_cast<int32>(texture->WrapX);
+                    auto seletedWrapYMode  = static_cast<int32>(texture->WrapY);
+                    auto seletedFilterMode = static_cast<int32>(texture->Filter);
 
                     ImGui::Text("Wrap X");
                     ImGui::SameLine();
@@ -211,8 +241,9 @@ namespace Vision
                     {
                         if (seletedWrapXMode != static_cast<int32>(texture->WrapX))
                         {
-                            texture->SetWrapMode(static_cast<WrapMode>(seletedWrapXMode),
-                                                 static_cast<WrapMode>(seletedWrapYMode));
+                            Renderer::API.SetTextureWrapMode(texture,
+                                                             static_cast<WrapMode>(seletedWrapXMode),
+                                                             static_cast<WrapMode>(seletedWrapYMode));
                         }
                     }
 
@@ -224,8 +255,9 @@ namespace Vision
                     {
                         if (seletedWrapYMode != static_cast<int32>(texture->WrapY))
                         {
-                            texture->SetWrapMode(static_cast<WrapMode>(seletedWrapXMode),
-                                                 static_cast<WrapMode>(seletedWrapYMode));
+                            Renderer::API.SetTextureWrapMode(texture,
+                                                             static_cast<WrapMode>(seletedWrapXMode),
+                                                             static_cast<WrapMode>(seletedWrapYMode));
                         }
                     }
 
@@ -237,7 +269,7 @@ namespace Vision
                     {
                         if (seletedFilterMode != static_cast<int32>(texture->Filter))
                         {
-                            texture->SetFilterMode(static_cast<FilterMode>(seletedFilterMode));
+                            Renderer::API.SetTextureFilterMode(texture, static_cast<FilterMode>(seletedFilterMode));
                         }
                     }
                 }
@@ -246,12 +278,12 @@ namespace Vision
 
                 ImGui::Text("\n");
 
-                ImGuiWidgets::DrawColor("Color", (glm::vec4)sprite.Color);
+                ImGuiWidgets::DrawColor("Color", (glm::vec4&)sprite.Color);
 
                 ImGui::Text("\n");
 
-                ImGuiWidgets::DrawFloat2("Top Right UV", (glm::vec2)sprite.TopRightUV, 120.0f, 1.0f);
-                ImGuiWidgets::DrawFloat2("Bottom Left UV", (glm::vec2)sprite.BottomLeftUV, 120.0f, 0.0f);
+                ImGuiWidgets::DrawFloat2("Top Right UV", (glm::vec2&)sprite.TopRightUV, 120.0f, 1.0f);
+                ImGuiWidgets::DrawFloat2("Bottom Left UV", (glm::vec2&)sprite.BottomLeftUV, 120.0f, 0.0f);
             });
 
             SerializeComponent<SpriteRendererComponent>([&](void* component)
@@ -301,10 +333,11 @@ namespace Vision
                 stringStream >> prop >> prop >> prop >> wrapY;
                 stringStream >> prop >> prop >> prop >> filter;
 
-                texture->SetWrapMode(static_cast<WrapMode>(wrapX),
-                                     static_cast<WrapMode>(wrapY));
+                Renderer::API.SetTextureWrapMode(texture,
+                                                 static_cast<WrapMode>(wrapX),
+                                                 static_cast<WrapMode>(wrapY));
 
-                texture->SetFilterMode(static_cast<FilterMode>(filter));
+                Renderer::API.SetTextureFilterMode(texture, static_cast<FilterMode>(filter));
 
                 Vector4& c = sprite.Color;
                 Vector2& bl = sprite.BottomLeftUV;
@@ -334,11 +367,11 @@ namespace Vision
                 const EntityStorage& entityStorage = scene->Entities[seletedEntity];
 
                 auto& tagComponent = scene->GetComponent<TagComponent>(seletedEntity);
-                std::string oldTag = tagComponent.Tag;
+                std::string oldTag = tagComponent.Tag.Data;
 
                 char buffer[MaxEntityNameCount];
                 memset(buffer, 0, sizeof(buffer));
-                strcpy(buffer, tagComponent.Tag);
+                strcpy(buffer, tagComponent.Tag.Data);
 
                 if (ImGui::InputText("##Tag",
                                      buffer,
@@ -367,7 +400,8 @@ namespace Vision
                             scene->PrimaryCameraTag = newTag;
                         }
 
-                        strcpy(tagComponent.Tag, newTag.c_str());
+                        // strcpy(tagComponent.Tag, newTag.c_str());
+                        AssignString(tagComponent.Tag, newTag.c_str(), newTag.length());
                     }
                 }
 
@@ -431,7 +465,7 @@ namespace Vision
             entityStorageIter++;
 
             const ComponentInfo& info = editorState.ComponentMeta[componentID];
-            std::string tag = scene->GetComponent<TagComponent>(entity).Tag;
+            std::string tag = scene->GetComponent<TagComponent>(entity).Tag.Data;
 
             if (!info.InspectFn)
             {

@@ -1,12 +1,11 @@
 #pragma once
 
-#include "Vision/Core/Common.h"
+#include "Vision/Core/Defines.h"
 
 namespace Vision
 {
-	class Timer
+	struct Timer
 	{
-	public:
 		float64 ElapsedTime    = 0.0;
 		float64 StartTimePoint = 0.0;
 		float64 EndTimePoint   = 0.0;

@@ -1,6 +1,8 @@
 #pragma once
 
-#include "Vision/Core/Common.h"
+#include "Vision/Core/Defines.h"
+#include "Vision/Core/Logger.h"
+
 #include "Vision/IO/Assets.h"
 #include "Vision/Renderer/Texture.h"
 
@@ -63,7 +65,7 @@ namespace Vision
 
         inline const UVRect* GetUVRect(uint32 row, uint32 col)
         {
-            VnCoreAssert(row >= 0 && row < Rows && col >= 0 && col > Cols, "out of bounds");
+            VnCoreAssert(row >= 0 && row < Rows && col >= 0 && col > Cols);
             uint32 rectIndex = row * Cols  + col;
             return &Atlas.UVRects[rectIndex];
         }

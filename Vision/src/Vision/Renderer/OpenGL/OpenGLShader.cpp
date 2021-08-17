@@ -1,5 +1,11 @@
-#include "pch.h"
-#include "Vision/Core/Log.h"
+#include "pch.hpp"
+#include "Vision/Core/Defines.h"
+#include "Vision/Core/Logger.h"
+
+#ifdef VN_RENDERER_API_OPENGL
+
+#include "Vision/Renderer/Renderer.h"
+#include "Vision/Platform/Memory.h"
 #include "Vision/Renderer/Shader.h"
 #include "Vision/IO/FileSystem.h"
 
@@ -11,91 +17,149 @@
 
 namespace Vision
 {
-	static GLenum StringToOpenGLShaderType(const std::string& type)
+	static ShaderType StringToShaderType(const std::string& type)
 	{
 		if (type == "vertex")
 		{
-			return GL_VERTEX_SHADER;
+			return ShaderType_Vertex;
 		}
 		else if (type == "pixel" || type == "fragment")
 		{
-			return GL_FRAGMENT_SHADER;
+			return ShaderType_Fragment;
 		}
-		else if (type == "geo" || type == "geometry")
+		else if (type == "geometry" || type == "geo")
 		{
-			return GL_GEOMETRY_SHADER;
+			return ShaderType_Geometry;
 		}
-		else if (type == "compute")
+		else if (type == "compute" || type == "comp")
 		{
-			return GL_COMPUTE_SHADER;
+			return ShaderType_Compute;
 		}
 
 		VnCoreAssert(false, "unsupported shader type: {0}", type);
+
+		return ShaderType_None;
 	}
 
-	static std::string OpenGLShaderTypeToString(GLenum shaderType)
+	static GLenum ShaderTypeToOpenGLShaderType(ShaderType type)
 	{
-		switch (shaderType)
+		switch (type)
 		{
-			case GL_VERTEX_SHADER: 	 return "vertex";
-			case GL_FRAGMENT_SHADER: return "pixel";
-			case GL_GEOMETRY_SHADER: return "geometry";
-			case GL_COMPUTE_SHADER:  return "compute";
+			case ShaderType_Vertex:   return GL_VERTEX_SHADER;
+			case ShaderType_Fragment: return GL_FRAGMENT_SHADER;
+			case ShaderType_Geometry: return GL_GEOMETRY_SHADER;
+			case ShaderType_Compute:  return GL_COMPUTE_SHADER;
 		}
 
 		VnCoreAssert(false, "unsupported shader type");
+		return ShaderType_None;
 	}
 
-	static int32 GetShaderUniformLocation(Shader* shader, const std::string& uniformName)
+	static std::string ShaderTypeToString(ShaderType shaderType)
 	{
-		auto it = shader->UniformLocations.find(uniformName);
-
-		if (it == shader->UniformLocations.end())
+		switch (shaderType)
 		{
-			int32 uniformLocation = glGetUniformLocation(shader->RendererID, uniformName.c_str());
+			case ShaderType_Vertex:   return "vertex";
+			case ShaderType_Fragment: return "fragment";
+			case ShaderType_Geometry: return "geometry";
+			case ShaderType_Compute:  return "compute";
+		}
+
+		VnCoreAssert(false, "unsupported shader type");
+		return "none";
+	}
+
+	static int32 GetShaderUniformLocation(Shader* shader, const char* uniform)
+	{
+		int32 uniformIndex = -1;
+
+		for (uint32 index = 0; index < shader->OpenGL.UniformCount; ++index)
+		{
+			bool isEqual = strcmp(shader->OpenGL.Uniforms[index].Name, uniform) == 0;
+
+			if (isEqual)
+			{
+				uniformIndex = index;
+				break;
+			}
+		}
+
+		if (uniformIndex == -1)
+		{
+			int32 uniformLocation = glGetUniformLocation(shader->OpenGL.ProgramID, uniform);
 
 			if (uniformLocation == -1)
 			{
-				VnCoreInfo("opengl: unable to find uniform: {0}", uniformName);
+				VnCoreInfo("opengl: unable to find uniform: {0}", uniform);
 			}
 			else
 			{
-				shader->UniformLocations.emplace(uniformName, uniformLocation);
+				uint32 uinformIndex = shader->OpenGL.UniformCount + 1;
+				shader->OpenGL.UniformCount++;
+				shader->OpenGL.Uniforms[uinformIndex] = { uniform, uniformLocation };
 			}
 
 			return uniformLocation;
 		}
+
+		return shader->OpenGL.Uniforms[uniformIndex].Location;
+	}
+
+	static void CompileAndAttachShader(Shader* shader,
+	                                   ShaderType shaderType,
+	                                   const std::string& source)
+	{
+		uint32* shaderID = &shader->OpenGL.Shaders[shaderType];
+		*shaderID = glCreateShader(ShaderTypeToOpenGLShaderType(shaderType));
+
+		const char* cStringSource = source.c_str();
+		glShaderSource(*shaderID, 1, &cStringSource, nullptr);
+		glCompileShader(*shaderID);
+
+		int32 success;
+		char logInfo[512];
+
+		glGetShaderiv(*shaderID, GL_COMPILE_STATUS, &success);
+
+		if (success)
+		{
+			glAttachShader(shader->OpenGL.ProgramID, *shaderID);
+		}
 		else
 		{
-			return it->second;
+			glGetShaderInfoLog(*shaderID, 512, nullptr, logInfo);
+
+			VnCoreInfo("unable to compile {0} shader: {1}",
+			           ShaderTypeToString(shaderType),
+			           logInfo);
+
+			return;
 		}
 	}
 
-	Shader::Shader(const std::string& filePath)
+	void OpenGLInitShader(Shader* shader, const std::string& filePath)
 	{
-		Init(filePath);
-	}
+		memset(shader, 0, sizeof(Shader));
 
-	Shader::~Shader()
-	{
-		Uninit();
-	}
+		for (uint32 index = 0; index < MaxUniformLocations; ++index)
+		{
+			shader->OpenGL.Uniforms[index].Name	    = "";
+			shader->OpenGL.Uniforms[index].Location = -1;
+		}
 
-	bool Shader::Init(const std::string& filePath)
-	{
-		//@(Harlequin): Use the engine's file api
-
+		//@InComplete: Use the engine's file api
 		std::ifstream ifs(filePath, std::ios::in);
 
 		if (!ifs.is_open())
 		{
 			VnCoreInfo("unable to open shader file: {0}", filePath);
-			return false;
+			return;
 		}
 
-		std::string line;
-		GLenum currentShaderType;
+		ShaderType currentShaderType;
+		std::string sources[ShaderType_Count];
 
+		std::string line;
 		while (std::getline(ifs, line))
 		{
 			line.erase(0, line.find_first_not_of(" \t\n\r"));
@@ -112,169 +176,136 @@ namespace Vision
 				typeSignature.erase(0, typeSignature.find_first_not_of(" \t\n"));
 				typeSignature.erase(typeSignature.find_last_not_of(" \t\n") + 1);
 
-				currentShaderType = StringToOpenGLShaderType(typeSignature);
+				currentShaderType = StringToShaderType(typeSignature);
 			}
 			else
 			{
-				SubShaders[currentShaderType].Source += line + '\n';
+				sources[currentShaderType] += line + '\n';
 			}
 		}
 
 		ifs.close();
 
-		RendererID = glCreateProgram();
+		shader->OpenGL.ProgramID = glCreateProgram();
 
 		int32 success;
 		char logInfo[512];
 
-		for (auto& subShader : SubShaders)
+		for (uint32 shaderTypeIndex = 0;
+		     shaderTypeIndex < ShaderType_Count;
+		     ++shaderTypeIndex)
 		{
-			auto& [type, data] = subShader;
-			data.RendererID = glCreateShader(type);
-
-			const char* cStringSource = data.Source.c_str();
-			glShaderSource(data.RendererID, 1, &cStringSource, nullptr);
-			glCompileShader(data.RendererID);
-
-			glGetShaderiv(data.RendererID, GL_COMPILE_STATUS, &success);
-
-			if (success)
+			if (sources[shaderTypeIndex].empty())
 			{
-				glAttachShader(RendererID, data.RendererID);
+				continue;
 			}
-			else
-			{
-				glGetShaderInfoLog(data.RendererID, 512, nullptr, logInfo);
 
-				VnCoreInfo("unable to compile {0} shader in shader file: {1}\n{2}",
-				           OpenGLShaderTypeToString(type),
-				           filePath,
-				           logInfo);
-
-				return false;
-			}
+			CompileAndAttachShader(shader, static_cast<ShaderType>(shaderTypeIndex), sources[shaderTypeIndex]);
 		}
 
-		glLinkProgram(RendererID);
-		glGetProgramiv(RendererID, GL_LINK_STATUS, &success);
+		glLinkProgram(shader->OpenGL.ProgramID);
+		glGetProgramiv(shader->OpenGL.ProgramID, GL_LINK_STATUS, &success);
 
 		if (!success)
 		{
-			glGetProgramInfoLog(RendererID, 512, nullptr, logInfo);
+			glGetProgramInfoLog(shader->OpenGL.ProgramID, sizeof(logInfo), nullptr, logInfo);
 			VnCoreInfo("unable to link shader program : {0}", logInfo);
-			return false;
+			return;
 		}
 
-		return true;
+		return;
 	}
 
-	void Shader::Uninit()
+	void OpenGLUninitShader(Shader* shader)
 	{
-		for (const auto& subShader : SubShaders)
+		for (uint32 shaderTypeIndex = 0;
+		     shaderTypeIndex < ShaderType_Count;
+		     ++shaderTypeIndex)
 		{
-			const auto& [type, data] = subShader;
-			glDetachShader(RendererID, data.RendererID);
-			glDeleteShader(data.RendererID);
+			glDetachShader(shader->OpenGL.ProgramID,
+			               shader->OpenGL.Shaders[shaderTypeIndex]);
+			glDeleteShader(shader->OpenGL.Shaders[shaderTypeIndex]);
+			shader->OpenGL.Shaders[shaderTypeIndex] = 0;
 		}
 
-		glDeleteProgram(RendererID);
-		SubShaders.clear();
+		glDeleteProgram(shader->OpenGL.ProgramID);
+		shader->OpenGL.ProgramID = 0;
 	}
 
-	void Shader::Bind()
+	void OpenGLBindShader(Shader* shader)
 	{
-		glUseProgram(RendererID);
+		glUseProgram(shader->OpenGL.ProgramID);
 	}
 
-	void Shader::Unbind()
+	void OpenGLSetUniformInt(Shader* shader,
+	                         const char* uniform,
+							 int32 value)
 	{
-		glUseProgram(0);
+		glUniform1i(GetShaderUniformLocation(shader, uniform), value);
 	}
 
-	void Shader::SetUniformInt(const std::string& uniformName,
-							   int32 value)
+	void OpenGLSetUniformIntArray(Shader* shader,
+	                              const char* uniform,
+								  const int32* values,
+								  uint32 count)
 	{
-		glUniform1i(GetShaderUniformLocation(this, uniformName), value);
+		glUniform1iv(GetShaderUniformLocation(shader, uniform), count, values);
 	}
 
-	void Shader::SetUniformIntArray(const std::string& uniformName,
-								    const int32* values,
-								    uint32 count)
+	void OpenGLSetUniformFloat(Shader* shader,
+	                           const char* uniform,
+							   float32 value)
 	{
-		glUniform1iv(GetShaderUniformLocation(this, uniformName), count, values);
+		glUniform1f(GetShaderUniformLocation(shader, uniform), value);
 	}
 
-	void Shader::SetUniformFloat(const std::string& uniformName,
-							     float32 v0)
+	void OpenGLSetUniformFloat2(Shader* shader,
+	                            const char* uniform,
+								const float32* values)
 	{
-		glUniform1f(GetShaderUniformLocation(this, uniformName), v0);
+		glUniform2f(GetShaderUniformLocation(shader, uniform), values[0], values[1]);
 	}
 
-	void Shader::SetUniformFloat2(const std::string& uniformName,
-								  float32 v0,
-								  float32 v1)
+	void OpenGLSetUniformFloat3(Shader* shader,
+	                            const char* uniform,
+								const float32* values)
 	{
-		glUniform2f(GetShaderUniformLocation(this, uniformName), v0, v1);
+		glUniform3f(GetShaderUniformLocation(shader, uniform),
+		            values[0],
+		            values[1],
+		            values[2]);
 	}
 
-	void Shader::SetUniformFloat3(const std::string& uniformName,
-								  float32 v0,
-								  float32 v1,
-								  float32 v2)
+	void OpenGLSetUniformFloat4(Shader* shader,
+	                            const char* uniform,
+								const float32* values)
 	{
-		glUniform3f(GetShaderUniformLocation(this, uniformName), v0, v1, v2);
+		glUniform4f(GetShaderUniformLocation(shader, uniform),
+		            values[0],
+		            values[1],
+		            values[2],
+		            values[3]);
 	}
 
-	void Shader::SetUniformFloat4(const std::string& uniformName,
-								  float32 v0,
-								  float32 v1,
-								  float32 v2,
-								  float32 v3)
+	void OpenGLSetUniformMatrix3(Shader* shader,
+	                             const char* uniform,
+								 const float* matrix)
 	{
-		glUniform4f(GetShaderUniformLocation(this, uniformName), v0, v1, v2, v3);
-	}
-
-	void Shader::SetUniformMatrix3(const std::string& uniformName,
-								   const float* matrix3)
-	{
-		glUniformMatrix3fv(GetShaderUniformLocation(this, uniformName),
+		glUniformMatrix3fv(GetShaderUniformLocation(shader, uniform),
 		                   1,
 		                   GL_FALSE,
-		                   matrix3);
+		                   matrix);
 	}
 
-	void Shader::SetUniformMatrix4(const std::string& uniformName,
-								   const float* matrix4)
+	void OpenGLSetUniformMatrix4(Shader* shader,
+								 const char* uniform,
+								 const float* matrix)
 	{
-		glUniformMatrix4fv(GetShaderUniformLocation(this, uniformName),
+		glUniformMatrix4fv(GetShaderUniformLocation(shader, uniform),
 		                   1,
 		                   GL_FALSE,
-		                   matrix4);
-	}
-
-	AssetLoadingData LoadShader(const std::string& filePath)
-	{
-		AssetLoadingData shaderAsset;
-
-		Shader* shader = new Shader;
-
-		if (shader->Init(filePath))
-		{
-			shaderAsset.Memory = shader;
-			shaderAsset.SizeInBytes = sizeof(Shader);
-			shaderAsset.TotalSizeInBytes = sizeof(Shader);
-		}
-		else
-		{
-			delete shader;
-		}
-
-		return shaderAsset;
-	}
-
-	void UnloadShader(Asset* shaderAsset)
-	{
-		Shader* shader = (Shader*)shaderAsset->Memory;
-		delete shader;
+		                   matrix);
 	}
 }
+
+#endif

@@ -1,8 +1,12 @@
-#include "pch.h"
+#include "pch.hpp"
 
-#include "Vision/Core/Common.h"
+#include "Vision/Core/Defines.h"
+
 #ifdef VN_PLATFORM_WINDOWS
+
 #include "Vision/IO/FileSystem.h"
+
+#include <windows.h>
 #include <fileapi.h>
 
 namespace Vision
@@ -43,12 +47,12 @@ namespace Vision
         return SetCurrentDirectoryA(path.c_str());
     }
 
-    bool FileSystem::CreateDirectory(const std::string& path)
+    bool FileSystem::MakeDirectory(const std::string& path)
     {
         return CreateDirectoryA(path.c_str(), 0);
     }
 
-    bool FileSystem::CreateDirectoryRecursive(const std::string& path)
+    bool FileSystem::MakeDirectoryRecursive(const std::string& path)
     {
         uint32 firstSlash = path.find_first_of("/\\");
 
@@ -61,16 +65,18 @@ namespace Vision
             {
                 uint32 countFromStart = index;
                 std::string subPath = path.substr(0, countFromStart);
-                CreateDirectory(subPath);
+                MakeDirectory(subPath);
             }
 
             ++index;
         }
 
-        return CreateDirectory(path);
+        return MakeDirectory(path);
     }
 
-    std::vector<std::string> FileSystem::ScanDirectory(const std::string& path, const std::vector<std::string>& extensions)
+    std::vector<std::string> FileSystem::ScanDirectory(const std::string& path,
+                                                       const std::vector<std::string>& extensions,
+                                                       bool includeSubDirectories)
     {
         WIN32_FIND_DATAA info;
         HANDLE handle = FindFirstFileA((path + "/*").c_str(), &info);
@@ -96,11 +102,15 @@ namespace Vision
 
             if (isDirectory)
             {
+                std::string directoryName = info.cFileName;
+
+                if (includeSubDirectories && directoryName.back() != '.')
+                    result.push_back(directoryName);
+
                 continue;
             }
 
             std::string name = info.cFileName;
-
             std::string extension = FileSystem::GetFileExtension(name, includeDot);
 
             if (extensions.empty() || std::find(extensions.begin(), extensions.end(), extension) != extensions.end())
@@ -122,7 +132,7 @@ namespace Vision
         std::string Path;
     };
 
-    std::vector<std::string> FileSystem::ScanDirectoryRecursive(const std::string& path, const std::vector<std::string>& extensions)
+    std::vector<std::string> FileSystem::ScanDirectoryRecursive(const std::string& path, const std::vector<std::string>& extensions, bool includeSubDirectories)
     {
         WIN32_FIND_DATAA info;
 
@@ -171,6 +181,12 @@ namespace Vision
                     nextDirectory.Handle = FindFirstFileA((nextDirectory.Path + "/*").c_str(), &info);
 
                     directories.push(nextDirectory);
+                }
+
+                if (includeSubDirectories)
+                {
+                    if (currentDirectory.Path.back() != '.')
+                        result.push_back(currentDirectory.Path);
                 }
             }
             else

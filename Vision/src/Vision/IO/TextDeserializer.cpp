@@ -1,4 +1,4 @@
-#include "pch.h"
+#include "pch.hpp"
 
 #include "Vision/IO/TextDeserializer.h"
 #include "Vision/IO/File.h"
@@ -17,7 +17,9 @@ namespace Vision
         std::string prop;
         std::string space;
 
-        for (int i = 0; i < 4; i++)
+        uint32 headerLineCount = 7;
+
+        for (uint32 lineIndex = 0; lineIndex < headerLineCount; lineIndex++)
         {
             File::ReadLine(handle, line);
             contents += line + " ";
@@ -45,7 +47,16 @@ namespace Vision
         PerspectiveCamera& camera = editorState.SceneCamera;
         glm::vec3& p = camera.FocalPoint;
         stringStream >> prop >> p.x >> p.y >> p.z;
-        
+
+        float32& pitch = camera.Pitch;
+        stringStream >> prop >> pitch;
+
+        float32& yaw = camera.Yaw;
+        stringStream >> prop >> yaw;
+
+        float32& zoomLevel = camera.Distance;
+        stringStream >> prop >> zoomLevel;
+
         camera.UpdateView();
         camera.UpdateProjection();
 

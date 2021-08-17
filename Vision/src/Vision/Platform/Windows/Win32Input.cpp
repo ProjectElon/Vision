@@ -1,4 +1,4 @@
-#include "pch.h"
+#include "pch.hpp"
 
 #include "Vision/Platform/Input.h"
 #include "Vision/Core/Application.h"
@@ -11,7 +11,7 @@ namespace Vision
 {
 	static GLFWwindow* window;
 
-	void Input::Init()
+	void Input::Initialize()
 	{
 		Application& app = Application::Get();
 		window = static_cast<GLFWwindow*>(app.Window.Handle);

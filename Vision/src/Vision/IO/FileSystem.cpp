@@ -1,10 +1,22 @@
-#include "pch.h"
-#include "Vision/Core/Common.h"
+#include "pch.hpp"
+#include "Vision/Core/Defines.h"
 #include "Vision/IO/FileSystem.h"
 
 namespace Vision
 {
-    std::string FileSystem::GetPath(const std::string& filepath)
+    std::string FileSystem::GetDirectoryName(const std::string& path)
+    {
+        int32 lastSlash = path.find_last_of("/\\");
+
+        if (lastSlash == -1)
+        {
+            return std::string();
+        }
+
+        return path.substr(lastSlash + 1);
+    }
+
+    std::string FileSystem::GetFilePath(const std::string& filepath)
     {
         int32 dotIndex = filepath.rfind(".");
 
@@ -80,5 +92,17 @@ namespace Vision
     bool FileSystem::IsRelativePath(const std::string& path)
     {
         return !IsAbsolutePath(path);
+    }
+
+    std::string FileSystem::GetParentPath(const std::string& path)
+    {
+        int32 lastSlash = path.rfind("/");
+
+        if (lastSlash == -1)
+        {
+            return std::string();
+        }
+
+        return path.substr(0, lastSlash);
     }
 }

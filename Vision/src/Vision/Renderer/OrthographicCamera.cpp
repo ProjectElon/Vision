@@ -1,6 +1,6 @@
-#include "pch.h"
+#include "pch.hpp"
+#include "Vision/Core/Defines.h"
 #include "Vision/Renderer/OrthographicCamera.h"
-#include "Vision/Core/Common.h"
 #include "Vision/Platform/Input.h"
 
 namespace Vision

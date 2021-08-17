@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vision/Core/Common.h"
+#include "Vision/Core/Defines.h"
 #include "Vision/Entity/Components.h"
 
 namespace Vision

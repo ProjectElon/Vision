@@ -1,0 +1,1 @@
+start ../bin/windows-x86_64-Release/Inception/Inception.exe

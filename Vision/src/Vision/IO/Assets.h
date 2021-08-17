@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vision/Core/Common.h"
+#include "Vision/Core/Defines.h"
 
 #include <functional>
 
@@ -68,21 +68,22 @@ namespace Vision
     struct Scene;
     struct BitmapFont;
 
-    class Assets
+    struct Assets
     {
-    public:
-        static AssetsStorage AssetsStorage; // @ReadOnly
+        static AssetsStorage AssetsStorage;
 
-        static void Init();
+        static void Initialize();
         static void Shutdown();
 
-        static void RigisterAsset(const std::string& type,
+        static void RigisterAsset(const std::string& assetType,
                                   uint32 extensionCount,
                                   std::string* extensions,
                                   AssetLoaderFn loaderFn,
                                   AssetUnloaderFn unloaderFn);
 
         static bool IsExtensionSupported(const std::string& extension);
+        static bool IsExtensionOfAssetType(const std::string& extension,
+                                           const std::string& assetType);
 
         static AssetInfo& GetAssetInfo(const std::string& extension);
         static AssetInfo& GetAssetInfo(AssetID assetID);
@@ -105,4 +106,13 @@ namespace Vision
     private:
         static uint32 GetAssetInfoIndex(const std::string& assetType);
     };
+
+    AssetLoadingData LoadTexture(const std::string& texturepath);
+    void UnloadTexture(Asset* textureAsset);
+
+    AssetLoadingData LoadShader(const std::string& shaderpath);
+    void UnloadShader(Asset* shader);
+
+    AssetLoadingData LoadScene(const std::string& scenepath);
+    void UnloadScene(Asset* sceneAsset);
 }

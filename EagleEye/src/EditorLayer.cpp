@@ -15,7 +15,10 @@ namespace Vision
 		, Menubar(this)
 		, Dialog(this)
 	{
-		Renderer::SetVSync(true);
+		Renderer::API.SetVSync(true);
+		//@Incomplete: Remove and add to allocators
+		SceneFrameBuffer = VnAllocateStruct(FrameBuffer);
+		SceneViewPanel.FrameBuffer = SceneFrameBuffer;
 	}
 
 	EditorLayer::~EditorLayer()
@@ -24,92 +27,20 @@ namespace Vision
 
 	void EditorLayer::OnAttach()
 	{
-		using namespace Vision;
+		LoadVars();
 
-		Vars& vars = Application::Get().Vars;
-		vars.Load();
+		// WatchDirectory("Assets", VnBindWatcherFn(EditorLayer::OnFileChanged), true);
+		WatchDirectory("", VnBindWatcherFn(EditorLayer::OnFileChanged), false);
 
-		std::string scenePath = vars.Settings.ScenePath.Text;
-
-		if (scenePath != "none" && FileSystem::FileExists(scenePath))
-		{
-			ActiveSceneID = Assets::RequestAsset(scenePath);
-			SceneHierarchyPanel.ActiveSceneID = ActiveSceneID;
-			InspectorPanel.ActiveSceneID = ActiveSceneID;
-			SceneViewPanel.ActiveSceneID = ActiveSceneID;
-		}
-
-		Window& window = Application::Get().Window;
-
-		window.SetTitle(vars.Settings.WindowTitle.Text);
-		window.SetPosition(vars.Settings.WindowX, vars.Settings.WindowY);
-		window.SetSize(vars.Settings.WindowWidth, vars.Settings.WindowHeight);
-
-		if (vars.Settings.IsWindowMaximized)
-		{
-			window.Maximize();
-		}
-
-		FrameBufferAttachmentSpecification SceneBufferSpecification;
-
-		SceneBufferSpecification.Attachments =
-		{
-			FrameBufferTextureFormat::RGBA8,
-			FrameBufferTextureFormat::RedInt32,
-			FrameBufferTextureFormat::Depth24Stencil8
-		};
-
-		SceneFrameBuffer.Init(SceneBufferSpecification,
-							  vars.Settings.ViewportWidth,
-							  vars.Settings.ViewportHeight);
-
-		SceneViewPanel.FrameBuffer = &SceneFrameBuffer;
-
-		EditorState& editorState = Scene::EditorState;
-		SceneCamera = &editorState.SceneCamera;
-
-		float32 aspectRatio = static_cast<float32>(vars.Settings.ViewportWidth) /
-							  static_cast<float32>(vars.Settings.ViewportHeight);
-
-		SceneCamera->Init(aspectRatio, 45.0f);
-
-		SpriteShaderID = Assets::RequestAsset("Assets/Shaders/Sprite.glsl");
-		FontShaderID = Assets::RequestAsset("Assets/Shaders/Font.glsl");
-
-		FiraCodeFontID = Assets::RequestAsset("Assets/Fonts/FiraCode-Regular.ttf");
-		DebugFontID = Assets::RequestAsset("Assets/Fonts/TitilliumWeb-Regular.ttf");
-
-		BitmapFont* firaCodeFont = Assets::GetBitmapFont(FiraCodeFontID);
-		firaCodeFont->SetSize(vars.Settings.FontSize);
-
-		BitmapFont* debugFont = Assets::GetBitmapFont(DebugFontID);
-		debugFont->SetSize(vars.Settings.DebugFontSize);
-
-		WatchDirectory("Assets", VnBindWatcherFn(EditorLayer::OnFileChanged));
+		SceneViewPanel.EditorLayer = this;
 	}
 
 	void EditorLayer::OnDetach()
 	{
-		Vars& vars = Application::Get().Vars;
-
-		std::string activeScenePath = "none";
-
-		if (ActiveSceneID)
-		{
-			SaveActiveScene();
-
-			const Asset& activeSceneAsset = Assets::GetAsset(ActiveSceneID);
-			activeScenePath = activeSceneAsset.Path;
-		}
-
-		vars.Settings.ScenePath = activeScenePath.c_str();
-		vars.Settings.ViewportWidth = static_cast<uint32>(SceneViewPanel.ViewportSize.x);
-		vars.Settings.ViewportHeight = static_cast<uint32>(SceneViewPanel.ViewportSize.y);
-
-		vars.Save();
+		SaveVars();
 	}
 
-	void EditorLayer::OnFileChanged(FileWatcherAction action,
+	void EditorLayer::OnFileChanged(DirectoryWatcherAction action,
 									std::string filepath,
 									std::string oldpath)
 	{
@@ -117,17 +48,17 @@ namespace Vision
 
 		switch (action)
 		{
-			case Vision::FileWatcherAction::FileAdded:
+			case DirectoryWatcherAction::FileAdded:
 			{
 			}
 			break;
 
-			case Vision::FileWatcherAction::FileRemoved:
+			case DirectoryWatcherAction::FileRemoved:
 			{
 			}
 			break;
 
-			case Vision::FileWatcherAction::FileModified:
+			case DirectoryWatcherAction::FileModified:
 			{
 				std::string cwd = FileSystem::GetCurrentWorkingDirectory();
 				std::string fileRelativePath = filepath.substr(cwd.length() + 1);
@@ -136,12 +67,21 @@ namespace Vision
 
 				if (isFile)
 				{
-					Assets::ReloadAsset(fileRelativePath);
+					std::string extension = FileSystem::GetFileExtension(fileRelativePath, false);
+
+					if (extension == "vars")
+					{
+						LoadVars();
+					}
+					else
+					{
+						Assets::ReloadAsset(fileRelativePath);
+					}
 				}
 			}
 			break;
 
-			case Vision::FileWatcherAction::FileRenamed:
+			case DirectoryWatcherAction::FileRenamed:
 			{
 			}
 			break;
@@ -150,28 +90,23 @@ namespace Vision
 
 	void EditorLayer::OnUpdate(float deltaTime)
 	{
-		using namespace Vision;
+		bool isControlDown = Input::IsKeyDown(Key::LeftControl) ||
+			Input::IsKeyDown(Key::RightControl);
 
-		if (SceneViewPanel.IsInteractable)
+		if (ActiveSceneID && !isControlDown)
 		{
-			bool isControlDown = Input::IsKeyDown(Key::LeftControl) ||
-								 Input::IsKeyDown(Key::RightControl);
-
-			if (ActiveSceneID && !isControlDown)
-			{
-				SceneCamera->OnUpdate(deltaTime);
-			}
+			SceneCamera->OnUpdate(deltaTime, SceneViewPanel.IsInteractable);
 		}
 
-		SceneFrameBuffer.Bind();
+		Renderer::API.BindFrameBuffer(SceneFrameBuffer);
 
 		if (ActiveSceneID)
 		{
 			float32 values[] = { 0.1f, 0.1f, 0.1f, 1.0f };
-			SceneFrameBuffer.ClearColorAttachment(0, values);
+			Renderer::API.ClearColorAttachment(SceneFrameBuffer, 0, values);
 
 			int value = -1;
-			SceneFrameBuffer.ClearColorAttachment(1, &value);
+			Renderer::API.ClearColorAttachment(SceneFrameBuffer, 1, &value);
 
 			Renderer2D::BeginScene(SceneCamera->View,
 								   SceneCamera->Projection,
@@ -188,30 +123,30 @@ namespace Vision
 										sprite.Color,
 										sprite.BottomLeftUV,
 										sprite.TopRightUV,
-										(int32)entity);
+										static_cast<int32>(entity));
 			});
 
 			Renderer2D::EndScene();
 
 			glm::mat4 ortho = glm::ortho(0.0f,
-			                             static_cast<float32>(SceneFrameBuffer.Width),
-									     static_cast<float32>(SceneFrameBuffer.Height),
+			                             static_cast<float32>(SceneFrameBuffer->Width),
+									     static_cast<float32>(SceneFrameBuffer->Height),
 									     0.0f);
 
 			Renderer2D::BeginScene(glm::mat4(1.0f),
 								   ortho,
-								   Assets::GetShader(FontShaderID));
+								   Assets::GetShader(SpriteShaderID));
 
-			Renderer2D::DrawString(Assets::GetBitmapFont(FiraCodeFontID),
+
+			Renderer2D::DrawString(Assets::GetBitmapFont(MainFontID),
 								   "Vision Engine!",
 								   glm::vec2(10.0f, 50.0f),
-								   glm::vec4(0.9f, 0.8f, 0.2f, 1.0f),
-								   0);
+								   glm::vec4(0.9f, 0.3f, 0.0f, 1.0f));
 
 			scene->EachGroup<TagComponent, TransformComponent>([this](Entity entity, auto& tag, auto& transform)
 			{
 				Renderer2D::DrawString(Assets::GetBitmapFont(DebugFontID),
-								   	   std::string(tag.Tag),
+								   	   std::string(tag.Tag.Data),
 									   transform.Position,
 			                           glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
 									   entity);
@@ -241,9 +176,14 @@ namespace Vision
 			{
 				if (Input::IsMouseButtonDown(Mouse::ButtonLeft) &&
 				    !ImGuizmo::IsUsing() &&
-				    !ImGuizmo::IsOver())
+				    !ImGuizmo::IsOver() &&
+					!ImGui::IsMouseDragging(ImGuiMouseButton_Left) &&
+					!Input::IsKeyDown(Key::LeftAlt))
 				{
-					int32 pixel = SceneFrameBuffer.ReadPixel(1, mouseX, mouseY);
+					int32 pixel = Renderer::API.ReadPixel(SceneFrameBuffer,
+					                                      1,
+					                                      mouseX,
+					                                      mouseY);
 
 					if (pixel > 0)
 					{
@@ -271,7 +211,7 @@ namespace Vision
 						if (shouldSelectEntity)
 						{
 							auto& tagComponent = scene->GetComponent<TagComponent>(pixel);
-							editorState.SelectedEntityTag = tagComponent.Tag;
+							editorState.SelectedEntityTag = tagComponent.Tag.Data;
 						}
 					}
 					else
@@ -284,10 +224,10 @@ namespace Vision
 		else
 		{
 			float32 values[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-			SceneFrameBuffer.ClearColorAttachment(0, values);
+			Renderer::API.ClearColorAttachment(SceneFrameBuffer, 0, values);
 		}
 
-		SceneFrameBuffer.Unbind();
+		Renderer::API.UnbindFrameBuffer(SceneFrameBuffer);
  	}
 
 	void EditorLayer::OnEvent(Event& e)
@@ -301,17 +241,18 @@ namespace Vision
 	{
 		using namespace Vision;
 
+		Menubar.OnImGuiRender();
+		SceneHierarchyPanel.OnImGuiRender();
+		InspectorPanel.OnImGuiRender();
+		ContentBrowserPanel.OnImGuiRender();
+		SceneViewPanel.OnImGuiRender();
+		Dialog.OnImGuiRender();
+
 		if (SceneViewPanel.IsViewportResized)
 		{
 			SceneCamera->SetViewportSize(SceneViewPanel.ViewportSize.x,
 										 SceneViewPanel.ViewportSize.y);
 		}
-
-		Menubar.OnImGuiRender();
-		SceneHierarchyPanel.OnImGuiRender();
-		InspectorPanel.OnImGuiRender();
-		SceneViewPanel.OnImGuiRender();
-		Dialog.OnImGuiRender();
 	}
 
 	bool EditorLayer::OnKeyPressed(KeyPressedEvent& e)
@@ -358,7 +299,7 @@ namespace Vision
 			{
 				if (isControlDown && isShiftDown)
 				{
-					OpenScene();
+					OpenSceneDialog();
 				}
 			}
 			break;
@@ -431,6 +372,7 @@ namespace Vision
 		{
 			float32 mouseWheelDelta = -e.GetYOffset() * 0.1f;
 			SceneCamera->Zoom(mouseWheelDelta);
+			SceneCamera->UpdateView();
 		}
 
 		return false;
@@ -455,26 +397,33 @@ namespace Vision
 
 		ActiveSceneID = Assets::RequestAsset(filepath);
 		SceneHierarchyPanel.ActiveSceneID = ActiveSceneID;
+		ContentBrowserPanel.ActiveSceneID = ActiveSceneID;
 		InspectorPanel.ActiveSceneID = ActiveSceneID;
 		SceneViewPanel.ActiveSceneID = ActiveSceneID;
 	}
 
-	void EditorLayer::OpenScene()
+	void EditorLayer::OpenScene(const std::string& filepath)
+	{
+		if (ActiveSceneID)
+		{
+			SaveActiveScene();
+			Assets::ReleaseAsset(ActiveSceneID);
+		}
+
+		ActiveSceneID = Assets::RequestAsset(filepath);
+		SceneHierarchyPanel.ActiveSceneID = ActiveSceneID;
+		ContentBrowserPanel.ActiveSceneID = ActiveSceneID;
+		InspectorPanel.ActiveSceneID = ActiveSceneID;
+		SceneViewPanel.ActiveSceneID = ActiveSceneID;
+	}
+
+	void EditorLayer::OpenSceneDialog()
 	{
 		std::string filepath = FileDialog::OpenFile("Vision Scene (*.vscene)", { "vscene" });
 
 		if (!filepath.empty())
 		{
-			if (ActiveSceneID)
-			{
-				SaveActiveScene();
-				Assets::ReleaseAsset(ActiveSceneID);
-			}
-
-			ActiveSceneID = Assets::RequestAsset(filepath);
-			SceneHierarchyPanel.ActiveSceneID = ActiveSceneID;
-			InspectorPanel.ActiveSceneID = ActiveSceneID;
-			SceneViewPanel.ActiveSceneID = ActiveSceneID;
+			OpenScene(filepath);
 		}
 	}
 
@@ -494,6 +443,7 @@ namespace Vision
 		const Asset& activeSceneAsset = Assets::GetAsset(ActiveSceneID);
 		Scene* activeScene = Assets::GetScene(ActiveSceneID);
 		SerializeScene(activeSceneAsset.Path, activeScene);
+		VnCoreInfo("Saving Active Scene: {0}", activeSceneAsset.Path);
 	}
 
 	void EditorLayer::CloseActiveScene()
@@ -502,7 +452,113 @@ namespace Vision
 		Assets::ReleaseAsset(ActiveSceneID);
 		ActiveSceneID = 0;
 		SceneHierarchyPanel.ActiveSceneID = 0;
+		ContentBrowserPanel.ActiveSceneID = 0;
 		InspectorPanel.ActiveSceneID = 0;
 		SceneViewPanel.ActiveSceneID = 0;
+	}
+
+	void EditorLayer::LoadVars()
+	{
+		Vars& vars = Application::Get().Vars;
+		vars.Load();
+
+		Settings& settings = vars.Settings;
+
+		if (SpriteShaderID)
+		{
+			Assets::ReleaseAsset(SpriteShaderID);
+			SpriteShaderID = 0;
+		}
+
+		if (MainFontID)
+		{
+			Assets::ReleaseAsset(MainFontID);
+			MainFontID = 0;
+		}
+
+		if (DebugFontID)
+		{
+			Assets::ReleaseAsset(DebugFontID);
+			DebugFontID = 0;
+		}
+
+
+		SpriteShaderID = Assets::RequestAsset(std::string(settings.SpriteShaderPath.Data,
+														  settings.SpriteShaderPath.Count));
+
+		MainFontID = Assets::RequestAsset(std::string(settings.MainFontPath.Data,
+													  settings.MainFontPath.Count));
+
+		DebugFontID = Assets::RequestAsset(std::string(settings.DebugFontPath.Data,
+													   settings.DebugFontPath.Count));
+
+		std::string scenePath = vars.Settings.ScenePath.Data;
+
+		if (scenePath != "none" && FileSystem::FileExists(scenePath))
+		{
+			ActiveSceneID = Assets::RequestAsset(scenePath);
+			SceneHierarchyPanel.ActiveSceneID = ActiveSceneID;
+			InspectorPanel.ActiveSceneID = ActiveSceneID;
+			SceneViewPanel.ActiveSceneID = ActiveSceneID;
+			ContentBrowserPanel.ActiveSceneID = ActiveSceneID;
+		}
+
+		Window& window = Application::Get().Window;
+
+		const char* windowTitle = vars.Settings.WindowTitle.Data;
+		SetWindowTitle(&window, windowTitle);
+		SetWindowPosition(&window, vars.Settings.WindowX, vars.Settings.WindowY);
+		SetWindowSize(&window, vars.Settings.WindowWidth, vars.Settings.WindowHeight);
+
+		FrameBufferAttachmentSpecification SceneBufferSpecification;
+
+		SceneBufferSpecification.Attachments =
+		{
+			FrameBufferTextureFormat_RGBA8,
+			FrameBufferTextureFormat_RedInt32,
+			FrameBufferTextureFormat_Depth24Stencil8
+		};
+
+		Renderer::API.InitFrameBuffer(SceneFrameBuffer,
+									  SceneBufferSpecification,
+									  vars.Settings.ViewportWidth,
+									  vars.Settings.ViewportHeight);
+
+		EditorState& editorState = Scene::EditorState;
+		SceneCamera = &editorState.SceneCamera;
+
+		float32 aspectRatio = static_cast<float32>(vars.Settings.ViewportWidth) /
+							  static_cast<float32>(vars.Settings.ViewportHeight);
+
+		SceneCamera->Init(aspectRatio, 45.0f);
+
+		BitmapFont* firaCodeFont = Assets::GetBitmapFont(MainFontID);
+		SetBitmapFontSize(firaCodeFont, vars.Settings.FontSize);
+
+		BitmapFont* debugFont = Assets::GetBitmapFont(DebugFontID);
+		SetBitmapFontSize(debugFont, vars.Settings.DebugFontSize);
+	}
+
+	void EditorLayer::SaveVars()
+	{
+		Vars& vars = Application::Get().Vars;
+
+		std::string activeScenePath = "none";
+
+		if (ActiveSceneID)
+		{
+			SaveActiveScene();
+
+			const Asset& activeSceneAsset = Assets::GetAsset(ActiveSceneID);
+			activeScenePath = activeSceneAsset.Path;
+		}
+
+		// vars.Settings.ScenePath = activeScenePath.c_str();
+		AssignString(&vars.Settings.ScenePath, activeScenePath.c_str(), activeScenePath.length());
+
+		vars.Settings.ViewportWidth = static_cast<uint32>(SceneViewPanel.ViewportSize.x);
+		vars.Settings.ViewportHeight = static_cast<uint32>(SceneViewPanel.ViewportSize.y);
+
+		vars.Save();
 	}
 }

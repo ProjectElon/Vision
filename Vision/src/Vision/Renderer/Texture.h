@@ -1,30 +1,32 @@
 #pragma once
 
-#include "Vision/Core/Common.h"
-#include "Vision/IO/Assets.h"
+#include "Vision/Core/Defines.h"
 
 #include <glm/glm.hpp>
 
+#ifdef VN_RENDERER_API_OPENGL
+    #include <glad/glad.h>
+#endif
+
 namespace Vision
 {
-    enum class WrapMode
+    enum WrapMode : uint8
     {
-        Repeat,
-        ClampToEdge
+        WrapMode_Repeat = 0,
+        WrapMode_ClampToEdge = 1,
     };
 
-    enum class FilterMode
+    enum FilterMode : uint8
     {
-        Point,
-        Bilinear
+        FilterMode_Point = 0,
+        FilterMode_Bilinear = 1
     };
 
-    enum class PixelFormat
+    enum PixelFormat : uint8
     {
-        R,
-        RGB,
-        RGBA,
-        Font
+        PixelFormat_R    = 0,
+        PixelFormat_RGB  = 1,
+        PixelFormat_RGBA = 2
     };
 
     struct TextureRect
@@ -44,31 +46,47 @@ namespace Vision
 
     struct Texture
     {
-        uint32 RendererID = 0;
-        uint32 Width      = 0;
-        uint32 Height     = 0;
+        union
+        {
+#ifdef VN_RENDERER_API_OPENGL
+            struct
+            {
+                GLuint TextureID = 0;
+            }
+            OpenGL;
+#endif
+        };
 
-        WrapMode WrapX = WrapMode::Repeat;
-        WrapMode WrapY = WrapMode::Repeat;
+        uint32 Width = 0;
+        uint32 Height = 0;
 
-        FilterMode  Filter = FilterMode::Point;
-        PixelFormat Format = PixelFormat::RGBA;
+        WrapMode WrapX = WrapMode_Repeat;
+        WrapMode WrapY = WrapMode_Repeat;
 
-        Texture() = default;
-        Texture(void* pixels, uint32 width, uint32 height, PixelFormat format);
-
-        ~Texture();
-
-        void Init(void* pixels, uint32 width, uint32 height, PixelFormat format);
-        void Uninit();
-
-        void Bind(uint32 textureSlot) const;
-        void UnBind();
-
-        void SetWrapMode(WrapMode wrapModeX, WrapMode wrapModeY);
-        void SetFilterMode(FilterMode filter);
+        FilterMode Filter = FilterMode_Bilinear;
+        PixelFormat Format = PixelFormat_RGBA;
     };
 
-    AssetLoadingData LoadTexture(const std::string& texturepath);
-    void UnloadTexture(Asset* textureAsset);
+#ifdef VN_RENDERER_API_OPENGL
+
+    void OpenGLInitTexture(Texture* texture,
+                           void* pixels,
+                           uint32 width,
+                           uint32 height,
+                           PixelFormat pixelFormat,
+                           WrapMode wrapModeX,
+                           WrapMode wrapModeY,
+                           FilterMode filter);
+
+    void OpenGLUninitTexture(Texture* texture);
+    void OpenGLBindTexture(Texture* texture, uint32 textureSlot);
+    void OpenGLUnbindTexture(Texture* texture);
+
+    void OpenGLSetTextureWrapMode(Texture* texture,
+                                  WrapMode wrapModeX,
+                                  WrapMode wrapModeY);
+
+    void OpenGLSetTextureFilterMode(Texture* texture,
+                                    FilterMode filter);
+#endif
 }

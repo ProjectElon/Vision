@@ -1,6 +1,9 @@
 #pragma once
 
-#include <functional>
+#include <cstdint>
+#include <cstdio>
+
+#include "Common.h"
 
 enum class TokenType
 {
@@ -16,6 +19,7 @@ enum class TokenType
     OpenBrace,
     CloseBrace,
     Equal,
+    UnderScore,
 
     String,
     Identifier,
@@ -31,15 +35,15 @@ struct Token
 {
     TokenType Type = TokenType::Unknown;
 
-    size_t TextLength = 0;
-    char* Text = nullptr;
+    String Text;
 
     bool IsEquals(const char* match);
 };
 
 struct Lexer
 {
-    char* At = nullptr;
+    String Input;
+    char At[2] = { 0 };
 
     Token GetNextToken();
 };

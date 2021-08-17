@@ -1,30 +1,31 @@
-#include "pch.h"
-#include "Vision/Core/Common.h"
+#include "pch.hpp"
+#include "Vision/Core/Defines.h"
+#include "Vision/Core/Log.h"
 
 #ifdef VN_PLATFORM_WINDOWS
 
-#include "Vision/IO/FileWatcher.h"
+#include "Vision/IO/DirectoryWatcher.h"
 #include "Vision/IO/FileSystem.h"
 
+#include <windows.h>
 #include <winnt.h>
-
 #include <vector>
 
 namespace Vision
 {
-    struct WatchData
+    struct Win32WatchData
     {
-        OVERLAPPED             Overlapped;
-        std::string            DirectoryPath;
-        HANDLE                 DirectoryHandle;
-        uint8                  Buffer[64 * 1024];
-        bool                   Recursive;
-        FileWatcherCallbackFn  CallbackFn;
+        OVERLAPPED Overlapped;
+        std::string DirectoryPath;
+        HANDLE DirectoryHandle;
+        uint8 Buffer[64 * 1024];
+        bool Recursive;
+        DirectoryWatcherCallbackFn CallbackFn;
     };
 
-    static std::unordered_map<std::string, WatchData> InternalHistory;
+    static std::unordered_map<std::string, Win32WatchData> InternalHistory;
 
-    static void RefreshWatcherDirectory(WatchData& data, bool subscriping = true);
+    static void RefreshWatcherDirectory(Win32WatchData& data, bool subscriping = true);
 
     static void CALLBACK WatchCallback(DWORD dwErrorCode, DWORD dwNumberOfBytesTransfered, LPOVERLAPPED lpOverlapped)
     {
@@ -40,7 +41,7 @@ namespace Vision
         {
             PFILE_NOTIFY_INFORMATION notify;
             uint64 offset = 0;
-            WatchData& data = *(WatchData*)(lpOverlapped);
+            Win32WatchData& data = *(Win32WatchData*)(lpOverlapped);
 
             do
             {
@@ -53,11 +54,11 @@ namespace Vision
 
                 if (notify->Action == FILE_ACTION_ADDED)
                 {
-                    data.CallbackFn(FileWatcherAction::FileAdded, path, path);
+                    data.CallbackFn(DirectoryWatcherAction::FileAdded, path, path);
                 }
                 else if (notify->Action == FILE_ACTION_REMOVED)
                 {
-                    data.CallbackFn(FileWatcherAction::FileRemoved, path, path);
+                    data.CallbackFn(DirectoryWatcherAction::FileRemoved, path, path);
                 }
                 if (notify->Action == FILE_ACTION_MODIFIED && ignoreFirstModifedAction)
                 {
@@ -65,7 +66,7 @@ namespace Vision
                 }
                 else if (notify->Action == FILE_ACTION_MODIFIED && !ignoreFirstModifedAction)
                 {
-                    data.CallbackFn(FileWatcherAction::FileModified, path, path);
+                    data.CallbackFn(DirectoryWatcherAction::FileModified, path, path);
                     ignoreFirstModifedAction = true;
                 }
                 else if (notify->Action == FILE_ACTION_RENAMED_OLD_NAME)
@@ -74,7 +75,7 @@ namespace Vision
                 }
                 else if (notify->Action == FILE_ACTION_RENAMED_NEW_NAME)
                 {
-                    data.CallbackFn(FileWatcherAction::FileRenamed, path, oldPath);
+                    data.CallbackFn(DirectoryWatcherAction::FileRenamed, path, oldPath);
                 }
             }
             while (notify->NextEntryOffset != 0);
@@ -92,7 +93,7 @@ namespace Vision
 
         if (isFile)
         {
-            result = FileSystem::GetPath(path);
+            result = FileSystem::GetFilePath(path);
         }
 
         if (FileSystem::IsRelativePath(path))
@@ -104,7 +105,7 @@ namespace Vision
         return result;
     }
 
-    void RefreshWatcherDirectory(WatchData& data, bool subscribing)
+    void RefreshWatcherDirectory(Win32WatchData& data, bool subscribing)
     {
         ReadDirectoryChangesW(data.DirectoryHandle,
                               data.Buffer,
@@ -121,19 +122,8 @@ namespace Vision
                               (subscribing) ? WatchCallback : 0);
     }
 
-    /*
-    FileWatcher::~FileWatcher()
-    {
-        for (auto& [filepath, data] : InternalHistory)
-        {
-            CloseHandle(data.Overlapped.hEvent);
-            CloseHandle(data.DirectoryHandle);
-        }
-    }
-    */
-
     bool WatchDirectory(const std::string& path,
-                        FileWatcherCallbackFn callback,
+                        DirectoryWatcherCallbackFn callback,
                         bool recursive)
     {
         std::string watchPath = GetAbsultePathFromRelative(path);
@@ -156,13 +146,13 @@ namespace Vision
 
         if (handle != INVALID_HANDLE_VALUE)
         {
-            WatchData& data = InternalHistory[watchPath];
-            data.DirectoryPath = watchPath;
-            data.DirectoryHandle = handle;
-            data.Overlapped = { 0 };
+            Win32WatchData& data   = InternalHistory[watchPath];
+            data.DirectoryPath     = watchPath;
+            data.DirectoryHandle   = handle;
+            data.Overlapped        = { 0 };
             data.Overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-            data.CallbackFn = callback;
-            data.Recursive = recursive;
+            data.CallbackFn        = callback;
+            data.Recursive         = recursive;
 
             RefreshWatcherDirectory(data);
 
@@ -183,7 +173,7 @@ namespace Vision
 
         if (watcherIter != InternalHistory.end())
         {
-            WatchData& data = watcherIter->second;
+            Win32WatchData& data = watcherIter->second;
 
             CancelIo(data.DirectoryHandle);
             RefreshWatcherDirectory(data, false);

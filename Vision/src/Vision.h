@@ -1,13 +1,13 @@
 #pragma once
 
 /*----------    Core    ----------*/
-#include "Vision/Core/Common.h"
-#include "Vision/Core/Log.h"
+#include "Vision/Core/Defines.h"
+#include "Vision/Core/Logger.h"
 #include "Vision/Core/Application.h"
 #include "Vision/Core/Layer.h"
 #include "Vision/Core/LayerStack.h"
 #include "Vision/Core/Vars.h"
-#include "Vision/Core/Lexer.h"
+#include "Vision/Core/String.h"
 /*--------------------------------*/
 
 /*----------   Events   ----------*/
@@ -31,7 +31,7 @@
 /*----------  IO  ----------*/
 #include "Vision/IO/File.h"
 #include "Vision/IO/FileSystem.h"
-#include "Vision/IO/FileWatcher.h"
+#include "Vision/IO/DirectoryWatcher.h"
 #include "Vision/IO/Assets.h"
 #include "Vision/IO/TextSerializer.h"
 #include "Vision/IO/TextDeserializer.h"

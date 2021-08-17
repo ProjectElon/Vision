@@ -1,7 +1,8 @@
-#include "pch.h"
+#include "pch.hpp"
 #include "Vision/Renderer/Renderer.h"
 #include "Vision/Renderer/Renderer2D.h"
 #include "Vision/Entity/Scene.h"
+#include "Vision/Renderer/VertexLayout.h"
 
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/matrix_transform_2d.hpp>
@@ -10,42 +11,53 @@
 
 namespace Vision
 {
-	void Renderer2D::Init()
+	void Renderer2D::Initialize()
 	{
 		uint32 white = 0xffffffff;
 
-		s_QuadData.WhitePixel.Init(&white, 1, 1, PixelFormat::RGBA);
+		Renderer::API.InitTexture(&QuadData.WhitePixel,
+								  &white,
+								  1,
+								  1,
+								  PixelFormat_RGBA,
+								  WrapMode_Repeat,
+								  WrapMode_Repeat,
+								  FilterMode_Bilinear);
 
-		s_QuadData.MaxTextureSlots = Renderer::GetMaxTextureSlots();
+		QuadData.MaxTextureSlots = 32;
 
 		for (uint32 textureSlotIndex = 0;
-			 textureSlotIndex < s_QuadData.MaxTextureSlots;
+			 textureSlotIndex < QuadData.MaxTextureSlots;
 			 textureSlotIndex++)
 		{
-			s_QuadData.Samplers[textureSlotIndex] = textureSlotIndex;
-			s_QuadData.TextureSlots[textureSlotIndex] = -1;
+			QuadData.Samplers[textureSlotIndex] = textureSlotIndex;
+			QuadData.TextureSlots[textureSlotIndex] = -1;
 		}
 
 		VertexLayout quadVertexlayout(
 		{
-			{ ShaderDataType::Float3, "a_Position",     false },
-			{ ShaderDataType::Float4, "a_Color", 	    false },
-			{ ShaderDataType::Float2, "a_TextureCoord", false },
-			{ ShaderDataType::UInt32, "a_TextureIndex", false },
-			{ ShaderDataType::Int32,  "a_EntityIndex",  false },
+			{ ShaderDataType_Float3, "a_Position",     false },
+			{ ShaderDataType_Float4, "a_Color", 	   false },
+			{ ShaderDataType_Float2, "a_TextureCoord", false },
+			{ ShaderDataType_UInt32, "a_TextureIndex", false },
+			{ ShaderDataType_Int32,  "a_EntityIndex",  false },
 		});
 
-		s_QuadData.VertexBase = new QuadVertex[4 * s_QuadData.MaxCount];
-		s_QuadData.CurrentVertex = s_QuadData.VertexBase;
+		QuadData.VertexBase = new QuadVertex[4 * QuadData.MaxCount];
+		QuadData.CurrentVertex = QuadData.VertexBase;
 
-		s_QuadData.VertexBuffer.Init(nullptr,
-									 4 * sizeof(QuadVertex) * s_QuadData.MaxCount,
-									 BufferUsage::Dynamic);
+		Renderer::API.InitVertexBuffer(&QuadData.VertexBuffer,
+									   nullptr,
+									   4 * sizeof(QuadVertex) * QuadData.MaxCount,
+									   BufferUsage::Dynamic);
 
-		s_QuadData.VertexBuffer.SetLayout(quadVertexlayout);
+		Renderer::API.SetVertexBufferLayout(&QuadData.VertexBuffer, &quadVertexlayout);
 
-		uint32 maxQuadIndexCount = s_QuadData.MaxCount * 6;
-		uint32* indices = new uint32[maxQuadIndexCount];
+		uint32 maxQuadIndexCount = QuadData.MaxCount * 6;
+		uint16* indices = new uint16[maxQuadIndexCount];
+
+		VnCoreAssert(maxQuadIndexCount <= std::numeric_limits<uint16>::max(),
+		             "can't use index buffer with uint16 values");
 
 		for (uint32 quadIndex = 0, offset = 0;
 			 quadIndex < maxQuadIndexCount;
@@ -62,29 +74,34 @@ namespace Vision
 			offset += 4;
 		}
 
-		s_QuadData.IndexBuffer.Init(indices, maxQuadIndexCount * sizeof(uint32));
+		Renderer::API.InitIndexBuffer16(&QuadData.IndexBuffer,
+										indices,
+										maxQuadIndexCount * sizeof(uint16),
+										BufferUsage::Static);
 
 		delete[] indices;
 	}
 
 	void Renderer2D::Shutdown()
 	{
-		delete[] s_QuadData.VertexBase;
+		delete[] QuadData.VertexBase;
 	}
 
 	void Renderer2D::BeginScene(const glm::mat4& cameraView,
 								const glm::mat4& cameraProjection,
 								Shader* shader)
 	{
-		s_SceneData.ViewProjection = cameraProjection * cameraView;
+		SceneData.ViewProjection = cameraProjection * cameraView;
 
-		shader->Bind();
-		shader->SetUniformIntArray("u_Textures",
-										s_QuadData.Samplers,
-										s_QuadData.MaxTextureSlots);
+		Renderer::API.BindShader(shader);
+		Renderer::API.SetUniformIntArray(shader,
+										 "u_Textures",
+										 QuadData.Samplers,
+										 QuadData.MaxTextureSlots);
 
-		shader->SetUniformMatrix4("u_ViewProj",
-								   glm::value_ptr(s_SceneData.ViewProjection));
+		Renderer::API.SetUniformMatrix4(shader,
+										"u_ViewProj",
+										glm::value_ptr(SceneData.ViewProjection));
 	}
 
 	void Renderer2D::DrawQuad(const glm::mat4& transform,
@@ -92,7 +109,7 @@ namespace Vision
 						      int32 entityIndex)
 	{
 		DrawTexture(transform,
-					&s_QuadData.WhitePixel,
+					&QuadData.WhitePixel,
 					color,
 					{ 0.0f, 0.0f },
 					{ 1.0f, 1.0f },
@@ -114,7 +131,7 @@ namespace Vision
 	void Renderer2D::DrawTexture(const glm::vec3& position,
 								 float32 rotationAngle,
 								 const glm::vec2& scale,
-								 const Texture* texture,
+								 Texture* texture,
 								 const glm::vec4& color,
 								 const glm::vec2& bottomLeftUV,
 								 const glm::vec2& topRightUV,
@@ -135,7 +152,7 @@ namespace Vision
 	void Renderer2D::DrawTexture(const glm::vec3& position,
 								 const glm::vec3& rotation,
 								 const glm::vec3& scale,
-								 const Texture* texture,
+								 Texture* texture,
 								 const glm::vec4& color,
 								 const glm::vec2& bottomLeftUV,
 								 const glm::vec2& topRightUV,
@@ -154,13 +171,13 @@ namespace Vision
 	}
 
 	void Renderer2D::DrawTexture(const glm::mat4& transform,
-								 const Texture* texture,
+								 Texture* texture,
 								 const glm::vec4& color,
 								 const glm::vec2& bottomLeftUV,
 								 const glm::vec2& topRightUV,
 								 int32 entityIndex)
 	{
-		if (s_QuadData.Count >= s_QuadData.MaxCount)
+		if (QuadData.Count >= QuadData.MaxCount)
 		{
 			FlushQuadBatch();
 		}
@@ -182,7 +199,7 @@ namespace Vision
 		SubmitQuadVertex({ v2, color, uv2, textureIndex, entityIndex });
 		SubmitQuadVertex({ v3, color, uv3, textureIndex, entityIndex });
 
-		s_QuadData.Count++;
+		QuadData.Count++;
 	}
 
 	void Renderer2D::DrawString(BitmapFont* font,
@@ -191,7 +208,9 @@ namespace Vision
 	                            const glm::vec4& color,
 	                            int32 entityIndex)
 	{
-		for (size_t characterIndex = 0; characterIndex < text.length(); characterIndex++)
+		for (memorysize characterIndex = 0;
+		     characterIndex < text.length();
+		     characterIndex++)
 		{
 			char character = text[characterIndex];
 
@@ -242,21 +261,27 @@ namespace Vision
 		EditorState& editorState = Scene::EditorState;
 		PerspectiveCamera& sceneCamera = editorState.SceneCamera;
 
-		glm::vec4 p(position.x, position.y, position.z, 1.0f);
+		glm::vec4 worldPosition = { position.x, position.y, position.z, 1.0f };
 
-		p = sceneCamera.Projection * sceneCamera.View * p;
-		p = p / p.w;
+		glm::vec4 clipSpacePosition = sceneCamera.Projection *
+									  sceneCamera.View *
+									  worldPosition;
 
-		float32 halfWidth = static_cast<float32>(Renderer::ViewportWidth) / 2.0f;
-		float32 halfHeight = static_cast<float32>(Renderer::ViewportHeight) / 2.0f;
-		float32 height = static_cast<float32>(Renderer::ViewportHeight);
+		clipSpacePosition /= clipSpacePosition.w;
 
-		p.x = (p.x + 1) * halfWidth;
-		p.y = (p.y + 1) * halfHeight;
-		p.y = height - p.y; // positive y is down coords
+		float32 width  = static_cast<float32>(Renderer::ViewportRect.Width);
+		float32 height = static_cast<float32>(Renderer::ViewportRect.Height);
 
-		glm::vec2 pp(p.x, p.y);
-		DrawString(font, text, pp, color, entityIndex);
+		float32 halfWidth  = width / 2.0f;
+		float32 halfHeight = height / 2.0f;
+
+		glm::vec2 screenSpacePosition =
+		{
+			(clipSpacePosition.x + 1) * halfWidth,
+			height - ((clipSpacePosition.y + 1) * halfHeight) // positive y is down
+		};
+
+		DrawString(font, text, screenSpacePosition, color, entityIndex);
 	}
 
 	void Renderer2D::EndScene()
@@ -264,15 +289,16 @@ namespace Vision
 		FlushQuadBatch();
 	}
 
-	uint32 Renderer2D::AssginTextureSlot(const Texture* texture)
+	uint32 Renderer2D::AssginTextureSlot(Texture* texture)
 	{
 		int32 textureIndex = -1;
 
 		for (uint32 index = 0;
-			 index < s_QuadData.CurrentTextureIndex;
+			 index < QuadData.CurrentTextureIndex;
 			 index++)
 		{
-			if (texture->RendererID == s_QuadData.TextureSlots[index])
+			//@InComplete: Right now we handle opengl only
+			if (texture->OpenGL.TextureID == QuadData.TextureSlots[index])
 			{
 				textureIndex = index;
 				break;
@@ -281,24 +307,25 @@ namespace Vision
 
 		if (textureIndex == -1)
 		{
-			if (s_QuadData.CurrentTextureIndex >= s_QuadData.MaxTextureSlots)
+			if (QuadData.CurrentTextureIndex >= QuadData.MaxTextureSlots)
 			{
 				FlushQuadBatch();
 
-				s_QuadData.CurrentTextureIndex = 0;
+				QuadData.CurrentTextureIndex = 0;
 
-				memset(s_QuadData.TextureSlots,
+				memset(QuadData.TextureSlots,
 					   0,
-				       sizeof(uint32) * s_QuadData.MaxTextureSlots);
+				       sizeof(uint32) * QuadData.MaxTextureSlots);
 			}
 
-			textureIndex = s_QuadData.CurrentTextureIndex;
+			textureIndex = QuadData.CurrentTextureIndex;
 
-			s_QuadData.TextureSlots[textureIndex] = texture->RendererID;
-			s_QuadData.CurrentTextureIndex++;
+			//@Incomplete: Right now we handle opengl only
+			QuadData.TextureSlots[textureIndex] = texture->OpenGL.TextureID;
+			QuadData.CurrentTextureIndex++;
 		}
 
-		texture->Bind(textureIndex);
+		Renderer::API.BindTexture(texture, textureIndex);
 
 		return textureIndex;
 	}
@@ -307,7 +334,7 @@ namespace Vision
 									          float32 rotationAngle,
 									          const glm::vec2& scale)
 	{
-		glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)   *
+		glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) *
 							  glm::rotate(glm::mat4(1.0f), rotationAngle, glm::vec3(0.0f, 0.0f, 1.0f)) *
 							  glm::scale(glm::mat4(1.0f), glm::vec3(scale.x, scale.y, 1.0f));
 
@@ -318,9 +345,8 @@ namespace Vision
 	                                          const glm::vec3& rotation,
 	                                          const glm::vec3& scale)
 	{
-		glm::quat rot  = glm::quat(rotation);
 		glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) *
-							  glm::toMat4(rot) *
+							  glm::toMat4(glm::quat(rotation)) *
 							  glm::scale(glm::mat4(1.0f), scale);
 
 		return transform;
@@ -328,36 +354,32 @@ namespace Vision
 
 	void Renderer2D::SubmitQuadVertex(const QuadVertex& vertex)
 	{
-		s_QuadData.CurrentVertex->Position     = vertex.Position;
-		s_QuadData.CurrentVertex->Color        = vertex.Color;
-		s_QuadData.CurrentVertex->TextureCoord = vertex.TextureCoord;
-		s_QuadData.CurrentVertex->TextureIndex = vertex.TextureIndex;
-		s_QuadData.CurrentVertex->EntityIndex  = vertex.EntityIndex;
-		s_QuadData.CurrentVertex++;
+	   *QuadData.CurrentVertex = vertex;
+		QuadData.CurrentVertex++;
 	}
 
 	void Renderer2D::FlushQuadBatch()
 	{
-		if (s_QuadData.Count > 0)
+		if (QuadData.Count > 0)
 		{
-			s_QuadData.VertexBuffer.Bind();
-			s_QuadData.IndexBuffer.Bind();
+			Renderer::API.BindVertexBuffer(&QuadData.VertexBuffer);
+			Renderer::API.BindIndexBuffer(&QuadData.IndexBuffer);
 
-			uint32 dataSize = 4 * sizeof(QuadVertex) * s_QuadData.Count;
+			uint32 dataSize = 4 * sizeof(QuadVertex) * QuadData.Count;
 
-			s_QuadData.VertexBuffer.SetData(s_QuadData.VertexBase,
-											dataSize);
+			Renderer::API.SetVertexBufferData(&QuadData.VertexBuffer,
+											  QuadData.VertexBase,
+											  dataSize,
+											  0);
+ 			Renderer::API.DrawIndexed16(&QuadData.VertexBuffer,
+									    &QuadData.IndexBuffer,
+ 										QuadData.Count * 6);
 
- 			Renderer::DrawIndexed(&s_QuadData.VertexBuffer,
-								  &s_QuadData.IndexBuffer,
- 								  s_QuadData.Count * 6,
- 								  Primitive::Triangles);
-
-			s_QuadData.CurrentVertex = s_QuadData.VertexBase;
-			s_QuadData.Count = 0;
+			QuadData.CurrentVertex = QuadData.VertexBase;
+			QuadData.Count = 0;
 		}
 	}
 
-	SceneData Renderer2D::s_SceneData; // @(Harlequin): this should be on the heap
-	QuadData  Renderer2D::s_QuadData; // @(Harlequin): this should be on the heap
+	SceneData Renderer2D::SceneData = {};
+	QuadData  Renderer2D::QuadData = {};
 }

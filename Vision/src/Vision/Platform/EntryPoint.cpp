@@ -1,4 +1,4 @@
-#include "pch.h"
+#include "pch.hpp"
 #include "Vision/Platform/EntryPoint.h"
 #include "Vision/Core/Application.h"
 
@@ -10,14 +10,13 @@ extern Vision::Application* Vision::CreateApplication();
 	{
         using namespace Vision;
 
-		Log::Init();
-
 		Application* application = CreateApplication();
 		application->Run();
-
 		delete application;
 
 		return 0;
 	}
+
+
 
 #endif

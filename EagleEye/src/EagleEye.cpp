@@ -5,7 +5,8 @@ namespace Vision
 {
 	EagleEye::EagleEye()
 	{
-		PushLayer(new EditorLayer);
+		EditorLayer* editorLayer = new EditorLayer;
+		PushLayer(editorLayer);
 	}
 
 	EagleEye::~EagleEye()

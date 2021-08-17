@@ -4,6 +4,7 @@
 #include "Vision/Renderer/Buffers.h"
 #include "Vision/Renderer/Texture.h"
 #include "Vision/Renderer/Font.h"
+#include "Vision/Renderer/Buffers.h"
 
 #define MAX_TEXTURE_SLOTS 128
 
@@ -27,6 +28,7 @@ namespace Vision
 
 	struct QuadData
 	{
+
 		Texture WhitePixel;
 
 		VertexBuffer VertexBuffer;
@@ -47,8 +49,13 @@ namespace Vision
 	class Renderer2D
 	{
 	public:
-		static void Init();
+		Renderer2D() = delete;
+		~Renderer2D() = delete;
 
+		static SceneData SceneData;
+		static QuadData  QuadData;
+
+		static void Initialize();
 		static void Shutdown();
 
 		static void BeginScene(const glm::mat4& cameraTransform,
@@ -70,7 +77,7 @@ namespace Vision
 		static void DrawTexture(const glm::vec3& position,
 								float32 rotationAngle,
 								const glm::vec2& scale,
-								const Texture* texture,
+								Texture* texture,
 								const glm::vec4& color = { 1.0f, 1.0f, 1.0f, 1.0f },
 								const glm::vec2& bottomLeftUV = { 0.0f, 0.0f },
 								const glm::vec2& topRightUV = { 1.0f, 1.0f },
@@ -79,14 +86,14 @@ namespace Vision
 		static void DrawTexture(const glm::vec3& position,
 								const glm::vec3& rotation,
 								const glm::vec3& scale,
-								const Texture* texture,
+								Texture* texture,
 								const glm::vec4& color,
 								const glm::vec2& bottomLeftUV,
 								const glm::vec2& topRightUV,
 								int32 entityIndex);
 
 		static void DrawTexture(const glm::mat4& transform,
-								const Texture* texture,
+								Texture* texture,
 								const glm::vec4& color = { 1.0f, 1.0f, 1.0f, 1.0f },
 								const glm::vec2& bottomLeftUV = { 0.0f, 0.0f },
 								const glm::vec2& topRightUV = { 1.0f, 1.0f },
@@ -105,11 +112,11 @@ namespace Vision
 		                       int32 entityIndex = 0);
 
 	private:
-		static uint32 AssginTextureSlot(const Texture* texture);
+		static uint32 AssginTextureSlot(Texture* texture);
 
 		static glm::mat4 CreateQuadTransform(const glm::vec3& position,
-										  		    float32 rotationAngle,
-										  		    const glm::vec2& scale);
+										  	 float32 rotationAngle,
+										     const glm::vec2& scale);
 
 		static glm::mat4 CreateQuadTransform(const glm::vec3& position,
 		                                     const glm::vec3& rotation,
@@ -118,9 +125,5 @@ namespace Vision
 		static void SubmitQuadVertex(const QuadVertex& vertex);
 
 		static void FlushQuadBatch();
-
-	private:
-		static SceneData s_SceneData;
-		static QuadData  s_QuadData;
 	};
 }

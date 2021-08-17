@@ -1,73 +1,152 @@
 #pragma once
 
-#include "Vision/Core/Common.h"
+#include "Vision/Core/Defines.h"
+#include "Vision/Renderer/RendererTypes.h"
+
+#include "Vision/Renderer/Texture.h"
+#include "Vision/Renderer/Shader.h"
+#include "Vision/Renderer/Buffers.h"
+#include "Vision/Renderer/FrameBuffer.h"
 
 namespace Vision
 {
-	enum class ShaderDataType
+	struct RendererAPI
 	{
-		Bool,
-		Int8,
-		UInt8,
-		Int16,
-		UInt16,
-		Int32,
-		UInt32,
-		Float,
-		Float2,
-		Float3,
-		Float4,
-		Matrix3,
-		Matrix4
+		// Pipeline State Functions
+		void (*SetClearColor) (float32 r, float32 g, float32 b, float32 a);
+		void (*Clear) (uint32 clearFlags);
+		void (*SetViewport) (const ViewportRect* viewportRect);
+		void (*DrawIndexed16) (const VertexBuffer* vertexBuffer,
+	                           const IndexBuffer* indexBuffer,
+							   uint32 count);
+
+		void (*DrawIndexed32) (const VertexBuffer* vertexBuffer,
+							   const IndexBuffer* indexBuffer,
+							   uint32 count);
+		void (*SetVSync) (bool enabled);
+		void (*SwapBuffers) ();
+
+		// Buffers
+		void (*InitVertexBuffer)(VertexBuffer* vertexBuffer,
+		                         const void* data,
+		                         uint32 sizeInBytes,
+		                         BufferUsage usage);
+
+		void (*UninitVertexBuffer)(VertexBuffer* vertexBuffer);
+
+		void (*SetVertexBufferLayout)(VertexBuffer* vertexBuffer,
+		                              VertexLayout* vertexLayout);
+
+		void (*SetVertexBufferData)(VertexBuffer* vertexBuffer,
+		                            const void* data,
+		                            uint32 sizeInBytes,
+		                            uint32 offset);
+
+		void (*BindVertexBuffer)(VertexBuffer* vertexBuffer);
+
+		void (*InitIndexBuffer16)(IndexBuffer* indexBuffer,
+		                          const uint16* data,
+		                          uint32 sizeInBytes,
+				  				  BufferUsage usage);
+
+		void (*InitIndexBuffer32)(IndexBuffer* indexBuffer,
+		                          const uint32* data,
+					  			  uint32 sizeInBytes,
+					  			  BufferUsage usage);
+
+		void (*UninitIndexBuffer)(IndexBuffer* indexBuffer);
+
+		void (*BindIndexBuffer)(IndexBuffer* indexBuffer);
+
+		// Texture Functions
+		void (*InitTexture)(Texture* texture,
+		                    void* pixels,
+		                    uint32 width,
+		                    uint32 height,
+		                    PixelFormat pixelFormat,
+		                    WrapMode wrapModeX,
+		                    WrapMode wrapModeY,
+		                    FilterMode filter);
+
+		void (*UninitTexture)(Texture* texture);
+		void (*BindTexture)(Texture* texture, uint32 textureSlot);
+
+		void (*SetTextureWrapMode)(Texture* texture,
+		                           WrapMode wrapModeX,
+		                           WrapMode wrapModeY);
+
+		void (*SetTextureFilterMode)(Texture* texture, FilterMode filter);
+
+		// Shader Functions
+		void (*InitShader)(Shader* shader, const std::string& filePath);
+		void (*UninitShader)(Shader* shader);
+
+		void (*BindShader)(Shader* shader);
+
+		void (*SetUniformInt)(Shader* shader, const char* uniform, int32 value);
+
+		void (*SetUniformIntArray)(Shader* shader,
+		                           const char* uniform,
+		                           const int32* values,
+		                           uint32 count);
+
+		void (*SetUniformFloat)(Shader* shader,
+		                        const char* uniform,
+		                        float32 value);
+
+		void (*SetUniformFloat2)(Shader* shader,
+		                         const char* uniform,
+		                         const float32* values);
+
+		void (*SetUniformFloat3)(Shader* shader,
+		                         const char* uniform,
+		                         const float32* values);
+
+		void (*SetUniformFloat4)(Shader* shader,
+		                         const char* uniform,
+		                         const float32* values);
+
+		void (*SetUniformMatrix3)(Shader* shader,
+		                          const char* uniform,
+		                          const float32* matrix3);
+
+		void (*SetUniformMatrix4)(Shader* shader,
+		                          const char* uniform,
+		                          const float32* matrix4);
+
+		// FrameBuffer Functions
+		void (*InitFrameBuffer)(FrameBuffer* frameBuffer,
+		                        const FrameBufferAttachmentSpecification& specification,
+                                uint32 width,
+                                uint32 height);
+
+		void (*UninitFrameBuffer)(FrameBuffer* frameBuffer);
+
+		void (*ResizeFrameBuffer)(FrameBuffer* frameBuffer,
+
+		                          uint32 width,
+                                  uint32 height);
+
+		int32 (*ReadPixel)(FrameBuffer* frameBuffer,
+                          uint32 attachmentIndex,
+                          int32 x,
+                          int32 y);
+
+		void (*ClearColorAttachment)(FrameBuffer* frameBuffer,
+                                     uint32 attachmentIndex,
+                                     const void* value);
+
+		void (*BindFrameBuffer)(FrameBuffer* frameBuffer);
+		void (*UnbindFrameBuffer)(FrameBuffer* frameBuffer);
 	};
 
-	enum ClearFlags
+	struct Renderer
 	{
-		ClearColorBuffer   = VnBitUInt32(1),
-		ClearDepthBuffer   = VnBitUInt32(2),
-		ClearStencilBuffer = VnBitUInt32(3)
-	};
+		static RendererAPI API;
+		static ViewportRect ViewportRect;
+		static RendererCapabilites Capabilites;
 
-	enum class Primitive
-	{
-		Triangles
-	};
-
-	struct Window;
-	struct VertexBuffer;
-	struct IndexBuffer;
-
-	class Renderer
-	{
-	public:
-		static uint32 ViewportWidth;
-		static uint32 ViewportHeight;
-
-		static Window* RenderTargetWindow;
-
-		static void Init(Window* renderTargetWindow);
+		static void Initialize();
 		static void Shutdown();
-
-		static void Clear(ClearFlags clearflags);
-
-		static void SetClearColor(float32 r,
-								  float32 g,
-								  float32 b,
-								  float32 a);
-
-		static void SetViewport(uint32 x,
-								uint32 y,
-								uint32 width,
-								uint32 height);
-
-		static void DrawIndexed(const VertexBuffer* vertexBuffer,
-								const IndexBuffer* indexBuffer,
-								uint32 count,
-								Primitive primitive = Primitive::Triangles);
-
-		static void SetVSync(bool enabled);
-		static void SwapBuffers();
-
-		static int32 GetMaxTextureSlots();
 	};
 }

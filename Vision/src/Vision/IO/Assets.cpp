@@ -1,17 +1,23 @@
-#include "pch.h"
+#include "pch.hpp"
 #include "Vision/IO/Assets.h"
 #include "Vision/IO/FileSystem.h"
 
 #include "Vision/Entity/Scene.h"
+
+#include "Vision/Renderer/Renderer.h"
 #include "Vision/Renderer/Texture.h"
 #include "Vision/Renderer/Shader.h"
 #include "Vision/Renderer/Font.h"
+#include "Vision/IO/TextDeserializer.h"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 namespace Vision
 {
-    void Assets::Init()
+    void Assets::Initialize()
     {
-        AssetsStorage.Assets.resize(1);
+        AssetsStorage.Assets.reserve(128);
 
         std::string textureExtensions[] =
         {
@@ -124,6 +130,21 @@ namespace Vision
         AssetInfoMap& assetInfoMap = AssetsStorage.AssetInfoMap;
         auto assetInfoIter = assetInfoMap.find(extension);
         return assetInfoIter != assetInfoMap.end();
+    }
+
+    bool Assets::IsExtensionOfAssetType(const std::string& extension,
+                                        const std::string& assetType)
+    {
+        AssetInfoMap& assetInfoMap = AssetsStorage.AssetInfoMap;
+        auto assetInfoIter = assetInfoMap.find(extension);
+
+        if (assetInfoIter == assetInfoMap.end())
+        {
+            return false;
+        }
+
+        AssetInfo& assetInfo = AssetsStorage.AssetInfoList[assetInfoIter->second];
+        return assetInfo.Type == assetType;
     }
 
     AssetID Assets::RequestAsset(const std::string& assetpath)
@@ -316,6 +337,11 @@ namespace Vision
     {
         std::string extension = FileSystem::GetFileExtension(assetpath, false);
 
+        if (!IsExtensionSupported(extension))
+        {
+            return;
+        }
+
         AssetInfo& assetInfo = GetAssetInfo(extension);
         AssetList& assets = AssetsStorage.Assets;
 
@@ -362,6 +388,109 @@ namespace Vision
                 }
             }
         }
+    }
+
+    AssetLoadingData LoadTexture(const std::string& texturepath)
+    {
+        AssetLoadingData textureAsset;
+
+        int32 width;
+        int32 height;
+        int32 channelCount;
+
+        stbi_set_flip_vertically_on_load(true);
+        stbi_uc* pixels = stbi_load(texturepath.c_str(),
+                                    &width,
+                                    &height,
+                                    &channelCount,
+                                    0);
+
+        if (pixels)
+        {
+            PixelFormat pixelFormat;
+
+            if (channelCount == 1)
+            {
+                pixelFormat = PixelFormat_R;
+            }
+            else if (channelCount == 3)
+            {
+                pixelFormat = PixelFormat_RGB;
+            }
+            else if (channelCount == 4)
+            {
+                pixelFormat = PixelFormat_RGBA;
+            }
+
+            auto texture = VnAllocateStruct(Texture);
+
+            Renderer::API.InitTexture(texture,
+                                      pixels,
+                                      width,
+                                      height,
+                                      pixelFormat,
+                                      WrapMode_Repeat,
+                                      WrapMode_Repeat,
+                                      FilterMode_Bilinear);
+
+            textureAsset.Memory = texture;
+            textureAsset.SizeInBytes = sizeof(Texture);
+            textureAsset.TotalSizeInBytes = sizeof(Texture) + (width * height * channelCount);
+
+            stbi_image_free(pixels);
+        }
+
+        return textureAsset;
+    }
+
+    void UnloadTexture(Asset* textureAsset)
+    {
+        Texture* texture = static_cast<Texture*>(textureAsset->Memory);
+        Renderer::API.UninitTexture(texture);
+        VnFree(texture);
+    }
+
+    AssetLoadingData LoadShader(const std::string& filePath)
+    {
+        AssetLoadingData shaderAsset;
+
+        Shader* shader = VnAllocateStruct(Shader);
+
+        Renderer::API.InitShader(shader, filePath);
+
+        shaderAsset.Memory = shader;
+        shaderAsset.SizeInBytes = sizeof(Shader);
+        shaderAsset.TotalSizeInBytes = sizeof(Shader);
+
+        return shaderAsset;
+    }
+
+    void UnloadShader(Asset* shaderAsset)
+    {
+        Shader* shader = static_cast<Shader*>(shaderAsset->Memory);
+        Renderer::API.UninitShader(shader);
+        VnFree(shader);
+    }
+
+    AssetLoadingData LoadScene(const std::string& scenepath)
+    {
+        AssetLoadingData sceneAsset;
+
+        Scene* scene = new Scene;
+        DeserializeScene(scenepath, scene);
+
+        sceneAsset.Memory = scene;
+        sceneAsset.SizeInBytes = sizeof(Scene);
+        sceneAsset.TotalSizeInBytes = sizeof(Scene); // @(Harlequin): not quite right entites + components
+
+        return sceneAsset;
+    }
+
+    void UnloadScene(Asset* sceneAsset)
+    {
+        Scene* scene = static_cast<Scene*>(sceneAsset->Memory);
+        DestroyScene(scene);
+        delete scene;
     }
 
     AssetsStorage Assets::AssetsStorage;

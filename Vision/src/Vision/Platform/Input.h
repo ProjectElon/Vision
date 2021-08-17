@@ -1,7 +1,7 @@
 #pragma once
 
-#include "pch.h"
-#include "Vision/Core/Common.h"
+#include "pch.hpp"
+#include "Vision/Core/Defines.h"
 #include "Vision/Platform/KeyCodes.h"
 #include "Vision/Platform/MouseCodes.h"
 
@@ -12,7 +12,7 @@ namespace Vision
 	class Input
 	{
 	public:
-		static void Init();
+		static void Initialize();
 		static void Shutdown();
 
 		static bool IsKeyDown(uint32 keyCode);

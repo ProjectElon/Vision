@@ -1,76 +1,71 @@
-#include "pch.h"
+#include "pch.hpp"
+#include "Vision/Core/Defines.h"
+#include "Vision/Core/Logger.h"
+
+#ifdef VN_RENDERER_API_OPENGL
+
 #include "Vision/Renderer/Buffers.h"
 #include "Vision/Renderer/OpenGL/OpenGLUtils.h"
-
+#include "Vision/Renderer/VertexLayout.h"
 #include <glad/glad.h>
 
 namespace Vision
 {
-
-	VertexBuffer::VertexBuffer(const void* data,
-				 	 		   uint32 sizeInBytes,
-				  	 		   BufferUsage usage)
+	void OpenGLInitVertexBuffer(VertexBuffer* vertexBuffer,
+	                            const void* data,
+								uint32 sizeInBytes,
+								BufferUsage usage)
 	{
-		Init(data, sizeInBytes, usage);
-	}
+		vertexBuffer->SizeInBytes = sizeInBytes;
+		vertexBuffer->Usage		  = usage;
 
-	VertexBuffer::~VertexBuffer()
-	{
-		Uninit();
-	}
+		auto& openglVertexBuffer = vertexBuffer->OpenGL;
 
-	void VertexBuffer::Init(const void* data,
-							uint32 sizeInBytes,
-							BufferUsage usage)
-	{
-		SizeInBytes = sizeInBytes;
-		Usage = usage;
+		glCreateVertexArrays(1, &openglVertexBuffer.VertexArrayObject);
+		glBindVertexArray(openglVertexBuffer.VertexArrayObject);
 
-		glCreateVertexArrays(1, &RendererLayoutID);
-		glBindVertexArray(RendererLayoutID);
-
-		glCreateBuffers(1, &RendererID);
-		glBindBuffer(GL_ARRAY_BUFFER, RendererID);
+		glCreateBuffers(1, &openglVertexBuffer.VertexBufferObject);
+		glBindBuffer(GL_ARRAY_BUFFER, openglVertexBuffer.VertexBufferObject);
 
 		glBufferData(GL_ARRAY_BUFFER, sizeInBytes, data, GLBufferUsage(usage));
 		glBindVertexArray(0);
 	}
 
-	void VertexBuffer::Uninit()
+	void OpenGLUninitVertexBuffer(VertexBuffer* vertexBuffer)
 	{
-		glDeleteBuffers(1, &RendererID);
-		glDeleteVertexArrays(1, &RendererLayoutID);
+		auto& openglVertexBuffer = vertexBuffer->OpenGL;
+		glDeleteBuffers(1, &openglVertexBuffer.VertexBufferObject);
+		glDeleteVertexArrays(1, &openglVertexBuffer.VertexArrayObject);
 	}
 
-	void VertexBuffer::Bind()
+	void OpenGLBindVertexBuffer(VertexBuffer* vertexBuffer)
 	{
-		glBindVertexArray(RendererLayoutID);
+		auto& openglVertexBuffer = vertexBuffer->OpenGL;
+		glBindVertexArray(openglVertexBuffer.VertexArrayObject);
 	}
 
-	void VertexBuffer::Unbind()
+	void OpenGLSetVertexBufferData(VertexBuffer* vertexBuffer,
+	                           	   const void* data,
+	                               uint32 sizeInBytes,
+	                               uint32 offset)
 	{
-		glBindVertexArray(0);
-	}
+		VnCoreAssert(vertexBuffer->Usage == BufferUsage::Dynamic,
+		             "can't set data to a static buffer");
 
-	void VertexBuffer::SetData(const void* data,
-	                           uint32 sizeInBytes,
-	                           uint32 offset)
-	{
-		VnCoreAssert(Usage == BufferUsage::Dynamic, "can't set data to a static buffer");
-		glBindBuffer(GL_ARRAY_BUFFER, RendererID);
+		auto& openglVertexBuffer = vertexBuffer->OpenGL;
+		glBindBuffer(GL_ARRAY_BUFFER, openglVertexBuffer.VertexBufferObject);
 		glBufferSubData(GL_ARRAY_BUFFER, offset, sizeInBytes, data);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
-	void VertexBuffer::SetLayout(const VertexLayout& layout)
+	void OpenGLSetVertexBufferLayout(VertexBuffer* vertexBuffer,
+	                                 VertexLayout* layout)
 	{
-		// @(Harlequin): Note that this code will fail
+		// @Incomplete: Note that this code will fail
 		// if the alignment of the vertex layout is not 4 bytes
 		// to solve this we need meta programming
 
-		Layout = layout;
-
-		const auto& attributes = layout.Attributes;
+		const auto& attributes = layout->Attributes;
 
 		uint32 offset = 0;
 		uint32 stride = 0; // vertex size in bytes
@@ -80,7 +75,7 @@ namespace Vision
 			stride += GLTypeSize(attributes[vertexIndex].Type);
 		}
 
-		glBindVertexArray(RendererLayoutID);
+		glBindVertexArray(vertexBuffer->OpenGL.VertexArrayObject);
 
 		for (uint32 vertexIndex = 0; vertexIndex < attributes.size(); ++vertexIndex)
 		{
@@ -89,13 +84,13 @@ namespace Vision
 
 			switch (attribute.Type)
 			{
-				case ShaderDataType::Bool:
-				case ShaderDataType::Int8:
-				case ShaderDataType::UInt8:
-				case ShaderDataType::Int16:
-				case ShaderDataType::UInt16:
-				case ShaderDataType::Int32:
-				case ShaderDataType::UInt32:
+				case ShaderDataType_Bool:
+				case ShaderDataType_Int8:
+				case ShaderDataType_UInt8:
+				case ShaderDataType_Int16:
+				case ShaderDataType_UInt16:
+				case ShaderDataType_Int32:
+				case ShaderDataType_UInt32:
 				{
 					glVertexAttribIPointer(vertexIndex,
 										   GLTypeComponentCount(attribute.Type),
@@ -105,12 +100,10 @@ namespace Vision
 				}
 				break;
 
-				case ShaderDataType::Float:
-				case ShaderDataType::Float2:
-				case ShaderDataType::Float3:
-				case ShaderDataType::Float4:
-				case ShaderDataType::Matrix3:
-				case ShaderDataType::Matrix4:
+				case ShaderDataType_Float:
+				case ShaderDataType_Float2:
+				case ShaderDataType_Float3:
+				case ShaderDataType_Float4:
 				{
 					glVertexAttribPointer(vertexIndex,
 										  GLTypeComponentCount(attribute.Type),
@@ -118,6 +111,14 @@ namespace Vision
 										  attribute.Normalized ? GL_TRUE : GL_FALSE,
 										  stride,
 										  (const void*)offset);
+				}
+				break;
+
+
+				case ShaderDataType_Matrix3:
+				case ShaderDataType_Matrix4:
+				{
+					VnCoreAssert(false, "unsupported types");
 				}
 				break;
 			}
@@ -128,46 +129,50 @@ namespace Vision
 		glBindVertexArray(0);
 	}
 
-
-
-	IndexBuffer::IndexBuffer(const uint32* data,
-							 uint32 sizeInBytes,
-							 BufferUsage usage)
+	static void InitIndexBuffer(IndexBuffer* indexBuffer,
+	                            const void* data,
+	                            memorysize sizeInBytes,
+	                            BufferUsage usage)
 	{
-		Init(data, sizeInBytes, usage);
-	}
+		indexBuffer->SizeInBytes = sizeInBytes;
+		indexBuffer->Usage		 = usage;
 
-	IndexBuffer::~IndexBuffer()
-	{
-		Uninit();
-	}
+		auto& openglIndexBuffer = indexBuffer->OpenGL;
 
-	void IndexBuffer::Init(const uint32* data,
-						   uint32 sizeInBytes,
-						   BufferUsage usage)
-	{
-		SizeInBytes = sizeInBytes;
-		Usage = usage;
-
-		glCreateBuffers(1, &RendererID);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RendererID);
+		glCreateBuffers(1, &openglIndexBuffer.ElementBufferObject);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, openglIndexBuffer.ElementBufferObject);
 
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeInBytes, data, GLBufferUsage(usage));
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	}
 
-	void IndexBuffer::Uninit()
+	void OpenGLInitIndexBuffer16(IndexBuffer* indexBuffer,
+	                             const uint16* data,
+	                             uint32 sizeInBytes,
+	                             BufferUsage usage)
 	{
-		glDeleteBuffers(1, &RendererID);
+		InitIndexBuffer(indexBuffer, data, sizeInBytes, usage);
 	}
 
-	void IndexBuffer::Bind()
+	void OpenGLInitIndexBuffer32(IndexBuffer* indexBuffer,
+		                         const uint32* data,
+					  			 uint32 sizeInBytes,
+					  			 BufferUsage usage)
 	{
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RendererID);
+		InitIndexBuffer(indexBuffer, data, sizeInBytes, usage);
 	}
 
-	void IndexBuffer::Unbind()
+	void OpenGLUninitIndexBuffer(IndexBuffer* indexBuffer)
 	{
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+		auto& openglIndexBuffer = indexBuffer->OpenGL;
+		glDeleteBuffers(1, &openglIndexBuffer.ElementBufferObject);
+	}
+
+	void OpenGLBindIndexBuffer(IndexBuffer* indexBuffer)
+	{
+		auto& openglIndexBuffer = indexBuffer->OpenGL;
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, openglIndexBuffer.ElementBufferObject);
 	}
 }
+
+#endif

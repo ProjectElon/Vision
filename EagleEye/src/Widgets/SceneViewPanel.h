@@ -1,17 +1,16 @@
 #pragma once
 
-#include "Vision/Core/Common.h"
+#include "Vision/Core/Defines.h"
 
 #include <glm/glm.hpp>
 
 namespace Vision
 {
-	struct FrameBuffer;
-
 	struct SceneViewPanel
 	{
 	public:
-		FrameBuffer* FrameBuffer = nullptr;
+		struct FrameBuffer* FrameBuffer = nullptr;
+		class EditorLayer* EditorLayer = nullptr;
 		uint32 ActiveSceneID = 0;
 		int32 GizmoType = -1;
 

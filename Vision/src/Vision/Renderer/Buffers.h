@@ -1,12 +1,10 @@
 #pragma once
 
-#include "Vision/Core/Common.h"
-#include "Vision/Renderer/Renderer.h"
-#include "Vision/Renderer/VertexLayout.h"
+#include "Vision/Core/Defines.h"
 
 namespace Vision
 {
-	enum class BufferUsage
+	enum class BufferUsage : uint32
 	{
 		Static,
 		Dynamic
@@ -14,59 +12,71 @@ namespace Vision
 
 	struct VertexBuffer
 	{
-		uint32 RendererLayoutID = 0;
-		uint32 RendererID = 0;
+		union
+		{
+#ifdef VN_RENDERER_API_OPENGL
+			struct
+			{
+				uint32 VertexBufferObject;
+				uint32 VertexArrayObject;
+			}
+			OpenGL;
+#endif
+		};
 
-		uint32 SizeInBytes = 0;
-		BufferUsage Usage = BufferUsage::Static;
-
-		VertexLayout Layout;
-
-		VertexBuffer() = default;
-		VertexBuffer(const void* data,
-				 	 uint32 sizeInBytes,
-				  	 BufferUsage usage);
-
-		~VertexBuffer();
-
-		void Init(const void* data,
-				  uint32 sizeInBytes,
-				  BufferUsage usage);
-
-		void Uninit();
-
-		void SetLayout(const VertexLayout& vertexLayout);
-
-		void SetData(const void* data,
-					 uint32 sizeInBytes,
-					 uint32 offset = 0);
-
-		void Bind();
-		void Unbind();
+		memorysize 	SizeInBytes;
+		BufferUsage Usage;
 	};
 
 	struct IndexBuffer
 	{
-		uint32 RendererID = 0;
-		uint32 SizeInBytes = 0;
+		union
+		{
+#ifdef VN_RENDERER_API_OPENGL
+			struct
+			{
+				uint32 ElementBufferObject;
+			}
+			OpenGL;
+#endif
+		};
 
-		BufferUsage Usage = BufferUsage::Static;
-
-		IndexBuffer() = default;
-
-		IndexBuffer(const uint32* data,
-					uint32 sizeInBytes,
-					BufferUsage usage = BufferUsage::Static);
-
-		~IndexBuffer();
-
-		void Init(const uint32* data,
-				  uint32 sizeInBytes,
-				  BufferUsage usage = BufferUsage::Static);
-
-		void Uninit();
-
-		void Bind();
-		void Unbind();
+		memorysize  SizeInBytes;
+		BufferUsage Usage;
 	};
+
+#ifdef VN_RENDERER_API_OPENGL
+
+	void OpenGLInitVertexBuffer(VertexBuffer* vertexBuffer,
+	                            const void* data,
+			  					uint32 sizeInBytes,
+			  					BufferUsage usage);
+
+	void OpenGLUninitVertexBuffer(VertexBuffer* vertexBuffer);
+
+	void OpenGLSetVertexBufferLayout(VertexBuffer* vertexBuffer,
+	               					 struct VertexLayout* vertexLayout);
+
+	void OpenGLSetVertexBufferData(VertexBuffer* vertexBuffer,
+	                               const void* data,
+				 				   uint32 sizeInBytes,
+				 				   uint32 offset = 0);
+
+	void OpenGLBindVertexBuffer(VertexBuffer* vertexBuffer);
+
+	void OpenGLInitIndexBuffer16(IndexBuffer* indexBuffer,
+		                         const uint16* data,
+		                         uint32 sizeInBytes,
+				  				 BufferUsage usage);
+
+	void OpenGLUninitIndexBuffer16(IndexBuffer* indexBuffer);
+	void OpenGLInitIndexBuffer32(IndexBuffer* indexBuffer,
+		                         const uint32* data,
+					  			 uint32 sizeInBytes,
+					  			 BufferUsage usage);
+
+	void OpenGLUninitIndexBuffer32(IndexBuffer* indexBuffer);
+	void OpenGLBindIndexBuffer(IndexBuffer* indexBuffer);
+
+#endif
 }

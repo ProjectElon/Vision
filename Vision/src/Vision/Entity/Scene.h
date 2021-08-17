@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Vision/Core/Common.h"
+#include "Vision/Core/Defines.h"
+#include "Vision/Core/Logger.h"
 
 #include "Vision/Entity/Entity.h"
 #include "Vision/Entity/Components.h"
@@ -63,9 +64,11 @@ namespace Vision
 
             Tags.insert_or_assign(tag, entity);
 
-            TagComponent t;
-            strcpy(t.Tag, tag.c_str());
-            AddComponents(entity, t, components...);
+            TagComponent tagComponent;
+            // strcpy(tagComponent.Tag, tag.c_str());
+            AssignString(tagComponent.Tag, tag.c_str(), tag.length());
+
+            AddComponents(entity, tagComponent, components...);
 
             return entity;
         }
@@ -241,7 +244,4 @@ namespace Vision
 
     void CreateScene(Scene* scene, uint32 maxEntityCount);
     void DestroyScene(Scene* scene);
-
-    AssetLoadingData LoadScene(const std::string& scenepath);
-    void UnloadScene(Asset* sceneAsset);
 }

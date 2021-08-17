@@ -1,4 +1,4 @@
-#include "pch.h"
+#include "pch.hpp"
 
 #include "Vision/Renderer/PerspectiveCamera.h"
 #include "Vision/Platform/Input.h"
@@ -37,8 +37,8 @@ namespace Vision
     {
         glm::quat orientation = glm::quat(glm::vec3(-Pitch, -Yaw, 0.0f));
 
-        Up      = glm::rotate(orientation, glm::vec3(0.0f, 1.0f, 0.0f));
-        Right   = glm::rotate(orientation, glm::vec3(1.0f, 0.0f, 0.0f));
+        Up = glm::rotate(orientation, glm::vec3(0.0f, 1.0f, 0.0f));
+        Right = glm::rotate(orientation, glm::vec3(1.0f, 0.0f, 0.0f));
         Forward = glm::rotate(orientation, glm::vec3(0.0f, 0.0f, -1.0f));
 
         Position = FocalPoint - Forward * Distance;
@@ -57,57 +57,70 @@ namespace Vision
                                       FarClip);
     }
 
-    void PerspectiveCamera::OnUpdate(float32 deltaTime)
+    void PerspectiveCamera::OnUpdate(float32 deltaTime, bool isViewportInteractable)
     {
         glm::vec2 mousePosition = Input::GetMousePosition();
         glm::vec2 mouseDelta = (mousePosition - PreviousMousePosition) * 0.003f;
         PreviousMousePosition = mousePosition;
 
-        if (Input::IsKeyDown(Key::LeftAlt))
+        if (isViewportInteractable)
         {
-            if (Input::IsMouseButtonDown(Mouse::ButtonLeft))
+            if (Input::IsKeyDown(Key::LeftAlt))
             {
-                Pan(mouseDelta);
+                if (Input::IsMouseButtonDown(Mouse::ButtonMiddle))
+                {
+                    Pan(mouseDelta);
+                }
+                else if (Input::IsMouseButtonDown(Mouse::ButtonLeft))
+                {
+                    Rotate(mouseDelta);
+                }
+                else if (Input::IsMouseButtonDown(Mouse::ButtonRight))
+                {
+                    Zoom(mouseDelta.y);
+                }
             }
 
-            if (Input::IsMouseButtonDown(Mouse::ButtonRight))
+            glm::quat orientation = glm::quat(glm::vec3(-Pitch, -Yaw, 0.0f));
+
+            Up = glm::rotate(orientation, glm::vec3(0.0f, 1.0f, 0.0f));
+            Right = glm::rotate(orientation, glm::vec3(1.0f, 0.0f, 0.0f));
+            Forward = glm::rotate(orientation, glm::vec3(0.0f, 0.0f, -1.0f));
+
+            float movementSpeed = 10.0f;
+
+            if (Input::IsKeyDown(Key::W))
             {
-                Rotate(mouseDelta);
+                FocalPoint += Forward * movementSpeed * deltaTime;
             }
+
+            if (Input::IsKeyDown(Key::S))
+            {
+                FocalPoint += -Forward * movementSpeed * deltaTime;
+            }
+
+            if (Input::IsKeyDown(Key::D))
+            {
+                FocalPoint += Right * movementSpeed * deltaTime;
+            }
+
+            if (Input::IsKeyDown(Key::A))
+            {
+                FocalPoint += -Right * movementSpeed * deltaTime;
+            }
+
+            if (Input::IsKeyDown(Key::Space))
+            {
+                FocalPoint += Up * movementSpeed * deltaTime;
+            }
+
+            if (Input::IsKeyDown(Key::LeftShift))
+            {
+                FocalPoint += -Up * movementSpeed * deltaTime;
+            }
+
         }
-
-        float movementSpeed = 10.0f;
-
-        if (Input::IsKeyDown(Key::W))
-        {
-            FocalPoint += Forward * movementSpeed * deltaTime;
-        }
-
-        if (Input::IsKeyDown(Key::S))
-        {
-            FocalPoint += -Forward * movementSpeed * deltaTime;
-        }
-
-        if (Input::IsKeyDown(Key::D))
-        {
-            FocalPoint += Right * movementSpeed * deltaTime;
-        }
-
-        if (Input::IsKeyDown(Key::A))
-        {
-            FocalPoint += -Right * movementSpeed * deltaTime;
-        }
-
-        if (Input::IsKeyDown(Key::Space))
-        {
-            FocalPoint += Up * movementSpeed * deltaTime;
-        }
-
-        if (Input::IsKeyDown(Key::LeftShift))
-        {
-            FocalPoint += -Up * movementSpeed * deltaTime;
-        }
-
+        
         UpdateView();
     }
 
@@ -120,32 +133,41 @@ namespace Vision
 
         if (Distance < 1.0f)
         {
+            glm::quat orientation = glm::quat(glm::vec3(-Pitch, -Yaw, 0.0f));
+            Forward = glm::rotate(orientation, glm::vec3(0.0f, 0.0f, -1.0f));
+
             FocalPoint += Forward;
             Distance = 1.0f;
         }
-
-        UpdateView();
     }
 
     void PerspectiveCamera::Rotate(const glm::vec2& mouseDelta)
     {
         float32 rotationSpeed = 0.8f;
 
-        float yawSign = Up.y < 0 ? -1.0f : 1.0f;
-        Yaw += yawSign * mouseDelta.x * rotationSpeed;
+        glm::quat orientation = glm::quat(glm::vec3(-Pitch, -Yaw, 0.0f));
+        Up = glm::rotate(orientation, glm::vec3(0.0f, 1.0f, 0.0f));
+
+        float32 yawSign = Up.y < 0 ? -1.0f : 1.0f;
+        Yaw   += yawSign * mouseDelta.x * rotationSpeed;
         Pitch += mouseDelta.y * rotationSpeed;
     }
 
     void PerspectiveCamera::Pan(const glm::vec2& mouseDelta)
     {
-        float x = std::min(ViewportWidth / 1000.0f, 2.4f);
-        float xSpeed = 0.0366f * (x * x) - 0.1778f * x + 0.3021f;
+        float32 x = std::min(ViewportWidth / 1000.0f, 2.4f);
+        float32 xSpeed = 0.0366f * (x * x) - 0.1778f * x + 0.3021f;
 
-        float y = std::min(ViewportHeight / 1000.0f, 2.4f);
-        float ySpeed = 0.0366f * (y * y) - 0.1778f * y + 0.3021f;
+        float32 y = std::min(ViewportHeight / 1000.0f, 2.4f);
+        float32 ySpeed = 0.0366f * (y * y) - 0.1778f * y + 0.3021f;
+
+        glm::quat orientation = glm::quat(glm::vec3(-Pitch, -Yaw, 0.0f));
+
+        Right = glm::rotate(orientation, glm::vec3(1.0f, 0.0f, 0.0f));
+        Up = glm::rotate(orientation, glm::vec3(0.0f, 1.0f, 0.0f));
 
         FocalPoint += -Right * mouseDelta.x * xSpeed * Distance;
-        FocalPoint += Up * mouseDelta.y * ySpeed * Distance;
+        FocalPoint +=  Up    * mouseDelta.y * ySpeed * Distance;
     }
 
     void PerspectiveCamera::Reset()

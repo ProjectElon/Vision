@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vision/Core/Common.h"
+#include "Vision/Core/Defines.h"
 #include "Vision/Renderer/Texture.h"
 
 #include <vector>
@@ -8,28 +8,27 @@
 
 namespace Vision
 {
-    enum class FrameBufferTextureFormat
+    enum FrameBufferTextureFormat
     {
-        None = 0,
+        FrameBufferTextureFormat_None = 0,
 
-        RGBA8,
+        FrameBufferTextureFormat_RGBA8,
 
-        Depth24Stencil8,
+        FrameBufferTextureFormat_Depth24Stencil8,
 
-        Depth = Depth24Stencil8,
+        FrameBufferTextureFormat_Depth = FrameBufferTextureFormat_Depth24Stencil8,
 
-        RedInt32,
-        RedUInt32
+        FrameBufferTextureFormat_RedInt32,
+        FrameBufferTextureFormat_RedUInt32
     };
 
     struct FrameBufferTextureSpecification
     {
-        FrameBufferTextureFormat TextureFormat = FrameBufferTextureFormat::None;
+        FrameBufferTextureFormat TextureFormat = FrameBufferTextureFormat_None;
 
-        WrapMode WrapX = WrapMode::ClampToEdge;
-        WrapMode WrapY = WrapMode::ClampToEdge;
-
-        FilterMode FilterMode = FilterMode::Point;
+        WrapMode WrapX = WrapMode_ClampToEdge;
+        WrapMode WrapY = WrapMode_ClampToEdge;
+        FilterMode FilterMode = FilterMode_Point;
 
         FrameBufferTextureSpecification() = default;
 
@@ -47,41 +46,50 @@ namespace Vision
             : Attachments(attachments) {}
     };
 
+    #define MaxColorAttachments 4
+
     struct FrameBuffer
     {
-        uint32 RendererID = 0;
-        uint32 Width = 0;
-        uint32 Height = 0;
-        uint32 Samples = 1;
+        union
+        {
+#ifdef VN_RENDERER_API_OPENGL
+            struct
+            {
+                uint32 FrameBufferObject;
+                uint32 ColorAttachments[MaxColorAttachments];
+                uint32 DepthAttachment;
+            }
+            OpenGL;
+#endif
+        };
 
-        std::vector<uint32> ColorAttachments;
-        uint32 DepthAttachment = 0;
+        uint32 Width;
+        uint32 Height;
 
-        std::vector<FrameBufferTextureSpecification> ColorAttachmentSpecification;
+        uint32 ColorAttachmentCount;
+        FrameBufferTextureSpecification ColorAttachmentSpecification[MaxColorAttachments];
         FrameBufferTextureSpecification DepthAttachmentSpecification;
-
-        bool SwapChainTarget = false;
-
-        FrameBuffer() = default;
-
-        FrameBuffer(const FrameBufferAttachmentSpecification& specification,
-                    uint32 width,
-                    uint32 height);
-
-        ~FrameBuffer();
-
-        void Init(const FrameBufferAttachmentSpecification& specification,
-                  uint32 width,
-                  uint32 height);
-
-        void Uninit();
-
-        void Resize(uint32 width, uint32 height);
-
-        int32 ReadPixel(uint32 attachmentIndex, int32 x, int32 y);
-        void ClearColorAttachment(uint32 index, const void* value);
-
-        void Bind();
-        void Unbind();
     };
+
+#ifdef VN_RENDERER_API_OPENGL
+
+    void OpenGLInitFrameBuffer(FrameBuffer* frameBuffer,
+                               const FrameBufferAttachmentSpecification& specification,
+                               uint32 width,
+                               uint32 height);
+    void OpenGLUninitFrameBuffer(FrameBuffer* frameBuffer);
+    void OpenGLResizeFrameBuffer(FrameBuffer* frameBuffer,
+                                 uint32 width,
+                                 uint32 height);
+    int32 OpenGLReadPixel(FrameBuffer* frameBuffer,
+                          uint32 attachmentIndex,
+                          int32 x,
+                          int32 y);
+    void OpenGLClearColorAttachment(FrameBuffer* frameBuffer,
+                                    uint32 attachmentIndex,
+                                    const void* value);
+    void OpenGLBindFrameBuffer(FrameBuffer* frameBuffer);
+    void OpenGLUnbindFrameBuffer(FrameBuffer* frameBuffer);
+
+#endif
 }

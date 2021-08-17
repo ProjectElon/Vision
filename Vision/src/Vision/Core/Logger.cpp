@@ -1,9 +1,9 @@
-#include "pch.h"
-#include "Log.h"
+#include "pch.hpp"
+#include "Logger.h"
 
 namespace Vision
 {
-	void Log::Init()
+	void Logging::Initialize()
 	{
 		spdlog::set_pattern("%^[%T] %n : %v%$");
 
@@ -14,6 +14,10 @@ namespace Vision
 		ClientLogger->set_level(spdlog::level::trace);
 	}
 	
-	std::shared_ptr<spdlog::logger> Log::CoreLogger;
-	std::shared_ptr<spdlog::logger> Log::ClientLogger;
+	void Logging::Shutdown()
+	{
+	}
+
+	std::shared_ptr<spdlog::logger> Logging::CoreLogger;
+	std::shared_ptr<spdlog::logger> Logging::ClientLogger;
 }

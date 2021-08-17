@@ -1,14 +1,14 @@
 #pragma once
 
-#include "Vision/Core/Common.h"
-#include "Vision/Meta/Meta.h"
+#include "Vision/Core/Defines.h"
+#include "../Meta/Meta.h"
 
 namespace Vision
 {
     enum class TokenType
     {
         Unknown,
-
+        UnderScore,
         Semicolon,
         Colon,
         Asterisk,
@@ -72,50 +72,16 @@ namespace Vision
                                                   void* memberPointer,
                                                   bool beginStruct,
                                                   bool endStruct,
+                                                  int32 arrayIndex,
                                                   uint32 depth)>;
 
-    template<typename T>
     void InspectStruct(StructMember* members,
                        uint32 memebersCount,
-                       T* structPointer,
+                       void* structPointer,
                        const char* structName,
                        MemberInspectionFn memberFn,
-                       uint32 depth = 0)
-    {
-        memberFn(structName,
-                 nullptr,
-                 structPointer,
-                 true,
-                 false,
-                 depth);
+                       int32 arrayIndex = -1,
+                       uint32 depth = 0);
 
-        for (uint32 memberIndex = 0; memberIndex < memebersCount; ++memberIndex)
-        {
-            StructMember* member = members + memberIndex;
-            void* memberPointer = (uint8*)structPointer + member->Offset;
-
-            switch (member->Type)
-            {
-                HandleMetaTypeCases(memberPointer)
-
-                default:
-                {
-                    memberFn(structName,
-                             member,
-                             memberPointer,
-                             false,
-                             false,
-                             depth);
-                }
-                break;
-            }
-        }
-
-        memberFn(structName,
-                 nullptr,
-                 structPointer,
-                 false,
-                 true,
-                 depth);
-    }
+    #define InspectMembers(Struct, Instance, MemberInspectFn) InspectStruct(Struct##Members, VnArrayCount(Struct##Members), &Instance, #Instance, MemberInspectFn)
 }

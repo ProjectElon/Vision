@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vision/Core/Common.h"
+#include "Vision/Core/Defines.h"
 
 #define KiloBytes(Count) (memorysize)(Count)            * (memorysize)1024
 #define MegaBytes(Count) (memorysize)KiloBytes((Count)) * (memorysize)1024
@@ -8,6 +8,12 @@
 
 namespace Vision
 {
+
+    #define VnAllocateStruct(Struct) static_cast<Struct*>(_aligned_malloc(sizeof(Struct), alignof(Struct)))
+    #define VnAllocate(Size, Alignment) _aligned_malloc(Size, Alignment);
+    #define VnAllocateStructArray(Struct, Count) static_cast<Struct*>(_aligned_malloc((Count) * sizeof(Struct), alignof(Struct)))
+    #define VnFree(Address) _aligned_free(Address)
+
     template<typename T>
     struct MemoryPool
     {
@@ -29,14 +35,14 @@ namespace Vision
 
         void Init(uint32 maxElementCount)
         {
-            BasePointer = reinterpret_cast<T*>(_mm_malloc((memorysize)maxElementCount * sizeof(T), alignof(T)));
+            BasePointer = AllocArray(T, maxElementCount);
             MaxElementCount = maxElementCount;
         }
 
         void Uninit()
         {
             VnCoreAssert(BasePointer != nullptr, "BasePointer is nullptr");
-            _mm_free(BasePointer);
+            Free(BasePointer);
         }
 
         inline T* Allocate()

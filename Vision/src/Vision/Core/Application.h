@@ -15,12 +15,12 @@ namespace Vision
 	class Application
 	{
 	public:
-		Vision::Window Window;
-		Vision::Vars Vars;
+		Window Window;
+		Vars   Vars;
 
-		Vision::ImGuiLayer ImGuiLayer;
+		ImGuiLayer ImGuiLayer;
+		LayerStack LayerStack;
 
-		Vision::LayerStack LayerStack;
 		Timer FrameTimer;
 
 		bool Running   = true;
@@ -29,9 +29,10 @@ namespace Vision
 		Application();
 		virtual ~Application();
 
+		void OnEvent(Event& e);
+
 		void Run();
 
-		void OnEvent(Event& e);
 		void PushLayer(Layer* layer);
 		void PushOverlay(Layer* overlay);
 

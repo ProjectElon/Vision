@@ -1,4 +1,4 @@
-#include "pch.h"
+#include "pch.hpp"
 #include "Vision/Entity/Components.h"
 
 namespace Vision
@@ -25,6 +25,7 @@ namespace Vision
     ComponentStorage::~ComponentStorage()
     {
         _mm_free(Data);
+
         delete[] Entities;
     }
 }

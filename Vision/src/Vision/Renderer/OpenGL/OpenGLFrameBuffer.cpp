@@ -1,7 +1,12 @@
-#include "pch.h"
+#include "pch.hpp"
+#include "Vision/Core/Defines.h"
+#include "Vision/Core/Logger.h"
+
+#ifdef VN_RENDERER_API_OPENGL
+
+#include "Vision/Renderer/Renderer.h"
 #include "Vision/Renderer/FrameBuffer.h"
 #include "Vision/Renderer/OpenGL/OpenGLUtils.h"
-#include "Vision/Renderer/Renderer.h"
 
 #include <glad/glad.h>
 
@@ -9,27 +14,21 @@ namespace Vision
 {
     static void InvalidateFrameBuffer(FrameBuffer* frameBuffer)
     {
-        if (frameBuffer->RendererID)
-        {
-            frameBuffer->Uninit();
-        }
+        OpenGLUninitFrameBuffer(frameBuffer);
 
-        glGenFramebuffers(1, &frameBuffer->RendererID);
-        glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer->RendererID);
+        auto& openglFrameBuffer = frameBuffer->OpenGL;
 
-        if (frameBuffer->ColorAttachments.empty())
-        {
-            frameBuffer->ColorAttachments.resize(frameBuffer->ColorAttachmentSpecification.size());
-        }
+        glGenFramebuffers(1, &openglFrameBuffer.FrameBufferObject);
+        glBindFramebuffer(GL_FRAMEBUFFER, openglFrameBuffer.FrameBufferObject);
 
         for (uint32 attachmentIndex = 0;
-             attachmentIndex < frameBuffer->ColorAttachmentSpecification.size();
+             attachmentIndex < frameBuffer->ColorAttachmentCount;
              attachmentIndex++)
         {
             auto& colorSpec = frameBuffer->ColorAttachmentSpecification[attachmentIndex];
 
-            glCreateTextures(GL_TEXTURE_2D, 1, &frameBuffer->ColorAttachments[attachmentIndex]);
-            glBindTexture(GL_TEXTURE_2D, frameBuffer->ColorAttachments[attachmentIndex]);
+            glCreateTextures(GL_TEXTURE_2D, 1, &openglFrameBuffer.ColorAttachments[attachmentIndex]);
+            glBindTexture(GL_TEXTURE_2D, openglFrameBuffer.ColorAttachments[attachmentIndex]);
 
             GLenum internalFormat = GLInternalFormat(colorSpec.TextureFormat);
             GLenum textureFormat = GLTextureFormat(colorSpec.TextureFormat);
@@ -44,20 +43,30 @@ namespace Vision
                          GL_UNSIGNED_BYTE,
                          nullptr);
 
-            glTextureParameteri(frameBuffer->ColorAttachments[attachmentIndex], GL_TEXTURE_MIN_FILTER, GLFilterMode(colorSpec.FilterMode));
-            glTextureParameteri(frameBuffer->ColorAttachments[attachmentIndex], GL_TEXTURE_MAG_FILTER, GLFilterMode(colorSpec.FilterMode));
+            glTextureParameteri(openglFrameBuffer.ColorAttachments[attachmentIndex],
+                                GL_TEXTURE_MIN_FILTER,
+                                GLFilterMode(colorSpec.FilterMode));
 
-            glTextureParameteri(frameBuffer->ColorAttachments[attachmentIndex], GL_TEXTURE_WRAP_S, GLWrapMode(colorSpec.WrapX));
-            glTextureParameteri(frameBuffer->ColorAttachments[attachmentIndex], GL_TEXTURE_WRAP_T, GLWrapMode(colorSpec.WrapY));
+            glTextureParameteri(openglFrameBuffer.ColorAttachments[attachmentIndex],
+                                GL_TEXTURE_MAG_FILTER,
+                                GLFilterMode(colorSpec.FilterMode));
+
+            glTextureParameteri(openglFrameBuffer.ColorAttachments[attachmentIndex],
+                                GL_TEXTURE_WRAP_S,
+                                GLWrapMode(colorSpec.WrapX));
+
+            glTextureParameteri(openglFrameBuffer.ColorAttachments[attachmentIndex],
+                                GL_TEXTURE_WRAP_T,
+                                GLWrapMode(colorSpec.WrapY));
 
             glFramebufferTexture2D(GL_FRAMEBUFFER,
                                    GL_COLOR_ATTACHMENT0 + attachmentIndex,
                                    GL_TEXTURE_2D,
-                                   frameBuffer->ColorAttachments[attachmentIndex],
+                                   openglFrameBuffer.ColorAttachments[attachmentIndex],
                                    0);
         }
 
-        if (frameBuffer->ColorAttachmentSpecification.size() > 1)
+        if (frameBuffer->ColorAttachmentCount > 1)
         {
             GLenum buffers[4] =
             {
@@ -67,97 +76,120 @@ namespace Vision
                 GL_COLOR_ATTACHMENT3
             };
 
-            VnCoreAssert(frameBuffer->ColorAttachments.size() <= 4, "max color attachments allowed is 4");
-            glDrawBuffers(frameBuffer->ColorAttachments.size(), buffers);
+            VnCoreAssert(frameBuffer->ColorAttachmentCount <= 4,
+                         "max color attachments allowed is 4");
+            glDrawBuffers(frameBuffer->ColorAttachmentCount, buffers);
         }
         else
         {
             glDrawBuffer(GL_NONE);
         }
 
-        if (frameBuffer->DepthAttachmentSpecification.TextureFormat != FrameBufferTextureFormat::None)
+        if (frameBuffer->DepthAttachmentSpecification.TextureFormat != FrameBufferTextureFormat_None)
         {
             auto& depthSpec = frameBuffer->DepthAttachmentSpecification;
 
-            glCreateTextures(GL_TEXTURE_2D, 1, &frameBuffer->DepthAttachment);
-            glBindTexture(GL_TEXTURE_2D, frameBuffer->DepthAttachment);
+            glCreateTextures(GL_TEXTURE_2D, 1, &openglFrameBuffer.DepthAttachment);
+            glBindTexture(GL_TEXTURE_2D, openglFrameBuffer.DepthAttachment);
             glTexStorage2D(GL_TEXTURE_2D,
                            1,
                            GL_DEPTH24_STENCIL8,
                            frameBuffer->Width,
                            frameBuffer->Height);
 
-            glTextureParameteri(frameBuffer->DepthAttachment, GL_TEXTURE_MIN_FILTER, GLFilterMode(depthSpec.FilterMode));
-            glTextureParameteri(frameBuffer->DepthAttachment, GL_TEXTURE_MAG_FILTER, GLFilterMode(depthSpec.FilterMode));
+            glTextureParameteri(openglFrameBuffer.DepthAttachment,
+                                GL_TEXTURE_MIN_FILTER,
+                                GLFilterMode(depthSpec.FilterMode));
 
-            glTextureParameteri(frameBuffer->DepthAttachment, GL_TEXTURE_WRAP_S, GLWrapMode(depthSpec.WrapX));
-            glTextureParameteri(frameBuffer->DepthAttachment, GL_TEXTURE_WRAP_T, GLWrapMode(depthSpec.WrapY));
+            glTextureParameteri(openglFrameBuffer.DepthAttachment,
+                                GL_TEXTURE_MAG_FILTER,
+                                GLFilterMode(depthSpec.FilterMode));
+
+            glTextureParameteri(openglFrameBuffer.DepthAttachment,
+                                GL_TEXTURE_WRAP_S,
+                                GLWrapMode(depthSpec.WrapX));
+
+            glTextureParameteri(openglFrameBuffer.DepthAttachment,
+                                GL_TEXTURE_WRAP_T,
+                                GLWrapMode(depthSpec.WrapY));
 
             glFramebufferTexture2D(GL_FRAMEBUFFER,
                                    GL_DEPTH_STENCIL_ATTACHMENT,
                                    GL_TEXTURE_2D,
-                                   frameBuffer->DepthAttachment,
+                                   openglFrameBuffer.DepthAttachment,
                                    0);
         }
 
-        VnCoreAssert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Incomplete Framebuffer");
+        VnCoreAssert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE,
+                     "incomplete framebuffer");
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-
-    FrameBuffer::FrameBuffer(const FrameBufferAttachmentSpecification& specification,
-                             uint32 width,
-                             uint32 height)
+    void OpenGLInitFrameBuffer(FrameBuffer* frameBuffer,
+                               const FrameBufferAttachmentSpecification& specification,
+                               uint32 width,
+                               uint32 height)
     {
-        Init(specification, width, height);
-    }
+        auto& openglFrameBuffer = frameBuffer->OpenGL;
 
-    FrameBuffer::~FrameBuffer()
-    {
-        Uninit();
-    }
+        frameBuffer->Width  = width;
+        frameBuffer->Height = height;
+        frameBuffer->ColorAttachmentCount = 0;
+        frameBuffer->DepthAttachmentSpecification = FrameBufferTextureFormat_None;
 
-    void FrameBuffer::Init(const FrameBufferAttachmentSpecification& specification,
-                           uint32 width,
-                           uint32 height)
-    {
-        Width  = width;
-        Height = height;
-        RendererID = 0;
+        openglFrameBuffer.FrameBufferObject = 0;
+        openglFrameBuffer.DepthAttachment = 0;
 
-        for (const auto& attachment : specification.Attachments)
+        auto& spec = specification.Attachments;
+
+        for (uint32 attachmentIndex = 0;
+             attachmentIndex < spec.size();
+             attachmentIndex++)
         {
-            if (attachment.TextureFormat == FrameBufferTextureFormat::Depth24Stencil8)
+            if (spec[attachmentIndex].TextureFormat == FrameBufferTextureFormat_Depth24Stencil8)
             {
-                DepthAttachmentSpecification = FrameBufferTextureFormat::Depth24Stencil8;
+                frameBuffer->DepthAttachmentSpecification = spec[attachmentIndex].TextureFormat;
             }
             else
             {
-                ColorAttachmentSpecification.push_back(attachment);
+                uint32 colorAttachmentIndex = frameBuffer->ColorAttachmentCount;
+                frameBuffer->ColorAttachmentSpecification[colorAttachmentIndex] = spec[attachmentIndex];
+                frameBuffer->ColorAttachmentCount++;
             }
         }
 
-        InvalidateFrameBuffer(this);
+        InvalidateFrameBuffer(frameBuffer);
     }
 
-    void FrameBuffer::Uninit()
+    void OpenGLUninitFrameBuffer(FrameBuffer* frameBuffer)
     {
-        glDeleteFramebuffers(1, &RendererID);
+        auto& openglFrameBuffer = frameBuffer->OpenGL;
 
-        if (!ColorAttachments.empty())
+        if (openglFrameBuffer.FrameBufferObject)
         {
-            glDeleteTextures(ColorAttachments.size(), ColorAttachments.data());
-            memset(ColorAttachments.data(), 0, sizeof(uint32) * ColorAttachments.size());
+            glDeleteFramebuffers(1, &openglFrameBuffer.FrameBufferObject);
+            openglFrameBuffer.FrameBufferObject = 0;
         }
 
-        if (DepthAttachment)
+        if (frameBuffer->ColorAttachmentCount)
         {
-            glDeleteTextures(1, &DepthAttachment);
-            DepthAttachment = 0;
+            glDeleteTextures(frameBuffer->ColorAttachmentCount,
+                             openglFrameBuffer.ColorAttachments);
+            memset(openglFrameBuffer.ColorAttachments,
+                   0,
+                   sizeof(int32) * frameBuffer->ColorAttachmentCount);
+        }
+
+        if (frameBuffer->OpenGL.DepthAttachment)
+        {
+            glDeleteTextures(1, &openglFrameBuffer.DepthAttachment);
+            openglFrameBuffer.DepthAttachment = 0;
         }
     }
 
-    void FrameBuffer::Resize(uint32 width, uint32 height)
+    void OpenGLResizeFrameBuffer(FrameBuffer* frameBuffer,
+                                 uint32 width,
+                                 uint32 height)
     {
         if (width <= 0 || height <= 0)
         {
@@ -165,44 +197,55 @@ namespace Vision
             return;
         }
 
-        Width = width;
-        Height = height;
+        frameBuffer->Width  = width;
+        frameBuffer->Height = height;
 
-        InvalidateFrameBuffer(this);
+        InvalidateFrameBuffer(frameBuffer);
     }
 
-    int32 FrameBuffer::ReadPixel(uint32 attachmentIndex, int32 x, int32 y)
+    int32 OpenGLReadPixel(FrameBuffer* frameBuffer,
+                          uint32 attachmentIndex,
+                          int32 x,
+                          int32 y)
     {
-        VnCoreAssert(attachmentIndex < ColorAttachments.size(), "out of bounds");
+        VnCoreAssert(attachmentIndex < frameBuffer->ColorAttachmentCount, "out of bounds");
         glReadBuffer(GL_COLOR_ATTACHMENT0 + attachmentIndex);
         int32 pixel;
         glReadPixels(x, y, 1, 1, GL_RED_INTEGER, GL_INT, &pixel);
         return pixel;
     }
 
-    void FrameBuffer::ClearColorAttachment(uint32 index, const void* value)
+    void OpenGLClearColorAttachment(FrameBuffer* frameBuffer,
+                                    uint32 attachmentIndex,
+                                    const void* value)
     {
-        auto& spec = ColorAttachmentSpecification[index];
+        auto& openglFrameBuffer = frameBuffer->OpenGL;
 
-        GLenum type = (spec.TextureFormat == FrameBufferTextureFormat::RedInt32) ? GL_INT : GL_FLOAT;
+        auto& spec = frameBuffer->ColorAttachmentSpecification[attachmentIndex];
+
+        GLenum type = (spec.TextureFormat == FrameBufferTextureFormat_RedInt32) ? GL_INT : GL_FLOAT;
 
         GLenum textureFormat = GLTextureFormat(spec.TextureFormat);
 
-        glClearTexImage(ColorAttachments[index],
+        glClearTexImage(openglFrameBuffer.ColorAttachments[attachmentIndex],
                         0,
                         textureFormat,
                         type,
                         value);
     }
 
-    void FrameBuffer::Bind()
+    void OpenGLBindFrameBuffer(FrameBuffer* frameBuffer)
     {
-        glBindFramebuffer(GL_FRAMEBUFFER, RendererID);
-        Renderer::SetViewport(0, 0, Width, Height);
+        auto& openglFrameBuffer = frameBuffer->OpenGL;
+        glBindFramebuffer(GL_FRAMEBUFFER, openglFrameBuffer.FrameBufferObject);
+        ViewportRect viewportRect = { 0, 0, frameBuffer->Width, frameBuffer->Height };
+        Renderer::API.SetViewport(&viewportRect);
     }
 
-    void FrameBuffer::Unbind()
+    void OpenGLUnbindFrameBuffer(FrameBuffer* frameBuffer)
     {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 }
+
+#endif

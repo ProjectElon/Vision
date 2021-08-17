@@ -1,43 +1,46 @@
 MaxEntityCount 100
 PrimaryCamera none
 SelectedEntity none
-CameraPosition 0.714911 0.25368 -0.171093
+CameraPosition 0.00605563 0.417812 0.834608
+CameraPitch -12.0634
+CameraYaw 69.8181
+CameraZoomLevel 4.18149
 Entity Entity0
 Component 1066925509535886804 Transform
-Position 0.330946 0.470966 0.668376
-Rotation -1.5708 0 0
-Scale 1.01 1.00902 1.00902
+Position 0.271612 0.469719 0.477266
+Rotation -1.5708 2.20268e-13 1.8462e-07
+Scale 1 0.999868 1.00815
 Component 13080639714729183211 Sprite Renderer
-Texture Path Assets/Textures/wood.png
+Texture Path Assets/Textures/greystone_sand.png
 Texture Wrap X 0
 Texture Wrap Y 0
-Texture Fliter Mode 0
-Color 1 1 1 1
+Texture Fliter Mode 1
+Color 0.99999 0.999991 1 1
 Bottom Left Point 0 0
 Top Right Point 1 1
 Entity Entity1
 Component 1066925509535886804 Transform
-Position -0.158046 -0.0305575 0.668078
-Rotation 2.41296e-11 -1.55666 3.14159
-Scale 1.00002 0.999992 0.999989
+Position -0.233679 -0.0294975 0.483597
+Rotation 0 -1.5708 0
+Scale 0.999736 0.999991 0.999718
 Component 13080639714729183211 Sprite Renderer
 Texture Path Assets/Textures/wood.png
-Texture Wrap X 0
-Texture Wrap Y 0
-Texture Fliter Mode 0
-Color 1 1 1 1
+Texture Wrap X 1
+Texture Wrap Y 1
+Texture Fliter Mode 1
+Color 0.999994 1 0.99999 1
 Bottom Left Point 0 0
 Top Right Point 1 1
 Entity Entity2
 Component 1066925509535886804 Transform
-Position 0.330482 -0.0302687 1.16333
+Position 0.26928 -0.0250715 0.96815
 Rotation 0 0 0
-Scale 1 1 1
+Scale 0.99986 1 0.99986
 Component 13080639714729183211 Sprite Renderer
-Texture Path Assets/Textures/wood.png
+Texture Path Assets/Textures/cotton_blue.png
 Texture Wrap X 0
 Texture Wrap Y 0
-Texture Fliter Mode 0
-Color 1 1 1 1
+Texture Fliter Mode 1
+Color 1 0.99999 0.99999 1
 Bottom Left Point 0 0
 Top Right Point 1 1

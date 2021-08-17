@@ -1,4 +1,6 @@
-#include "pch.h"
+#include "pch.hpp"
+#include "Vision/Core/Defines.h"
+#include "Vision/Core/Logger.h"
 
 #include "Vision/Renderer/TextureAtlas.h"
 
