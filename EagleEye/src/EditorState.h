@@ -2,13 +2,11 @@
 
 #include "Vision/Renderer/OrthographicCamera.h"
 #include "Vision/Renderer/PerspectiveCamera.h"
-#include "Vision/Entity/Entity.h"
+#include "Vision/Entity/Scene.h"
 #include "Vision/Entity/Components.h"
 
 namespace Vision
 {
-    struct Scene;
-
     struct ComponentState
     {
         bool Open = true;
@@ -34,10 +32,10 @@ namespace Vision
 
     struct EditorState
     {
-        std::string      SelectedEntityTag;
-        ComponentMetaMap ComponentMeta;
-
+        std::string SelectedEntityTag;
         PerspectiveCamera SceneCamera;
+
+        ComponentMetaMap ComponentMeta;
     };
 
     template<typename Component, bool Removable = true>
@@ -52,7 +50,8 @@ namespace Vision
         componentInfo.InspectFn = inspectFn;
         componentInfo.AddFn     = AddComponentInInspectorFn<Component>;
 
-        Scene::EditorState.ComponentMeta.insert_or_assign(componentID, componentInfo);
+        EditorState& editorState = EagleEye::EditorState;
+        editorState.ComponentMeta.insert_or_assign(componentID, componentInfo);
     }
 
     template<typename Component>
@@ -61,7 +60,8 @@ namespace Vision
         const std::type_info& typeInfo = typeid(Component);
         const ComponentID& componentID = typeInfo.hash_code();
 
-        ComponentInfo& info = Scene::EditorState.ComponentMeta[componentID];
+        EditorState& editorState = EagleEye::EditorState;
+        ComponentInfo& info = editorState.ComponentMeta[componentID];
         info.SerializeFn    = serializeFn;
     }
 
@@ -71,7 +71,8 @@ namespace Vision
         const std::type_info& typeInfo = typeid(Component);
         const ComponentID& componentID = typeInfo.hash_code();
 
-        ComponentInfo& info = Scene::EditorState.ComponentMeta[componentID];
+        EditorState& editorState = EagleEye::EditorState;
+        ComponentInfo& info = editorState.ComponentMeta[componentID];
         info.DeserializeFn  = deserializeFn;
     }
 

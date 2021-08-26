@@ -1,11 +1,11 @@
 #include "SceneViewPanel.h"
+#include "EagleEye.h"
 
-#include "Vision/Renderer/FrameBuffer.h"
 #include "Vision/Entity/Scene.h"
-#include "Vision/IO/Assets.h"
+#include "Vision/Assets/Assets.h"
 #include "Vision/Renderer/Renderer.h"
 #include "Vision/Platform/Input.h"
-#include "Vision/IO/FileSystem.h"
+#include "Vision/Platform/FileSystem.h"
 #include "EditorLayer.h"
 
 #include <imgui.h>
@@ -151,7 +151,7 @@ namespace Vision
 											static_cast<uint32>(currentViewportSize.y));
 		}
 
-		EditorState& editorState = Scene::EditorState;
+		EditorState& editorState = EagleEye::EditorState;
 
 		if (ActiveSceneID && !editorState.SelectedEntityTag.empty() && GizmoType != -1)
 		{
@@ -168,7 +168,7 @@ namespace Vision
 			Scene* scene = Assets::GetScene(ActiveSceneID);
 			Entity selectedEntity = scene->QueryEntity(editorState.SelectedEntityTag);
 
-			if (selectedEntity != entity::null)
+			if (selectedEntity)
 			{
 				if (scene->HasComponent<TransformComponent>(selectedEntity))
 				{

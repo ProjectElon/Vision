@@ -1,9 +1,6 @@
 #pragma once
 
-#include "Vision/Renderer/Renderer.h"
-#include "Vision/Renderer/Buffers.h"
-#include "Vision/Renderer/FrameBuffer.h"
-#include "Vision/Renderer/Texture.h"
+#include "Vision/Renderer/RendererTypes.h"
 
 #include <glad/glad.h>
 

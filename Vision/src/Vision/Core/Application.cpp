@@ -5,7 +5,7 @@
 #include "Vision/Platform/Input.h"
 #include "Vision/Renderer/Renderer.h"
 #include "Vision/Renderer/Renderer2D.h"
-#include "Vision/IO/Assets.h"
+#include "Vision/Assets/Assets.h"
 
 namespace Vision
 {

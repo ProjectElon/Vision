@@ -7,12 +7,18 @@
 
 #include "Vision/Renderer/Renderer.h"
 #include "Vision/Renderer/OpenGL/OpenGLRenderer.h"
-#include "Vision/Renderer/Buffers.h"
+
 #include "Vision/Platform/Window.h"
+
+#include "Vision/Renderer/OpenGL/OpenGLTexture.h"
+#include "Vision/Renderer/OpenGL/OpenGLBuffers.h"
+#include "Vision/Renderer/OpenGL/OpenGLShader.h"
+#include "Vision/Renderer/OpenGL/OpenGLFrameBuffer.h"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include <imgui.h>
 
 namespace Vision
 {
@@ -93,6 +99,8 @@ namespace Vision
 		rendererAPI->BindFrameBuffer      = &OpenGLBindFrameBuffer;
 		rendererAPI->UnbindFrameBuffer    = &OpenGLUnbindFrameBuffer;
 
+		rendererAPI->ConvertTextureToImGuiTexture = &OpenGLConvertTextureToImGuiTexture;
+
 #ifdef VN_DEBUG
 
 		int32 flags;
@@ -166,6 +174,12 @@ namespace Vision
 	{
 		Window* window = &Application::Get().Window;
 		glfwSwapBuffers(static_cast<GLFWwindow*>(window->Handle));
+	}
+
+	void* OpenGLConvertTextureToImGuiTexture(Texture* texture)
+	{
+		OpenGLTexture* openglTexture = &texture->OpenGL;
+		return &openglTexture->TextureHandle;
 	}
 
 	void APIENTRY OpenGLDebugOutput(GLenum source,

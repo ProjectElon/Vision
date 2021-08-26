@@ -6,8 +6,8 @@
 
 #include "Vision/Renderer/Renderer.h"
 #include "Vision/Platform/Memory.h"
-#include "Vision/Renderer/Shader.h"
-#include "Vision/IO/FileSystem.h"
+#include "Vision/Renderer/OpenGL/OpenGLShader.h"
+#include "Vision/Platform/FileSystem.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -86,7 +86,7 @@ namespace Vision
 
 		if (uniformIndex == -1)
 		{
-			int32 uniformLocation = glGetUniformLocation(shader->OpenGL.ProgramID, uniform);
+			int32 uniformLocation = glGetUniformLocation(shader->OpenGL.ProgramHandle, uniform);
 
 			if (uniformLocation == -1)
 			{
@@ -123,7 +123,7 @@ namespace Vision
 
 		if (success)
 		{
-			glAttachShader(shader->OpenGL.ProgramID, *shaderID);
+			glAttachShader(shader->OpenGL.ProgramHandle, *shaderID);
 		}
 		else
 		{
@@ -141,7 +141,7 @@ namespace Vision
 	{
 		memset(shader, 0, sizeof(Shader));
 
-		for (uint32 index = 0; index < MaxUniformLocations; ++index)
+		for (uint32 index = 0; index < 128; ++index)
 		{
 			shader->OpenGL.Uniforms[index].Name	    = "";
 			shader->OpenGL.Uniforms[index].Location = -1;
@@ -186,7 +186,7 @@ namespace Vision
 
 		ifs.close();
 
-		shader->OpenGL.ProgramID = glCreateProgram();
+		shader->OpenGL.ProgramHandle = glCreateProgram();
 
 		int32 success;
 		char logInfo[512];
@@ -203,12 +203,12 @@ namespace Vision
 			CompileAndAttachShader(shader, static_cast<ShaderType>(shaderTypeIndex), sources[shaderTypeIndex]);
 		}
 
-		glLinkProgram(shader->OpenGL.ProgramID);
-		glGetProgramiv(shader->OpenGL.ProgramID, GL_LINK_STATUS, &success);
+		glLinkProgram(shader->OpenGL.ProgramHandle);
+		glGetProgramiv(shader->OpenGL.ProgramHandle, GL_LINK_STATUS, &success);
 
 		if (!success)
 		{
-			glGetProgramInfoLog(shader->OpenGL.ProgramID, sizeof(logInfo), nullptr, logInfo);
+			glGetProgramInfoLog(shader->OpenGL.ProgramHandle, sizeof(logInfo), nullptr, logInfo);
 			VnCoreInfo("unable to link shader program : {0}", logInfo);
 			return;
 		}
@@ -222,19 +222,19 @@ namespace Vision
 		     shaderTypeIndex < ShaderType_Count;
 		     ++shaderTypeIndex)
 		{
-			glDetachShader(shader->OpenGL.ProgramID,
+			glDetachShader(shader->OpenGL.ProgramHandle,
 			               shader->OpenGL.Shaders[shaderTypeIndex]);
 			glDeleteShader(shader->OpenGL.Shaders[shaderTypeIndex]);
 			shader->OpenGL.Shaders[shaderTypeIndex] = 0;
 		}
 
-		glDeleteProgram(shader->OpenGL.ProgramID);
-		shader->OpenGL.ProgramID = 0;
+		glDeleteProgram(shader->OpenGL.ProgramHandle);
+		shader->OpenGL.ProgramHandle = 0;
 	}
 
 	void OpenGLBindShader(Shader* shader)
 	{
-		glUseProgram(shader->OpenGL.ProgramID);
+		glUseProgram(shader->OpenGL.ProgramHandle);
 	}
 
 	void OpenGLSetUniformInt(Shader* shader,

@@ -1,15 +1,15 @@
 MaxEntityCount 110
 PrimaryCamera none
-SelectedEntity none
+SelectedEntity entity0
 CameraPosition 0 0 0
-CameraPitch 0
-CameraYaw 0
+CameraPitch -0.0456001
+CameraYaw 0.00480011
 CameraZoomLevel 10
 Entity entity0
 Component 1066925509535886804 Transform
 Position 0 0 1
 Rotation 0 0 0
-Scale 1 1 1
+Scale 3 3 1
 Component 13080639714729183211 Sprite Renderer
 Texture Path Assets/Textures/oven.png
 Texture Wrap X 0

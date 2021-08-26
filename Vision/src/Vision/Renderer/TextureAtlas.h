@@ -3,8 +3,8 @@
 #include "Vision/Core/Defines.h"
 #include "Vision/Core/Logger.h"
 
-#include "Vision/IO/Assets.h"
-#include "Vision/Renderer/Texture.h"
+#include "Vision/Assets/Assets.h"
+#include "Vision/Renderer/RendererTypes.h"
 
 #include <glm/glm.hpp>
 

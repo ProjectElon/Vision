@@ -5,7 +5,7 @@
 #ifdef VN_RENDERER_API_OPENGL
 
 #include "Vision/Renderer/Renderer.h"
-#include "Vision/Renderer/FrameBuffer.h"
+#include "Vision/Renderer/OpenGL/OpenGLFrameBuffer.h"
 #include "Vision/Renderer/OpenGL/OpenGLUtils.h"
 
 #include <glad/glad.h>

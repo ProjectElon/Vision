@@ -23,6 +23,8 @@ namespace Vision
 
 	void OpenGLSetVSync(bool enabled);
 	void OpenGLSwapBuffers();
+
+	void* OpenGLConvertTextureToImGuiTexture(Texture *texture);
 }
 
 #endif

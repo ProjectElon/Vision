@@ -1,10 +1,10 @@
 #include "ContentBrowserPanel.h"
 
 #include "Vision/Core/Defines.h"
-#include "Vision/Core/Log.h"
-#include "Vision/Renderer/Texture.h"
+#include "Vision/Core/Logger.h"
+#include "Vision/Renderer/Renderer.h"
 
-#include "Vision/IO/FileSystem.h"
+#include "Vision/Platform/FileSystem.h"
 
 #include <imgui.h>
 
@@ -12,7 +12,11 @@
 
 namespace Vision
 {
+    // TODO(Harlequin): maybe instead of loading all the assets of a directory
+    // we can query the operation system for the thumbnails
+    // and for custom assets we can use an icon texture with the asset name
     static const std::string AssetsDirectory = "Assets";
+
     static void ReleaseCurrentDirectoryResources(ContentBrowserPanel* contentBrowserPanel);
 
     ContentBrowserPanel::ContentBrowserPanel()
@@ -36,11 +40,11 @@ namespace Vision
         
         bool isBackIconEnabled = CurrentDirectory != AssetsDirectory;
 
-        auto backIconTextureID = Assets::GetTexture(BackIcon)->OpenGL.TextureID;
+        auto backIconTexture = Assets::GetTexture(BackIcon);
 
         if (!isBackIconEnabled) ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
 
-        if (ImGui::ImageButton((ImTextureID)backIconTextureID,
+        if (ImGui::ImageButton(*(ImTextureID*)Renderer::ConvertTextureToImGuiTexture(backIconTexture),
                                 { 28, 28 },
                                 { 0, 1 },
                                 { 1, 0 }) && isBackIconEnabled)
@@ -62,12 +66,11 @@ namespace Vision
 
         bool isForwardIconEnabled = CurrentPathIndex + 1 < PathHistory.size();
 
-        auto forwardIconTextureID = Assets::GetTexture(ForwardIcon)->OpenGL.TextureID;
-        
+        auto forwardIconTexture = Assets::GetTexture(ForwardIcon);
         
         if (!isForwardIconEnabled) ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
 
-        if (ImGui::ImageButton((ImTextureID)forwardIconTextureID,
+        if (ImGui::ImageButton(*(ImTextureID*)Renderer::ConvertTextureToImGuiTexture(forwardIconTexture),
                                 { 28, 28 },
                                 { 0, 1 },
                                 { 1, 0 }) && isForwardIconEnabled)
@@ -89,7 +92,7 @@ namespace Vision
         ImGui::TextWrapped(CurrentDirectory.c_str());
 
         static float32 padding = 16.0f;
-        static float32 thumbnailSize = 64.0f;
+        static float32 thumbnailSize = 72.0f;
 
         float32 cellSize   = thumbnailSize + padding;
         float32 panelWidth = ImGui::GetContentRegionAvail().x;
@@ -166,9 +169,8 @@ namespace Vision
 
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
            
-            //Todo(Harlequin): right now we are just using opengl
-            
-            if (ImGui::ImageButton((ImTextureID)itemIconTexture->OpenGL.TextureID,
+
+            if (ImGui::ImageButton(*(ImTextureID*)Renderer::ConvertTextureToImGuiTexture(itemIconTexture),
                                    { thumbnailSize, thumbnailSize },
                                    { 0, 1 },
                                    { 1, 0 }))

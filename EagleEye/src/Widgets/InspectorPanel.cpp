@@ -1,14 +1,13 @@
 #include "InspectorPanel.h"
 
-#include "Vision/Entity/EditorState.h"
-#include "Vision/IO/FileSystem.h"
-#include "Vision/IO/Assets.h"
+#include "EagleEye.h"
+
+#include "Vision/Platform/FileSystem.h"
+#include "Vision/Assets/Assets.h"
 #include "Vision/Platform/PlatformUtils.h"
 #include "Vision/Entity/Components.h"
 #include "Vision/ImGui/ImGuiWidgets.h"
 #include "Vision/Renderer/Renderer.h"
-#include "Vision/Renderer/Texture.h"
-#include "Vision/Entity/Components.h"
 
 #include <sstream>
 
@@ -21,338 +20,319 @@ namespace Vision
 {
 	InspectorPanel::InspectorPanel()
 	{
-        EditorState& editorState = Scene::EditorState;
+        EditorState& editorState = EagleEye::EditorState;
 
-        // Tag Component
+        ComponentInfo& info = editorState.ComponentMeta[typeid(TagComponent).hash_code()];
+        info.Name = "Tag";
+        info.Removable = false;
+
+        InspectComponent<TransformComponent>("Transform", [&](Scene* scene, void* component)
         {
-            ComponentInfo& info = editorState.ComponentMeta[typeid(TagComponent).hash_code()];
-            info.Name = "Tag";
-            info.Removable = false;
-        }
+            auto& transform = ComponentCast<TransformComponent>(component);
 
-        // Transform Component
+            ImGuiWidgets::DrawFloat3("Position", (glm::vec3&)transform.Position, 78.0f, 0);
+
+            glm::vec3 rotation = glm::degrees((glm::vec3&)transform.Rotation);
+
+            ImGuiWidgets::DrawFloat3("Rotation", rotation, 78.0f, 0);
+
+            transform.Rotation = glm::radians(rotation);
+
+            ImGuiWidgets::DrawFloat3("Scale", (glm::vec3&)transform.Scale, 78.0f, 1.0f);
+        });
+
+        SerializeComponent<TransformComponent>([&](void* component)
         {
-            InspectComponent<TransformComponent>("Transform", [&](Scene* scene, void* component)
-            {
-                auto& transform = ComponentCast<TransformComponent>(component);
+            const auto& transform = ComponentCast<TransformComponent>(component);
 
-                ImGuiWidgets::DrawFloat3("Position", (glm::vec3&)transform.Position, 78.0f, 0);
+            const Vector3& p = transform.Position;
+            const Vector3& r = transform.Rotation;
+            const Vector3& s = transform.Scale;
 
-                glm::vec3 rotation = glm::degrees((glm::vec3&)transform.Rotation);
+            std::stringstream stringStream;
 
-                ImGuiWidgets::DrawFloat3("Rotation", rotation, 78.0f, 0);
+            stringStream << "Position " << p.x << " " << p.y << " " << p.z << "\n";
+            stringStream << "Rotation " << r.x << " " << r.y << " " << r.z << "\n";
+            stringStream << "Scale "    << s.x << " " << s.y << " " << s.z << "\n";
 
-                transform.Rotation = glm::radians(rotation);
+            return stringStream.str();
+        });
 
-                ImGuiWidgets::DrawFloat3("Scale", (glm::vec3&)transform.Scale, 78.0f, 1.0f);
-            });
-
-            SerializeComponent<TransformComponent>([&](void* component)
-            {
-                const auto& transform = ComponentCast<TransformComponent>(component);
-
-                const Vector3& p = transform.Position;
-                const Vector3& r = transform.Rotation;
-                const Vector3& s = transform.Scale;
-
-                std::stringstream stringStream;
-
-                stringStream << "Position " << p.x << " " << p.y << " " << p.z << "\n";
-                stringStream << "Rotation " << r.x << " " << r.y << " " << r.z << "\n";
-                stringStream << "Scale "    << s.x << " " << s.y << " " << s.z << "\n";
-
-                return stringStream.str();
-            });
-
-            DeserializeComponent<TransformComponent>([&](void* component, const std::string& contents)
-            {
-                auto& transform = ComponentCast<TransformComponent>(component);
-
-                Vector3& p = transform.Position;
-                Vector3& r = transform.Rotation;
-                Vector3& s = transform.Scale;
-
-                std::string prop;
-                std::string newline;
-                std::string space;
-
-                std::stringstream stringStream(contents);
-
-                stringStream >> prop >> p.x >> p.y >> p.z;
-                stringStream >> prop >> r.x >> r.y >> r.z;
-                stringStream >> prop >> s.x >> s.y >> s.z;
-            });
-        }
-
-        // OrthographicCameraComponent
+        DeserializeComponent<TransformComponent>([&](void* component, const std::string& contents)
         {
-            InspectComponent<OrthographicCameraComponent>("Orthographic Camera", [&](Scene* scene, void* component)
-            {
-                auto& camera = ComponentCast<OrthographicCameraComponent>(component);
+            auto& transform = ComponentCast<TransformComponent>(component);
 
-                static bool isPrimary;
-                isPrimary = editorState.SelectedEntityTag == scene->PrimaryCameraTag;
+            Vector3& p = transform.Position;
+            Vector3& r = transform.Rotation;
+            Vector3& s = transform.Scale;
 
-                if (ImGuiWidgets::DrawBool("Primary", isPrimary, 70.0f))
-                {
-                    scene->PrimaryCameraTag = editorState.SelectedEntityTag;
-                }
+            std::string prop;
+            std::string newline;
+            std::string space;
 
-                ImGuiWidgets::DrawBool("Static", camera.Static, 70.0f);
+            std::stringstream stringStream(contents);
 
-                ImGui::Text("\n");
+            stringStream >> prop >> p.x >> p.y >> p.z;
+            stringStream >> prop >> r.x >> r.y >> r.z;
+            stringStream >> prop >> s.x >> s.y >> s.z;
+        });
 
-                bool changed = false;
-
-                changed |= ImGuiWidgets::DrawFloat("Aspect Ratio", camera.AspectRatio, 100.0f);
-                changed |= ImGuiWidgets::DrawFloat("Size", camera.Size, 100.0f);
-                changed |= ImGuiWidgets::DrawFloat("Near", camera.Near, 100.0f);
-                changed |= ImGuiWidgets::DrawFloat("Far", camera.Far, 100.0f);
-
-                if (changed)
-                {
-                    camera.Projection = glm::ortho(-camera.AspectRatio * camera.Size,
-                                                    camera.AspectRatio * camera.Size,
-                                                   -camera.Size,
-                                                    camera.Size,
-                                                    camera.Near,
-                                                    camera.Far);
-                }
-
-            });
-
-            SerializeComponent<OrthographicCameraComponent>([&](void* component)
-            {
-                const auto& camera = ComponentCast<OrthographicCameraComponent>(component);
-
-                std::stringstream stringStream;
-
-                stringStream << "Aspect Ratio " << camera.AspectRatio << "\n";
-                stringStream << "Size " << camera.Size << "\n";
-                stringStream << "Near " << camera.Near << "\n";
-                stringStream << "Far " << camera.Far << "\n";
-                stringStream << "Static " << camera.Static << "\n";
-
-                return stringStream.str();
-            });
-
-            DeserializeComponent<OrthographicCameraComponent>([&](void* component, const std::string& contents)
-            {
-                auto& camera = ComponentCast<OrthographicCameraComponent>(component);
-
-                std::string prop;
-
-                std::stringstream stringStream(contents);
-
-                stringStream >> prop >> camera.AspectRatio;
-                stringStream >> prop >> camera.Size;
-                stringStream >> prop >> camera.Near;
-                stringStream >> prop >> camera.Far;
-                stringStream >> prop >> camera.Static;
-            });
-        }
-
-        // SpriteRendererComponent
+        InspectComponent<OrthographicCameraComponent>("Orthographic Camera", [&](Scene* scene, void* component)
         {
-            InspectComponent<SpriteRendererComponent>("Sprite Renderer", [&](Scene* scene, void* component)
+            auto& camera = ComponentCast<OrthographicCameraComponent>(component);
+
+            static bool isPrimary = false;
+            isPrimary = editorState.SelectedEntityTag == scene->PrimaryCameraTag;
+
+            if (ImGuiWidgets::DrawBool("Primary", isPrimary, 70.0f))
             {
-                auto& sprite = ComponentCast<SpriteRendererComponent>(component);
+                scene->PrimaryCameraTag = editorState.SelectedEntityTag;
+            }
 
-                const Asset& textureAsset = Assets::GetAsset(sprite.Texture);
+            ImGuiWidgets::DrawBool("Static", camera.Static, 70.0f);
 
-                Texture* texture = Assets::GetTexture(sprite.Texture);
+            ImGui::Text("\n");
 
-                std::string textureName = FileSystem::GetFileName(textureAsset.Path);
+            bool changed = false;
 
-                ImGui::Text(textureName.c_str());
+            changed |= ImGuiWidgets::DrawFloat("Aspect Ratio", camera.AspectRatio, 100.0f);
+            changed |= ImGuiWidgets::DrawFloat("Size", camera.Size, 100.0f);
+            changed |= ImGuiWidgets::DrawFloat("Near", camera.Near, 100.0f);
+            changed |= ImGuiWidgets::DrawFloat("Far", camera.Far, 100.0f);
 
-                float halfWidth = ImGui::GetContentRegionAvail().x / 2.0f;
+            if (changed)
+            {
+                camera.Projection = glm::ortho(-camera.AspectRatio * camera.Size,
+                                                camera.AspectRatio * camera.Size,
+                                               -camera.Size,
+                                                camera.Size,
+                                                camera.Near,
+                                                camera.Far);
+            }
 
-                ImGui::Columns(2);
+        });
 
-                ImGui::SetColumnWidth(0, halfWidth - 72.0f);
+        SerializeComponent<OrthographicCameraComponent>([&](void* component)
+        {
+            const auto& camera = ComponentCast<OrthographicCameraComponent>(component);
 
-                //@InComplete: we are using opengl for now
-                if (ImGui::ImageButton((void*)(intptr_t)texture->OpenGL.TextureID, ImVec2(72.0f, 72.0f), ImVec2(0, 1), ImVec2(1, 0)))
+            std::stringstream stringStream;
+
+            stringStream << "Aspect Ratio " << camera.AspectRatio << "\n";
+            stringStream << "Size " << camera.Size << "\n";
+            stringStream << "Near " << camera.Near << "\n";
+            stringStream << "Far " << camera.Far << "\n";
+            stringStream << "Static " << camera.Static << "\n";
+
+            return stringStream.str();
+        });
+
+        DeserializeComponent<OrthographicCameraComponent>([&](void* component, const std::string& contents)
+        {
+            auto& camera = ComponentCast<OrthographicCameraComponent>(component);
+
+            std::string prop;
+
+            std::stringstream stringStream(contents);
+
+            stringStream >> prop >> camera.AspectRatio;
+            stringStream >> prop >> camera.Size;
+            stringStream >> prop >> camera.Near;
+            stringStream >> prop >> camera.Far;
+            stringStream >> prop >> camera.Static;
+        });
+
+
+        InspectComponent<SpriteRendererComponent>("Sprite Renderer", [&](Scene* scene, void* component)
+        {
+            auto& sprite = ComponentCast<SpriteRendererComponent>(component);
+
+            const Asset& textureAsset = Assets::GetAsset(sprite.Texture);
+
+            Texture* texture = Assets::GetTexture(sprite.Texture);
+
+            std::string textureName = FileSystem::GetFileName(textureAsset.Path);
+
+            ImGui::Text(textureName.c_str());
+
+            float halfWidth = ImGui::GetContentRegionAvail().x / 2.0f;
+
+            ImGui::Columns(2);
+
+            ImGui::SetColumnWidth(0, halfWidth - 72.0f);
+
+            if (ImGui::ImageButton(*(ImTextureID*)Renderer::ConvertTextureToImGuiTexture(texture), ImVec2(72.0f, 72.0f), ImVec2(0, 1), ImVec2(1, 0)))
+            {
+                std::string texturepath = FileDialog::OpenFile("Texture", { "png", "jpeg", "psd", "bmp", "tga" });
+
+                if (!texturepath.empty())
                 {
-                    std::string texturepath = FileDialog::OpenFile("Texture", { "png", "jpeg", "psd", "bmp", "tga" });
-
-                    if (!texturepath.empty())
-                    {
-                        Assets::ReleaseAsset(sprite.Texture);
-                        sprite.Texture = Assets::RequestAsset(texturepath);
-                        texture = Assets::GetTexture(sprite.Texture);
-                    }
+                    Assets::ReleaseAsset(sprite.Texture);
+                    sprite.Texture = Assets::RequestAsset(texturepath);
+                    texture = Assets::GetTexture(sprite.Texture);
                 }
+            }
 
-                if (ImGui::BeginDragDropTarget())
+            if (ImGui::BeginDragDropTarget())
+            {
+                const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Content_Browser_Item");
+
+                if (payload)
                 {
-                    const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Content_Browser_Item");
+                    std::string path = std::string((const char*)payload->Data);
+                    std::string extension = FileSystem::GetFileExtension(path, false);
 
-                    if (payload)
+                    if (Assets::IsExtensionOfAssetType(extension, "Texture"))
                     {
-                        std::string path = std::string((const char*)payload->Data);
-                        std::string extension = FileSystem::GetFileExtension(path, false);
+                        Asset textureAsset = Assets::GetAsset(sprite.Texture);
 
-                        if (Assets::IsExtensionOfAssetType(extension, "Texture"))
+                        if (textureAsset.Path != path)
                         {
-                            Asset textureAsset = Assets::GetAsset(sprite.Texture);
-
-                            if (textureAsset.Path != path)
-                            {
-                                Assets::ReleaseAsset(sprite.Texture);
-                                sprite.Texture = Assets::RequestAsset(path);
-                                texture = Assets::GetTexture(sprite.Texture);
-                            }
-                        }
-                    }
-
-                    ImGui::EndDragDropTarget();
-                }
-
-
-                ImGui::NextColumn();
-
-                // Texture Properties
-                // @Note: Should we edit a texture properties in a texture editor
-                // or we should edit it per spite via a sampler ???
-                {
-                    static const char* WrapModeStrings[] =
-                    {
-                        "Repeat",
-                        "Clamp To Edge"
-                    };
-
-                    static const char* FilterModeStrings[] =
-                    {
-                        "Point",
-                        "Bilinear"
-                    };
-
-                    auto seletedWrapXMode  = static_cast<int32>(texture->WrapX);
-                    auto seletedWrapYMode  = static_cast<int32>(texture->WrapY);
-                    auto seletedFilterMode = static_cast<int32>(texture->Filter);
-
-                    ImGui::Text("Wrap X");
-                    ImGui::SameLine();
-
-                    // @CleanUp: Add Combo to ImGui Widgets
-                    if (ImGui::Combo("##Wrap X", &seletedWrapXMode, WrapModeStrings, 2))
-                    {
-                        if (seletedWrapXMode != static_cast<int32>(texture->WrapX))
-                        {
-                            Renderer::API.SetTextureWrapMode(texture,
-                                                             static_cast<WrapMode>(seletedWrapXMode),
-                                                             static_cast<WrapMode>(seletedWrapYMode));
-                        }
-                    }
-
-                    ImGui::Text("Wrap Y");
-                    ImGui::SameLine();
-
-                    // @CleanUp: Add Combo to ImGui Widgets
-                    if (ImGui::Combo("##Wrap Y", &seletedWrapYMode, WrapModeStrings, 2))
-                    {
-                        if (seletedWrapYMode != static_cast<int32>(texture->WrapY))
-                        {
-                            Renderer::API.SetTextureWrapMode(texture,
-                                                             static_cast<WrapMode>(seletedWrapXMode),
-                                                             static_cast<WrapMode>(seletedWrapYMode));
-                        }
-                    }
-
-                    ImGui::Text("FilterMode");
-                    ImGui::SameLine();
-
-                    // @CleanUp: Add Combo to ImGui Widgets
-                    if (ImGui::Combo("##Filter Mode", &seletedFilterMode, FilterModeStrings, 2))
-                    {
-                        if (seletedFilterMode != static_cast<int32>(texture->Filter))
-                        {
-                            Renderer::API.SetTextureFilterMode(texture, static_cast<FilterMode>(seletedFilterMode));
+                            Assets::ReleaseAsset(sprite.Texture);
+                            sprite.Texture = Assets::RequestAsset(path);
+                            texture = Assets::GetTexture(sprite.Texture);
                         }
                     }
                 }
 
-                ImGui::Columns(1);
+                ImGui::EndDragDropTarget();
+            }
 
-                ImGui::Text("\n");
+            ImGui::NextColumn();
 
-                ImGuiWidgets::DrawColor("Color", (glm::vec4&)sprite.Color);
-
-                ImGui::Text("\n");
-
-                ImGuiWidgets::DrawFloat2("Top Right UV", (glm::vec2&)sprite.TopRightUV, 120.0f, 1.0f);
-                ImGuiWidgets::DrawFloat2("Bottom Left UV", (glm::vec2&)sprite.BottomLeftUV, 120.0f, 0.0f);
-            });
-
-            SerializeComponent<SpriteRendererComponent>([&](void* component)
+            static const char* WrapModeStrings[] =
             {
-                const auto& sprite = ComponentCast<SpriteRendererComponent>(component);
+                "Repeat",
+                "Clamp To Edge"
+            };
 
-                std::stringstream stringStream;
-
-                const Asset& textureAsset = Assets::GetAsset(sprite.Texture);
-                Texture* texture = Assets::GetTexture(sprite.Texture);
-
-                stringStream << "Texture Path " << textureAsset.Path << "\n";
-                stringStream << "Texture Wrap X " << (uint32)texture->WrapX << "\n";
-                stringStream << "Texture Wrap Y " << (uint32)texture->WrapY << "\n";
-                stringStream << "Texture Fliter Mode " << (uint32)texture->Filter << "\n";
-
-                const Vector4& c = sprite.Color;
-                const Vector2& bl = sprite.BottomLeftUV;
-                const Vector2& tr = sprite.TopRightUV;
-
-                stringStream << "Color " << c.x << " " << c.y << " " << c.z << " " << c.w << "\n";
-                stringStream << "Bottom Left Point " << bl.x << " " << bl.y << "\n";
-                stringStream << "Top Right Point " << tr.x << " " << tr.y  << "\n";
-
-                return stringStream.str();
-            });
-
-            DeserializeComponent<SpriteRendererComponent>([&](void* component, const std::string& contents)
+            static const char* FilterModeStrings[] =
             {
-                auto& sprite = ComponentCast<SpriteRendererComponent>(component);
+                "Point",
+                "Bilinear"
+            };
 
-                std::string prop;
+            auto seletedWrapXMode  = static_cast<int32>(texture->WrapX);
+            auto seletedWrapYMode  = static_cast<int32>(texture->WrapY);
+            auto seletedFilterMode = static_cast<int32>(texture->Filter);
 
-                std::stringstream stringStream(contents);
+            ImGui::Text("Wrap X");
+            ImGui::SameLine();
 
-                std::string texturePath;
-                stringStream >> prop >> prop >> texturePath;
+            if (ImGui::Combo("##Wrap X", &seletedWrapXMode, WrapModeStrings, 2))
+            {
+                if (seletedWrapXMode != static_cast<int32>(texture->WrapX))
+                {
+                    Renderer::SetTextureWrapMode(texture,
+                                                 static_cast<WrapMode>(seletedWrapXMode),
+                                                 static_cast<WrapMode>(seletedWrapYMode));
+                }
+            }
 
-                sprite.Texture = Assets::RequestAsset(texturePath);
-                Texture* texture = Assets::GetTexture(sprite.Texture);
+            ImGui::Text("Wrap Y");
+            ImGui::SameLine();
 
-                uint32 wrapX;
-                uint32 wrapY;
-                uint32 filter;
+            // @CleanUp: Add Combo to ImGui Widgets
+            if (ImGui::Combo("##Wrap Y", &seletedWrapYMode, WrapModeStrings, 2))
+            {
+                if (seletedWrapYMode != static_cast<int32>(texture->WrapY))
+                {
+                    Renderer::SetTextureWrapMode(texture,
+                                                 static_cast<WrapMode>(seletedWrapXMode),
+                                                 static_cast<WrapMode>(seletedWrapYMode));
+                }
+            }
 
-                stringStream >> prop >> prop >> prop >> wrapX;
-                stringStream >> prop >> prop >> prop >> wrapY;
-                stringStream >> prop >> prop >> prop >> filter;
+            ImGui::Text("FilterMode");
+            ImGui::SameLine();
 
-                Renderer::API.SetTextureWrapMode(texture,
-                                                 static_cast<WrapMode>(wrapX),
-                                                 static_cast<WrapMode>(wrapY));
+            if (ImGui::Combo("##Filter Mode", &seletedFilterMode, FilterModeStrings, 2))
+            {
+                if (seletedFilterMode != static_cast<int32>(texture->Filter))
+                {
+                    Renderer::SetTextureFilterMode(texture, static_cast<FilterMode>(seletedFilterMode));
+                }
+            }
 
-                Renderer::API.SetTextureFilterMode(texture, static_cast<FilterMode>(filter));
+            ImGui::Columns(1);
 
-                Vector4& c = sprite.Color;
-                Vector2& bl = sprite.BottomLeftUV;
-                Vector2& tr = sprite.TopRightUV;
+            ImGui::Text("\n");
 
-                stringStream >> prop >> c.x  >> c.y  >> c.z  >> c.w;
-                stringStream >> prop >> prop >> prop >> bl.x >> bl.y;
-                stringStream >> prop >> prop >> prop >> tr.x >> tr.y;
-            });
-        }
+            ImGuiWidgets::DrawColor("Color", (glm::vec4&)sprite.Color);
+
+            ImGui::Text("\n");
+
+            ImGuiWidgets::DrawFloat2("Top Right UV",   (glm::vec2&)sprite.TopRightUV, 120.0f, 1.0f);
+            ImGuiWidgets::DrawFloat2("Bottom Left UV", (glm::vec2&)sprite.BottomLeftUV, 120.0f, 0.0f);
+        });
+
+        SerializeComponent<SpriteRendererComponent>([&](void* component)
+        {
+            const auto& sprite = ComponentCast<SpriteRendererComponent>(component);
+
+            std::stringstream stringStream;
+
+            const Asset& textureAsset = Assets::GetAsset(sprite.Texture);
+            Texture* texture = Assets::GetTexture(sprite.Texture);
+
+            stringStream << "Texture Path " << textureAsset.Path << "\n";
+            stringStream << "Texture Wrap X " << (uint32)texture->WrapX << "\n";
+            stringStream << "Texture Wrap Y " << (uint32)texture->WrapY << "\n";
+            stringStream << "Texture Fliter Mode " << (uint32)texture->Filter << "\n";
+
+            const Vector4& c = sprite.Color;
+            const Vector2& bl = sprite.BottomLeftUV;
+            const Vector2& tr = sprite.TopRightUV;
+
+            stringStream << "Color " << c.x << " " << c.y << " " << c.z << " " << c.w << "\n";
+            stringStream << "Bottom Left Point " << bl.x << " " << bl.y << "\n";
+            stringStream << "Top Right Point " << tr.x << " " << tr.y  << "\n";
+
+            return stringStream.str();
+        });
+
+        DeserializeComponent<SpriteRendererComponent>([&](void* component, const std::string& contents)
+        {
+            auto& sprite = ComponentCast<SpriteRendererComponent>(component);
+
+            std::string prop;
+
+            std::stringstream stringStream(contents);
+
+            std::string texturePath;
+            stringStream >> prop >> prop >> texturePath;
+
+            sprite.Texture = Assets::RequestAsset(texturePath);
+            Texture* texture = Assets::GetTexture(sprite.Texture);
+
+            uint32 wrapX;
+            uint32 wrapY;
+            uint32 filter;
+
+            stringStream >> prop >> prop >> prop >> wrapX;
+            stringStream >> prop >> prop >> prop >> wrapY;
+            stringStream >> prop >> prop >> prop >> filter;
+
+            Renderer::SetTextureWrapMode(texture,
+                                         static_cast<WrapMode>(wrapX),
+                                         static_cast<WrapMode>(wrapY));
+
+            Renderer::SetTextureFilterMode(texture, static_cast<FilterMode>(filter));
+
+            Vector4& c = sprite.Color;
+            Vector2& bl = sprite.BottomLeftUV;
+            Vector2& tr = sprite.TopRightUV;
+
+            stringStream >> prop >> c.x  >> c.y  >> c.z  >> c.w;
+            stringStream >> prop >> prop >> prop >> bl.x >> bl.y;
+            stringStream >> prop >> prop >> prop >> tr.x >> tr.y;
+        });
+
 	}
 
 	void InspectorPanel::OnImGuiRender()
 	{
-        EditorState& editorState = Scene::EditorState;
+        EditorState& editorState = EagleEye::EditorState;
 
 		ImGui::Begin("Inspector");
 
@@ -362,7 +342,7 @@ namespace Vision
 
             Entity seletedEntity = scene->QueryEntity(editorState.SelectedEntityTag);
 
-            if (seletedEntity != entity::null)
+            if (seletedEntity)
             {
                 const EntityStorage& entityStorage = scene->Entities[seletedEntity];
 
@@ -381,7 +361,7 @@ namespace Vision
                 {
                     std::string newTag = std::string(buffer);
 
-                    bool isNewTagAvailable = scene->QueryEntity(newTag) == entity::null;
+                    bool isNewTagAvailable = scene->QueryEntity(newTag) == 0;
 
                     if (!newTag.empty() && newTag != "none" && isNewTagAvailable)
                     {
@@ -400,46 +380,43 @@ namespace Vision
                             scene->PrimaryCameraTag = newTag;
                         }
 
-                        // strcpy(tagComponent.Tag, newTag.c_str());
                         AssignString(tagComponent.Tag, newTag.c_str(), newTag.length());
                     }
                 }
 
-                // Add Component Popup
+
+                ImGui::SameLine();
+                ImGui::PushItemWidth(-1);
+
+                if (ImGui::Button("Add Component"))
                 {
-                    ImGui::SameLine();
-                    ImGui::PushItemWidth(-1);
-
-                    if (ImGui::Button("Add Component"))
+                    if (entityStorage.size() < editorState.ComponentMeta.size())
                     {
-                        if (entityStorage.size() < editorState.ComponentMeta.size())
+                        ImGui::OpenPopup("Add Component Popup");
+                    }
+                }
+
+                if (ImGui::BeginPopup("Add Component Popup"))
+                {
+                    for (const auto& [componentID, componentInfo] : editorState.ComponentMeta)
+                    {
+                        bool isComponentFound = entityStorage.find(componentID) != entityStorage.end();
+
+                        if (isComponentFound)
                         {
-                            ImGui::OpenPopup("Add Component Popup");
+                            continue;
+                        }
+
+                        const char* name = componentInfo.Name.c_str();
+
+                        if (ImGui::MenuItem(name))
+                        {
+                            componentInfo.AddFn(scene, seletedEntity);
+                            ImGui::CloseCurrentPopup();
                         }
                     }
 
-                    if (ImGui::BeginPopup("Add Component Popup"))
-                    {
-                        for (const auto& [componentID, componentInfo] : editorState.ComponentMeta)
-                        {
-                            bool isComponentFound = entityStorage.find(componentID) != entityStorage.end();
-
-                            if (isComponentFound)
-                            {
-                                continue;
-                            }
-
-                            const char* name = componentInfo.Name.c_str();
-
-                            if (ImGui::MenuItem(name))
-                            {
-                                componentInfo.AddFn(scene, seletedEntity);
-                                ImGui::CloseCurrentPopup();
-                            }
-                        }
-
-                        ImGui::EndPopup();
-                    }
+                    ImGui::EndPopup();
                 }
 
                 ImGui::PopItemWidth();
@@ -453,7 +430,7 @@ namespace Vision
 
     void InspectorPanel::DrawComponents(Scene* scene, Entity entity, const EntityStorage& storage)
     {
-        EditorState& editorState = Scene::EditorState;
+        EditorState& editorState = EagleEye::EditorState;
 
         auto entityStorageIter = storage.begin();
 
@@ -520,5 +497,4 @@ namespace Vision
             }
         }
     }
-
 }

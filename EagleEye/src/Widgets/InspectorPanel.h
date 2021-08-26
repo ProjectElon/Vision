@@ -1,7 +1,10 @@
 #pragma once
 
 #include "Vision/Entity/Scene.h"
-#include "Vision/IO/Assets.h"
+#include "Vision/Assets/Assets.h"
+#include "EditorState.h"
+
+#include <map>
 
 namespace Vision
 {

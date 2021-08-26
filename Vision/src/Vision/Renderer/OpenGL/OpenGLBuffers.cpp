@@ -4,9 +4,9 @@
 
 #ifdef VN_RENDERER_API_OPENGL
 
-#include "Vision/Renderer/Buffers.h"
+#include "Vision/Renderer/OpenGL/OpenGLBuffers.h"
 #include "Vision/Renderer/OpenGL/OpenGLUtils.h"
-#include "Vision/Renderer/VertexLayout.h"
+
 #include <glad/glad.h>
 
 namespace Vision

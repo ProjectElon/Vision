@@ -4,6 +4,7 @@
 #ifdef VN_RENDERER_API_OPENGL
 
 #include "Vision/Renderer/Texture.h"
+#include "Vision/Renderer/OpenGL/OpenGLTexture.h"
 #include "Vision/IO/FileSystem.h"
 
 #include "Vision/Renderer/OpenGL/OpenGLUtils.h"
@@ -74,10 +75,6 @@ namespace Vision
 	{
 		auto& openglTexture = texture->OpenGL;
 		glBindTextureUnit(textureSlot, openglTexture.TextureID);
-	}
-
-	void OpenGLUnbindTexture(Texture* texture)
-	{
 	}
 
 	void OpenGLSetTextureWrapMode(Texture* texture, WrapMode wrapModeX, WrapMode wrapModeY)

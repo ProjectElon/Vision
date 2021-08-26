@@ -17,7 +17,6 @@ namespace Vision
     struct AssetLoadingData
     {
         void* Memory = nullptr;
-
         uint64 SizeInBytes      = 0;
         uint64 TotalSizeInBytes = 0;
     };
@@ -25,7 +24,6 @@ namespace Vision
     struct Asset
     {
         void* Memory = nullptr;
-
         AssetState State = AssetState::Unloaded;
 
         uint32 RefCount = 0;
@@ -38,6 +36,7 @@ namespace Vision
 
     using AssetID         = uint32;
     using AssetRigistry   = std::unordered_map<std::string, AssetID>;
+
     using AssetLoaderFn   = std::function<AssetLoadingData(const std::string& assetpath)>;
     using AssetUnloaderFn = std::function<void(Asset* asset)>;
 

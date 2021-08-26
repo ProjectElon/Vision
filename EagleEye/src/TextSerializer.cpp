@@ -1,13 +1,14 @@
 #include "pch.hpp"
-#include "Vision/IO/TextSerializer.h"
-#include "Vision/IO/File.h"
+#include "Vision/Platform/File.h"
+#include "TextSerializer.h"
+#include "EagleEye.h"
 #include <sstream>
 
 namespace Vision
 {
     void SerializeScene(const std::string& filepath, Scene* scene)
     {
-        EditorState& editorState = Scene::EditorState;
+        EditorState& editorState = EagleEye::EditorState;
 
         FileStream handle = File::Open(filepath, FileMode::Write);
         std::stringstream stringStream;
@@ -32,6 +33,7 @@ namespace Vision
         }
 
         const PerspectiveCamera& sceneCamera = editorState.SceneCamera;
+
         stringStream << "CameraPosition "
                      << sceneCamera.FocalPoint.x << " "
                      << sceneCamera.FocalPoint.y << " "
@@ -55,7 +57,7 @@ namespace Vision
 
     std::string SerializeEntity(Scene* scene, Entity entity)
     {
-        EditorState& editorState = Scene::EditorState;
+        EditorState& editorState = EagleEye::EditorState;
 
         const EntityStorage& storage = scene->Entities[entity];
 

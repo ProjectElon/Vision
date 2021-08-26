@@ -1,10 +1,5 @@
-# binaries
-
 **/bin/
 bin-int/
-
-# visual studio files and folders
-
 .vs/
 **.sln
 **.vcxproj

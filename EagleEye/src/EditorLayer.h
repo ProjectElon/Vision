@@ -14,14 +14,14 @@ namespace Vision
 	class EditorLayer : public Layer
 	{
     public:
-		Menubar               Menubar;
-		SceneHierarchyPanel   SceneHierarchyPanel;
-		ContentBrowserPanel   ContentBrowserPanel;
-		InspectorPanel		  InspectorPanel;
-		SceneViewPanel		  SceneViewPanel;
-		Dialog				  Dialog;
+		Menubar             Menubar;
+		SceneHierarchyPanel SceneHierarchyPanel;
+		ContentBrowserPanel ContentBrowserPanel;
+		InspectorPanel		InspectorPanel;
+		SceneViewPanel		SceneViewPanel;
+		Dialog				Dialog;
 
-		FrameBuffer* 	   SceneFrameBuffer;
+		FrameBuffer 	   SceneFrameBuffer;
 		PerspectiveCamera* SceneCamera;
 
 		AssetID ActiveSceneID  = 0;
@@ -35,16 +35,9 @@ namespace Vision
 		void OnAttach() override;
 		void OnDetach() override;
 
-		void OnUpdate(float32 deltaTime) override;
 		void OnEvent(Event& e) override;
+		void OnUpdate(float32 deltaTime) override;
 		void OnImGuiRender() override;
-
-		bool OnKeyPressed(KeyPressedEvent& e);
-		bool OnMouseWheelScrolled(MouseWheelScrolledEvent& e);
-
-		void OnFileChanged(DirectoryWatcherAction action,
-						   std::string filepath,
-						   std::string oldpath);
 
 		void NewScene(const std::string& filepath, uint32 maxEntityCount);
 		void OpenScene(const std::string& filepath);
@@ -55,5 +48,12 @@ namespace Vision
 
 		void LoadVars();
 		void SaveVars();
+
+		bool OnKeyPressed(KeyPressedEvent& e);
+		bool OnMouseWheelScrolled(MouseWheelScrolledEvent& e);
+
+		void OnFileChanged(DirectoryWatcherAction action,
+						   std::string filepath,
+						   std::string oldpath);
 	};
 }

@@ -1,7 +1,6 @@
 #include "pch.hpp"
 #include "Vision/Core/Logger.h"
 #include "Vision/Entity/Scene.h"
-#include "Vision/IO/TextDeserializer.h"
 
 namespace Vision
 {
@@ -26,7 +25,7 @@ namespace Vision
     {
         Entity entity = QueryEntity(tag);
 
-        VnCoreAssert(entity != entity::null && entity <= EntityCount);
+        VnCoreAssert(entity && entity <= EntityCount);
 
         Entity lastEntity = EntityCount;
 
@@ -73,7 +72,7 @@ namespace Vision
 
         if (tagIter == Tags.end())
         {
-            return entity::null;
+            return 0;
         }
 
         return tagIter->second;
@@ -89,9 +88,11 @@ namespace Vision
         }
     }
 
-    void Scene::RemoveComponent(Entity entity, ComponentID componentID, const std::string& name)
+    void Scene::RemoveComponent(Entity entity,
+                                ComponentID componentID,
+                                const std::string& name)
     {
-        VnCoreAssert(entity != entity::null && entity <= EntityCount);
+        VnCoreAssert(entity && entity <= EntityCount);
 
         EntityStorage& entityStorage = Entities[entity];
         auto entityStorageIter = entityStorage.find(componentID);
@@ -129,8 +130,4 @@ namespace Vision
 
         componentStorage.Count--;
     }
-
-#ifdef VN_EDITOR
-    EditorState Scene::EditorState;
-#endif
 }

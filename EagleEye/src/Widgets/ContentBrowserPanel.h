@@ -1,8 +1,8 @@
 #pragma once
 
 
-#include "Vision/IO/DirectoryWatcher.h"
-#include "Vision/IO/Assets.h"
+#include "Vision/Platform/DirectoryWatcher.h"
+#include "Vision/Assets/Assets.h"
 
 #include <vector>
 

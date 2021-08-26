@@ -1,14 +1,13 @@
 #include "pch.hpp"
-#include "Vision/IO/Assets.h"
-#include "Vision/IO/FileSystem.h"
+#include "Vision/Assets/Assets.h"
+#include "Vision/Platform/FileSystem.h"
 
 #include "Vision/Entity/Scene.h"
 
 #include "Vision/Renderer/Renderer.h"
-#include "Vision/Renderer/Texture.h"
-#include "Vision/Renderer/Shader.h"
+#include "Vision/Renderer/RendererTypes.h"
+
 #include "Vision/Renderer/Font.h"
-#include "Vision/IO/TextDeserializer.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -477,7 +476,6 @@ namespace Vision
         AssetLoadingData sceneAsset;
 
         Scene* scene = new Scene;
-        DeserializeScene(scenepath, scene);
 
         sceneAsset.Memory = scene;
         sceneAsset.SizeInBytes = sizeof(Scene);

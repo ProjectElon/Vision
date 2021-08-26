@@ -1,8 +1,8 @@
 #include "pch.hpp"
 #include "Vision/Renderer/Renderer.h"
 #include "Vision/Renderer/Renderer2D.h"
+#include "Vision/Renderer/Font.h"
 #include "Vision/Entity/Scene.h"
-#include "Vision/Renderer/VertexLayout.h"
 
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/matrix_transform_2d.hpp>
@@ -34,14 +34,14 @@ namespace Vision
 			QuadData.TextureSlots[textureSlotIndex] = -1;
 		}
 
-		VertexLayout quadVertexlayout(
+		VertexLayout quadVertexlayout =
 		{
 			{ ShaderDataType_Float3, "a_Position",     false },
 			{ ShaderDataType_Float4, "a_Color", 	   false },
 			{ ShaderDataType_Float2, "a_TextureCoord", false },
 			{ ShaderDataType_UInt32, "a_TextureIndex", false },
 			{ ShaderDataType_Int32,  "a_EntityIndex",  false },
-		});
+		};
 
 		QuadData.VertexBase = new QuadVertex[4 * QuadData.MaxCount];
 		QuadData.CurrentVertex = QuadData.VertexBase;
@@ -252,38 +252,6 @@ namespace Vision
 		}
 	}
 
-	void Renderer2D::DrawString(BitmapFont* font,
-		                   		const std::string& text,
-		                   		const glm::vec3& position,
-		                   		const glm::vec4& color,
-		                   		int32 entityIndex)
-	{
-		EditorState& editorState = Scene::EditorState;
-		PerspectiveCamera& sceneCamera = editorState.SceneCamera;
-
-		glm::vec4 worldPosition = { position.x, position.y, position.z, 1.0f };
-
-		glm::vec4 clipSpacePosition = sceneCamera.Projection *
-									  sceneCamera.View *
-									  worldPosition;
-
-		clipSpacePosition /= clipSpacePosition.w;
-
-		float32 width  = static_cast<float32>(Renderer::ViewportRect.Width);
-		float32 height = static_cast<float32>(Renderer::ViewportRect.Height);
-
-		float32 halfWidth  = width / 2.0f;
-		float32 halfHeight = height / 2.0f;
-
-		glm::vec2 screenSpacePosition =
-		{
-			(clipSpacePosition.x + 1) * halfWidth,
-			height - ((clipSpacePosition.y + 1) * halfHeight) // positive y is down
-		};
-
-		DrawString(font, text, screenSpacePosition, color, entityIndex);
-	}
-
 	void Renderer2D::EndScene()
 	{
 		FlushQuadBatch();
@@ -298,7 +266,7 @@ namespace Vision
 			 index++)
 		{
 			//@InComplete: Right now we handle opengl only
-			if (texture->OpenGL.TextureID == QuadData.TextureSlots[index])
+			if (texture->OpenGL.TextureHandle == QuadData.TextureSlots[index])
 			{
 				textureIndex = index;
 				break;
@@ -321,7 +289,7 @@ namespace Vision
 			textureIndex = QuadData.CurrentTextureIndex;
 
 			//@Incomplete: Right now we handle opengl only
-			QuadData.TextureSlots[textureIndex] = texture->OpenGL.TextureID;
+			QuadData.TextureSlots[textureIndex] = texture->OpenGL.TextureHandle;
 			QuadData.CurrentTextureIndex++;
 		}
 

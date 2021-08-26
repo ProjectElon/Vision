@@ -1,46 +1,46 @@
-MaxEntityCount 100
+MaxEntityCount 1000
 PrimaryCamera none
-SelectedEntity none
-CameraPosition 0.00605563 0.417812 0.834608
-CameraPitch -12.0634
-CameraYaw 69.8181
-CameraZoomLevel 4.18149
-Entity Entity0
+SelectedEntity top
+CameraPosition -1.37104 -0.110334 1.34897
+CameraPitch 0.6336
+CameraYaw 2.4096
+CameraZoomLevel 10
+Entity top
 Component 1066925509535886804 Transform
-Position 0.271612 0.469719 0.477266
-Rotation -1.5708 2.20268e-13 1.8462e-07
-Scale 1 0.999868 1.00815
-Component 13080639714729183211 Sprite Renderer
-Texture Path Assets/Textures/greystone_sand.png
-Texture Wrap X 0
-Texture Wrap Y 0
-Texture Fliter Mode 1
-Color 0.99999 0.999991 1 1
-Bottom Left Point 0 0
-Top Right Point 1 1
-Entity Entity1
-Component 1066925509535886804 Transform
-Position -0.233679 -0.0294975 0.483597
-Rotation 0 -1.5708 0
-Scale 0.999736 0.999991 0.999718
-Component 13080639714729183211 Sprite Renderer
-Texture Path Assets/Textures/wood.png
-Texture Wrap X 1
-Texture Wrap Y 1
-Texture Fliter Mode 1
-Color 0.999994 1 0.99999 1
-Bottom Left Point 0 0
-Top Right Point 1 1
-Entity Entity2
-Component 1066925509535886804 Transform
-Position 0.26928 -0.0250715 0.96815
+Position -0.708093 0.0812939 0.503511
 Rotation 0 0 0
-Scale 0.99986 1 0.99986
+Scale 2 2 1
 Component 13080639714729183211 Sprite Renderer
-Texture Path Assets/Textures/cotton_blue.png
+Texture Path Assets/Textures/table.png
 Texture Wrap X 0
 Texture Wrap Y 0
 Texture Fliter Mode 1
-Color 1 0.99999 0.99999 1
+Color 1 1 1 1
+Bottom Left Point 0 0
+Top Right Point 1 1
+Entity left
+Component 1066925509535886804 Transform
+Position -1.70791 0.0929863 1.50353
+Rotation 0 -1.5708 0
+Scale 1.99985 2 0.999923
+Component 13080639714729183211 Sprite Renderer
+Texture Path Assets/Textures/redstone_sand.png
+Texture Wrap X 0
+Texture Wrap Y 0
+Texture Fliter Mode 1
+Color 1 1 1 1
+Bottom Left Point 0 0
+Top Right Point 1 1
+Entity right
+Component 1066925509535886804 Transform
+Position -0.691208 1.05585 1.51035
+Rotation 1.5708 0 0
+Scale 2 1.99974 0.999868
+Component 13080639714729183211 Sprite Renderer
+Texture Path Assets/Textures/ice.png
+Texture Wrap X 0
+Texture Wrap Y 0
+Texture Fliter Mode 1
+Color 1 1 1 1
 Bottom Left Point 0 0
 Top Right Point 1 1

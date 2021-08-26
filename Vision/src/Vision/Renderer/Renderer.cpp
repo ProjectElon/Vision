@@ -5,9 +5,7 @@
 #include "Vision/Renderer/Renderer.h"
 
 #ifdef VN_RENDERER_API_OPENGL
-
 #include "Vision/Renderer/OpenGL/OpenGLRenderer.h"
-
 #endif 
 
 

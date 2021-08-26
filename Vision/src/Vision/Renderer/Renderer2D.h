@@ -1,15 +1,19 @@
 #pragma once
 
-#include "Vision/Renderer/Shader.h"
-#include "Vision/Renderer/Buffers.h"
-#include "Vision/Renderer/Texture.h"
-#include "Vision/Renderer/Font.h"
-#include "Vision/Renderer/Buffers.h"
+#include <glm/glm.hpp>
+
+#include "Vision/Renderer/RendererTypes.h"
 
 #define MAX_TEXTURE_SLOTS 128
 
 namespace Vision
 {
+	struct Shader;
+	struct VertexBuffer;
+	struct IndexBuffer;
+	struct Font;
+	struct BitmapFont;
+
 	struct SceneData
 	{
 		glm::vec3 CameraPosition;
@@ -28,7 +32,6 @@ namespace Vision
 
 	struct QuadData
 	{
-
 		Texture WhitePixel;
 
 		VertexBuffer VertexBuffer;
@@ -49,9 +52,6 @@ namespace Vision
 	class Renderer2D
 	{
 	public:
-		Renderer2D() = delete;
-		~Renderer2D() = delete;
-
 		static SceneData SceneData;
 		static QuadData  QuadData;
 

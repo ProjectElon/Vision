@@ -1,8 +1,9 @@
 #pragma once
 
 #include "Vision/Core/Defines.h"
-#include "Vision/IO/Assets.h"
-#include "Vision/Renderer/Texture.h"
+#include "Vision/Assets/Assets.h"
+#include "Vision/Renderer/RendererTypes.h"
+
 #include <stb_truetype.h>
 
 namespace Vision

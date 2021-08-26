@@ -1,4 +1,7 @@
 #include "EditorLayer.h"
+#include "EagleEye.h"
+#include "TextSerializer.h"
+#include "TextDeserializer.h"
 
 #include <fstream>
 #include <sstream>
@@ -16,9 +19,7 @@ namespace Vision
 		, Dialog(this)
 	{
 		Renderer::API.SetVSync(true);
-		//@Incomplete: Remove and add to allocators
-		SceneFrameBuffer = VnAllocateStruct(FrameBuffer);
-		SceneViewPanel.FrameBuffer = SceneFrameBuffer;
+		SceneViewPanel.FrameBuffer = &SceneFrameBuffer;
 	}
 
 	EditorLayer::~EditorLayer()
@@ -29,9 +30,7 @@ namespace Vision
 	{
 		LoadVars();
 
-		// WatchDirectory("Assets", VnBindWatcherFn(EditorLayer::OnFileChanged), true);
-		WatchDirectory("", VnBindWatcherFn(EditorLayer::OnFileChanged), false);
-
+		WatchDirectory("", VnBindWatcherFn(EditorLayer::OnFileChanged), true);
 		SceneViewPanel.EditorLayer = this;
 	}
 
@@ -58,6 +57,11 @@ namespace Vision
 			}
 			break;
 
+			case DirectoryWatcherAction::FileRenamed:
+			{
+			}
+			break;
+
 			case DirectoryWatcherAction::FileModified:
 			{
 				std::string cwd = FileSystem::GetCurrentWorkingDirectory();
@@ -76,13 +80,15 @@ namespace Vision
 					else
 					{
 						Assets::ReloadAsset(fileRelativePath);
+
+						if (extension == "vscene")
+						{
+							AssetID sceneAsset = Assets::RequestAsset(fileRelativePath);
+							Scene* scene = Assets::GetScene(sceneAsset);
+							DeserializeScene(fileRelativePath, scene);
+						}
 					}
 				}
-			}
-			break;
-
-			case DirectoryWatcherAction::FileRenamed:
-			{
 			}
 			break;
 		}
@@ -98,15 +104,15 @@ namespace Vision
 			SceneCamera->OnUpdate(deltaTime, SceneViewPanel.IsInteractable);
 		}
 
-		Renderer::API.BindFrameBuffer(SceneFrameBuffer);
+		Renderer::BindFrameBuffer(&SceneFrameBuffer);
 
 		if (ActiveSceneID)
 		{
 			float32 values[] = { 0.1f, 0.1f, 0.1f, 1.0f };
-			Renderer::API.ClearColorAttachment(SceneFrameBuffer, 0, values);
+			Renderer::ClearColorAttachment(&SceneFrameBuffer, 0, values);
 
 			int value = -1;
-			Renderer::API.ClearColorAttachment(SceneFrameBuffer, 1, &value);
+			Renderer::ClearColorAttachment(&SceneFrameBuffer, 1, &value);
 
 			Renderer2D::BeginScene(SceneCamera->View,
 								   SceneCamera->Projection,
@@ -128,32 +134,6 @@ namespace Vision
 
 			Renderer2D::EndScene();
 
-			glm::mat4 ortho = glm::ortho(0.0f,
-			                             static_cast<float32>(SceneFrameBuffer->Width),
-									     static_cast<float32>(SceneFrameBuffer->Height),
-									     0.0f);
-
-			Renderer2D::BeginScene(glm::mat4(1.0f),
-								   ortho,
-								   Assets::GetShader(SpriteShaderID));
-
-
-			Renderer2D::DrawString(Assets::GetBitmapFont(MainFontID),
-								   "Vision Engine!",
-								   glm::vec2(10.0f, 50.0f),
-								   glm::vec4(0.9f, 0.3f, 0.0f, 1.0f));
-
-			scene->EachGroup<TagComponent, TransformComponent>([this](Entity entity, auto& tag, auto& transform)
-			{
-				Renderer2D::DrawString(Assets::GetBitmapFont(DebugFontID),
-								   	   std::string(tag.Tag.Data),
-									   transform.Position,
-			                           glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
-									   entity);
-			});
-
-			Renderer2D::EndScene();
-
 			const glm::vec2& minBound = SceneViewPanel.ViewportBounds[0];
 			const glm::vec2& maxBound = SceneViewPanel.ViewportBounds[1];
 
@@ -169,7 +149,7 @@ namespace Vision
 			auto mouseX = static_cast<int32>(mouseXf);
 			auto mouseY = static_cast<int32>(mouseYf);
 
-			EditorState& editorState = Scene::EditorState;
+			EditorState& editorState = EagleEye::EditorState;
 
 			if (mouseX >= 0 && mouseX < static_cast<int32>(viewportSize.x) &&
 			    mouseY >= 0 && mouseY < static_cast<int32>(viewportSize.y))
@@ -180,10 +160,10 @@ namespace Vision
 					!ImGui::IsMouseDragging(ImGuiMouseButton_Left) &&
 					!Input::IsKeyDown(Key::LeftAlt))
 				{
-					int32 pixel = Renderer::API.ReadPixel(SceneFrameBuffer,
-					                                      1,
-					                                      mouseX,
-					                                      mouseY);
+					int32 pixel = Renderer::ReadPixel(&SceneFrameBuffer,
+					                                  1,
+					                                  mouseX,
+					                                  mouseY);
 
 					if (pixel > 0)
 					{
@@ -195,11 +175,11 @@ namespace Vision
 						}
 						else
 						{
-							auto tagIt = scene->Tags.find(editorState.SelectedEntityTag);
+							auto tagIter = scene->Tags.find(editorState.SelectedEntityTag);
 
-							if (tagIt != scene->Tags.end())
+							if (tagIter != scene->Tags.end())
 							{
-								Entity seletedEntity = tagIt->second;
+								Entity seletedEntity = tagIter->second;
 
 								if (seletedEntity != pixel)
 								{
@@ -224,10 +204,10 @@ namespace Vision
 		else
 		{
 			float32 values[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-			Renderer::API.ClearColorAttachment(SceneFrameBuffer, 0, values);
+			Renderer::ClearColorAttachment(&SceneFrameBuffer, 0, values);
 		}
 
-		Renderer::API.UnbindFrameBuffer(SceneFrameBuffer);
+		Renderer::UnbindFrameBuffer(&SceneFrameBuffer);
  	}
 
 	void EditorLayer::OnEvent(Event& e)
@@ -309,11 +289,11 @@ namespace Vision
 				if (ActiveSceneID && SceneHierarchyPanel.IsInteractable)
 				{
 					Scene* scene = Assets::GetScene(ActiveSceneID);
-
-					if (!scene->EditorState.SelectedEntityTag.empty())
+					EditorState& editorState = EagleEye::EditorState;
+					if (!editorState.SelectedEntityTag.empty())
 					{
-						scene->FreeEntity(scene->EditorState.SelectedEntityTag);
-						scene->EditorState.SelectedEntityTag = "";
+						scene->FreeEntity(editorState.SelectedEntityTag);
+						editorState.SelectedEntityTag = "";
 					}
 				}
 			}
@@ -395,11 +375,7 @@ namespace Vision
 		DestroyScene(tempScene);
 		delete tempScene;
 
-		ActiveSceneID = Assets::RequestAsset(filepath);
-		SceneHierarchyPanel.ActiveSceneID = ActiveSceneID;
-		ContentBrowserPanel.ActiveSceneID = ActiveSceneID;
-		InspectorPanel.ActiveSceneID = ActiveSceneID;
-		SceneViewPanel.ActiveSceneID = ActiveSceneID;
+		OpenScene(filepath);
 	}
 
 	void EditorLayer::OpenScene(const std::string& filepath)
@@ -411,6 +387,9 @@ namespace Vision
 		}
 
 		ActiveSceneID = Assets::RequestAsset(filepath);
+		Scene *scene = Assets::GetScene(ActiveSceneID);
+		DeserializeScene(filepath, scene);
+
 		SceneHierarchyPanel.ActiveSceneID = ActiveSceneID;
 		ContentBrowserPanel.ActiveSceneID = ActiveSceneID;
 		InspectorPanel.ActiveSceneID = ActiveSceneID;
@@ -496,11 +475,7 @@ namespace Vision
 
 		if (scenePath != "none" && FileSystem::FileExists(scenePath))
 		{
-			ActiveSceneID = Assets::RequestAsset(scenePath);
-			SceneHierarchyPanel.ActiveSceneID = ActiveSceneID;
-			InspectorPanel.ActiveSceneID = ActiveSceneID;
-			SceneViewPanel.ActiveSceneID = ActiveSceneID;
-			ContentBrowserPanel.ActiveSceneID = ActiveSceneID;
+			OpenScene(scenePath);
 		}
 
 		Window& window = Application::Get().Window;
@@ -510,21 +485,19 @@ namespace Vision
 		SetWindowPosition(&window, vars.Settings.WindowX, vars.Settings.WindowY);
 		SetWindowSize(&window, vars.Settings.WindowWidth, vars.Settings.WindowHeight);
 
-		FrameBufferAttachmentSpecification SceneBufferSpecification;
-
-		SceneBufferSpecification.Attachments =
+		FrameBufferAttachmentSpecification SceneBufferSpecification =
 		{
 			FrameBufferTextureFormat_RGBA8,
 			FrameBufferTextureFormat_RedInt32,
 			FrameBufferTextureFormat_Depth24Stencil8
 		};
 
-		Renderer::API.InitFrameBuffer(SceneFrameBuffer,
+		Renderer::API.InitFrameBuffer(&SceneFrameBuffer,
 									  SceneBufferSpecification,
 									  vars.Settings.ViewportWidth,
 									  vars.Settings.ViewportHeight);
 
-		EditorState& editorState = Scene::EditorState;
+		EditorState& editorState = EagleEye::EditorState;
 		SceneCamera = &editorState.SceneCamera;
 
 		float32 aspectRatio = static_cast<float32>(vars.Settings.ViewportWidth) /
@@ -553,8 +526,9 @@ namespace Vision
 			activeScenePath = activeSceneAsset.Path;
 		}
 
-		// vars.Settings.ScenePath = activeScenePath.c_str();
-		AssignString(&vars.Settings.ScenePath, activeScenePath.c_str(), activeScenePath.length());
+		AssignString(&vars.Settings.ScenePath,
+		             activeScenePath.c_str(),
+		             activeScenePath.length());
 
 		vars.Settings.ViewportWidth = static_cast<uint32>(SceneViewPanel.ViewportSize.x);
 		vars.Settings.ViewportHeight = static_cast<uint32>(SceneViewPanel.ViewportSize.y);

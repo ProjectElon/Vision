@@ -2,7 +2,7 @@
 
 #include "Vision/Core/Defines.h"
 #include "Vision/Entity/Scene.h"
-#include "Vision/IO/Assets.h"
+#include "Vision/Assets/Assets.h"
 
 namespace Vision
 {

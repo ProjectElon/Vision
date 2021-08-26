@@ -1,7 +1,9 @@
 #include "pch.hpp"
 
-#include "Vision/IO/TextDeserializer.h"
 #include "Vision/IO/File.h"
+#include "TextDeserializer.h"
+
+#include "EagleEye.h"
 
 #include <sstream>
 
@@ -25,7 +27,7 @@ namespace Vision
             contents += line + " ";
         }
 
-        EditorState& editorState = Scene::EditorState;
+        EditorState& editorState = EagleEye::EditorState;
 
         std::stringstream stringStream(contents);
         stringStream >> prop >> scene->MaxEntityCount;
@@ -110,7 +112,7 @@ namespace Vision
                               Scene* scene,
                               Entity entity)
     {
-        EditorState& editorState = Scene::EditorState;
+        EditorState& editorState = EagleEye::EditorState;
         const ComponentInfo& info = editorState.ComponentMeta[componentID];
         info.AddFn(scene, entity);
         if (info.DeserializeFn)

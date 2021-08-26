@@ -3,16 +3,18 @@
 #include "Vision/Core/Defines.h"
 #include "Vision/Core/Logger.h"
 
-#include "Vision/Entity/Entity.h"
 #include "Vision/Entity/Components.h"
-#include "Vision/Entity/EditorState.h"
-#include "Vision/IO/Assets.h"
+#include "Vision/Renderer/PerspectiveCamera.h"
+#include "Vision/Assets/Assets.h"
 
 #include <unordered_map>
 
 namespace Vision
 {
-    using TagMap       = std::unordered_map<std::string, Entity>;
+    using Entity        = uint32;
+    using EntityStorage = std::unordered_map<ComponentID, ComponentIndex>;
+
+    using TagMap = std::unordered_map<std::string, Entity>;
     using ComponentMap = std::unordered_map<ComponentID, ComponentStorage>;
 
     struct Scene
@@ -26,37 +28,33 @@ namespace Vision
 
         std::string PrimaryCameraTag;
 
-#ifdef VN_EDITOR
-        static EditorState EditorState;
-#endif
-
         template<typename ... Components>
         Entity CreateEntity(const std::string& tag, const Components ... components)
         {
             if (EntityCount == MaxEntityCount)
             {
                 VnCoreInfo("Can't create more than the max number of entites");
-                return entity::null;
+                return 0;
             }
 
             if (tag.empty())
             {
                 VnCoreInfo("Can't create an entity with an empty tag");
-                return entity::null;
+                return 0;
             }
 
             if (tag == "none")
             {
                 VnCoreInfo("Can't create an entity with an tag: none which is reserved");
-                return entity::null;
+                return 0;
             }
 
-            bool isTagTaken = QueryEntity(tag) != entity::null;
+            bool isTagTaken = QueryEntity(tag) != 0;
 
             if (isTagTaken)
             {
                 VnCoreInfo("Can't create an entity with a taken tag : {0}", tag);
-                return entity::null;
+                return 0;
             }
 
             Entity entity = EntityCount + 1;
@@ -65,7 +63,6 @@ namespace Vision
             Tags.insert_or_assign(tag, entity);
 
             TagComponent tagComponent;
-            // strcpy(tagComponent.Tag, tag.c_str());
             AssignString(tagComponent.Tag, tag.c_str(), tag.length());
 
             AddComponents(entity, tagComponent, components...);
@@ -156,7 +153,7 @@ namespace Vision
         template<typename Component>
         inline bool HasComponent(Entity entity)
         {
-            VnCoreAssert(entity != entity::null && entity <= EntityCount, "Entity is not valid");
+            VnCoreAssert(entity && entity <= EntityCount);
 
             const std::type_info& typeInfo = typeid(Component);
             const ComponentID& componentID = typeInfo.hash_code();
@@ -188,7 +185,7 @@ namespace Vision
             const std::type_info& typeInfo = typeid(Component);
             const ComponentID& componentID = typeInfo.hash_code();
 
-            VnCoreAssert(entity != entity::null && entity <= EntityCount, "Entity is not valid");
+            VnCoreAssert(entity && entity <= EntityCount);
 
             EntityStorage& entityStorage = Entities[entity];
 

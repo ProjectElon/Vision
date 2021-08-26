@@ -12,4 +12,8 @@ namespace Vision
 	EagleEye::~EagleEye()
 	{
 	}
+
+	EditorState EagleEye::EditorState;
+
+	RegisterEntryPointClass(EagleEye)
 }

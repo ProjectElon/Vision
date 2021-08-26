@@ -26,28 +26,23 @@
 #include "Vision/Platform/Timer.h"
 #include "Vision/Platform/PlatformUtils.h"
 #include "Vision/Platform/Memory.h"
+#include "Vision/Platform/File.h"
+#include "Vision/Platform/FileSystem.h"
+#include "Vision/Platform/DirectoryWatcher.h"
 /*--------------------------------*/
 
-/*----------  IO  ----------*/
-#include "Vision/IO/File.h"
-#include "Vision/IO/FileSystem.h"
-#include "Vision/IO/DirectoryWatcher.h"
-#include "Vision/IO/Assets.h"
-#include "Vision/IO/TextSerializer.h"
-#include "Vision/IO/TextDeserializer.h"
+
+/*---------- Assets ----------*/
+#include "Vision/Assets/Assets.h"
 /*--------------------------------*/
 
 /*----------  Renderer  ----------*/
 #include "Vision/Renderer/Renderer.h"
 #include "Vision/Renderer/Renderer2D.h"
-#include "Vision/Renderer/Buffers.h"
-#include "Vision/Renderer/VertexLayout.h"
-#include "Vision/Renderer/Texture.h"
 #include "Vision/Renderer/TextureAtlas.h"
-#include "Vision/Renderer/Shader.h"
-#include "Vision/Renderer/FrameBuffer.h"
 #include "Vision/Renderer/OrthographicCamera.h"
 #include "Vision/Renderer/PerspectiveCamera.h"
+#include "Vision/Renderer/Font.h"
 /*--------------------------------*/
 
 /*----------  UI  ----------*/
@@ -58,5 +53,4 @@
 #include "Vision/Entity/Entity.h"
 #include "Vision/Entity/Components.h"
 #include "Vision/Entity/Scene.h"
-#include "Vision/Entity/EditorState.h"
 /*--------------------------------*/

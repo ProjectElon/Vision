@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Vision/Core/Defines.h"
-#include "Vision/IO/Assets.h"
+#include "Vision/Assets/Assets.h"
 #include "Vision/Core/String.h"
 
 #include <glm/glm.hpp>
@@ -203,12 +203,9 @@ namespace Vision
 
     #define MaxEntityNameCount 256
 
-    //@(Todo): Replace Tag with tring
     introspect_struct("component", true)
     struct TagComponent
     {
-        // std::string Tag;
-        // char Tag[MaxEntityNameCount];
         String Tag;
     };
 
