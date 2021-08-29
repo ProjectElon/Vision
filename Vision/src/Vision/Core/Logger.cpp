@@ -3,6 +3,7 @@
 
 namespace Vision
 {
+
 	void Logging::Initialize()
 	{
 		spdlog::set_pattern("%^[%T] %n : %v%$");

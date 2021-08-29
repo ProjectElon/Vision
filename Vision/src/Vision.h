@@ -34,6 +34,7 @@
 
 /*---------- Assets ----------*/
 #include "Vision/Assets/Assets.h"
+#include "Vision/Assets/ObjLoader.h"
 /*--------------------------------*/
 
 /*----------  Renderer  ----------*/

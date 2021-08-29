@@ -32,6 +32,10 @@ namespace Vision
 
 		WatchDirectory("", VnBindWatcherFn(EditorLayer::OnFileChanged), true);
 		SceneViewPanel.EditorLayer = this;
+
+		Mesh mesh = {};
+		bool success = LoadObjMesh("Assets/Meshes/cube.obj", &mesh);
+		VnAssert(success);
 	}
 
 	void EditorLayer::OnDetach()

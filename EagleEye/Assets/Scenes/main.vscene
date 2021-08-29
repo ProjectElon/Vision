@@ -1,6 +1,6 @@
 MaxEntityCount 1000
 PrimaryCamera none
-SelectedEntity top
+SelectedEntity left
 CameraPosition -1.37104 -0.110334 1.34897
 CameraPitch 0.6336
 CameraYaw 2.4096
