@@ -15,7 +15,7 @@ namespace Vision
 	{
 		uint32 white = 0xffffffff;
 
-		Renderer::API.InitTexture(&QuadData.WhitePixel,
+		Renderer::InitTexture(&QuadData.WhitePixel,
 								  &white,
 								  1,
 								  1,
@@ -46,12 +46,12 @@ namespace Vision
 		QuadData.VertexBase = new QuadVertex[4 * QuadData.MaxCount];
 		QuadData.CurrentVertex = QuadData.VertexBase;
 
-		Renderer::API.InitVertexBuffer(&QuadData.VertexBuffer,
+		Renderer::InitVertexBuffer(&QuadData.VertexBuffer,
 									   nullptr,
 									   4 * sizeof(QuadVertex) * QuadData.MaxCount,
 									   BufferUsage::Dynamic);
 
-		Renderer::API.SetVertexBufferLayout(&QuadData.VertexBuffer, &quadVertexlayout);
+		Renderer::SetVertexBufferLayout(&QuadData.VertexBuffer, &quadVertexlayout);
 
 		uint32 maxQuadIndexCount = QuadData.MaxCount * 6;
 		uint16* indices = new uint16[maxQuadIndexCount];
@@ -74,7 +74,7 @@ namespace Vision
 			offset += 4;
 		}
 
-		Renderer::API.InitIndexBuffer16(&QuadData.IndexBuffer,
+		Renderer::InitIndexBuffer16(&QuadData.IndexBuffer,
 										indices,
 										maxQuadIndexCount * sizeof(uint16),
 										BufferUsage::Static);
@@ -93,15 +93,15 @@ namespace Vision
 	{
 		SceneData.ViewProjection = cameraProjection * cameraView;
 
-		Renderer::API.BindShader(shader);
-		Renderer::API.SetUniformIntArray(shader,
-										 "u_Textures",
-										 QuadData.Samplers,
-										 QuadData.MaxTextureSlots);
+		Renderer::BindShader(shader);
+		Renderer::SetUniformIntArray(shader,
+									 "u_Textures",
+									 QuadData.Samplers,
+									 QuadData.MaxTextureSlots);
 
-		Renderer::API.SetUniformMatrix4(shader,
-										"u_ViewProj",
-										glm::value_ptr(SceneData.ViewProjection));
+		Renderer::SetUniformMatrix4(shader,
+									"u_ViewProj",
+									glm::value_ptr(SceneData.ViewProjection));
 	}
 
 	void Renderer2D::DrawQuad(const glm::mat4& transform,
@@ -293,7 +293,7 @@ namespace Vision
 			QuadData.CurrentTextureIndex++;
 		}
 
-		Renderer::API.BindTexture(texture, textureIndex);
+		Renderer::BindTexture(texture, textureIndex);
 
 		return textureIndex;
 	}
@@ -330,18 +330,18 @@ namespace Vision
 	{
 		if (QuadData.Count > 0)
 		{
-			Renderer::API.BindVertexBuffer(&QuadData.VertexBuffer);
-			Renderer::API.BindIndexBuffer(&QuadData.IndexBuffer);
+			Renderer::BindVertexBuffer(&QuadData.VertexBuffer);
+			Renderer::BindIndexBuffer(&QuadData.IndexBuffer);
 
 			uint32 dataSize = 4 * sizeof(QuadVertex) * QuadData.Count;
 
-			Renderer::API.SetVertexBufferData(&QuadData.VertexBuffer,
+			Renderer::SetVertexBufferData(&QuadData.VertexBuffer,
 											  QuadData.VertexBase,
 											  dataSize,
 											  0);
- 			Renderer::API.DrawIndexed16(&QuadData.VertexBuffer,
-									    &QuadData.IndexBuffer,
- 										QuadData.Count * 6);
+ 			Renderer::DrawIndexed16(&QuadData.VertexBuffer,
+									&QuadData.IndexBuffer,
+ 									QuadData.Count * 6);
 
 			QuadData.CurrentVertex = QuadData.VertexBase;
 			QuadData.Count = 0;

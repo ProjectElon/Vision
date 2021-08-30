@@ -34,8 +34,8 @@ namespace Vision
         {
             Vertex vertex;
             vertex.Position = positions[positionIndex - 1];
-            vertex.UV = uvs[uvIndex - 1];
-            vertex.Normal = normals[normalIndex - 1];
+            vertex.UV       = uvs[uvIndex - 1];
+            vertex.Normal   = normals[normalIndex - 1];
 
             vertexIndex = vertices.size();
             vertices.push_back(vertex);

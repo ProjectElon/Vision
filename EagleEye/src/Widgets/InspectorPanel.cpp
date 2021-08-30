@@ -142,6 +142,7 @@ namespace Vision
             stringStream >> prop >> camera.Static;
         });
 
+        // Todo(Harlequin): Make a Serialize texture function for Sprite Renderer and Mesh Renderer
 
         InspectComponent<SpriteRendererComponent>("Sprite Renderer", [&](Scene* scene, void* component)
         {
@@ -328,6 +329,196 @@ namespace Vision
             stringStream >> prop >> prop >> prop >> tr.x >> tr.y;
         });
 
+         InspectComponent<MeshRendererComponent>("Mesh Renderer", [&](Scene* scene, void* component)
+         {
+            auto& meshComponent = ComponentCast<MeshRendererComponent>(component);
+
+            const Asset& meshAsset = Assets::GetAsset(meshComponent.MeshAssetID);
+
+            ImGui::Text("Mesh: %s", meshAsset.Path.c_str());
+
+            if (ImGui::BeginDragDropTarget())
+            {
+                const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Content_Browser_Item");
+
+                if (payload)
+                {
+                    std::string path = std::string((const char*)payload->Data);
+                    std::string extension = FileSystem::GetFileExtension(path, false);
+
+                    if (Assets::IsExtensionOfAssetType(extension, "Mesh"))
+                    {
+                        if (meshAsset.Path != path)
+                        {
+                            Assets::ReleaseAsset(meshComponent.MeshAssetID);
+                            meshComponent.MeshAssetID = Assets::RequestAsset(path);
+                        }
+                    }
+                }
+
+                ImGui::EndDragDropTarget();
+            }
+
+            const Asset& textureAsset = Assets::GetAsset(meshComponent.TextureAssetID);
+
+            Texture* texture = Assets::GetTexture(meshComponent.TextureAssetID);
+
+            std::string textureName = FileSystem::GetFileName(textureAsset.Path);
+
+            ImGui::Text(textureName.c_str());
+
+            float halfWidth = ImGui::GetContentRegionAvail().x / 2.0f;
+
+            ImGui::Columns(2);
+
+            ImGui::SetColumnWidth(0, halfWidth - 72.0f);
+
+            if (ImGui::ImageButton(*(ImTextureID*)Renderer::ConvertTextureToImGuiTexture(texture), ImVec2(72.0f, 72.0f), ImVec2(0, 1), ImVec2(1, 0)))
+            {
+                std::string texturepath = FileDialog::OpenFile("Texture", { "png", "jpeg", "psd", "bmp", "tga" });
+
+                if (!texturepath.empty() && texturepath != textureAsset.Path)
+                {
+                    Assets::ReleaseAsset(meshComponent.TextureAssetID);
+                    meshComponent.TextureAssetID = Assets::RequestAsset(texturepath);
+                    texture = Assets::GetTexture(meshComponent.TextureAssetID);
+                }
+            }
+
+            if (ImGui::BeginDragDropTarget())
+            {
+                const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Content_Browser_Item");
+
+                if (payload)
+                {
+                    std::string path = std::string((const char*)payload->Data);
+                    std::string extension = FileSystem::GetFileExtension(path, false);
+
+                    if (Assets::IsExtensionOfAssetType(extension, "Texture"))
+                    {
+                        Asset textureAsset = Assets::GetAsset(meshComponent.TextureAssetID);
+
+                        if (textureAsset.Path != path)
+                        {
+                            Assets::ReleaseAsset(meshComponent.TextureAssetID);
+                            meshComponent.TextureAssetID = Assets::RequestAsset(path);
+                            texture = Assets::GetTexture(meshComponent.TextureAssetID);
+                        }
+                    }
+                }
+
+                ImGui::EndDragDropTarget();
+            }
+
+            ImGui::NextColumn();
+
+            static const char* WrapModeStrings[] =
+            {
+                "Repeat",
+                "Clamp To Edge"
+            };
+
+            static const char* FilterModeStrings[] =
+            {
+                "Point",
+                "Bilinear"
+            };
+
+            auto seletedWrapXMode  = static_cast<int32>(texture->WrapX);
+            auto seletedWrapYMode  = static_cast<int32>(texture->WrapY);
+            auto seletedFilterMode = static_cast<int32>(texture->Filter);
+
+            ImGui::Text("Wrap X");
+            ImGui::SameLine();
+
+            if (ImGui::Combo("##Wrap X", &seletedWrapXMode, WrapModeStrings, 2))
+            {
+                if (seletedWrapXMode != static_cast<int32>(texture->WrapX))
+                {
+                    Renderer::SetTextureWrapMode(texture,
+                                                 static_cast<WrapMode>(seletedWrapXMode),
+                                                 static_cast<WrapMode>(seletedWrapYMode));
+                }
+            }
+
+            ImGui::Text("Wrap Y");
+            ImGui::SameLine();
+
+            // @CleanUp: Add Combo to ImGui Widgets
+            if (ImGui::Combo("##Wrap Y", &seletedWrapYMode, WrapModeStrings, 2))
+            {
+                if (seletedWrapYMode != static_cast<int32>(texture->WrapY))
+                {
+                    Renderer::SetTextureWrapMode(texture,
+                                                 static_cast<WrapMode>(seletedWrapXMode),
+                                                 static_cast<WrapMode>(seletedWrapYMode));
+                }
+            }
+
+            ImGui::Text("FilterMode");
+            ImGui::SameLine();
+
+            if (ImGui::Combo("##Filter Mode", &seletedFilterMode, FilterModeStrings, 2))
+            {
+                if (seletedFilterMode != static_cast<int32>(texture->Filter))
+                {
+                    Renderer::SetTextureFilterMode(texture, static_cast<FilterMode>(seletedFilterMode));
+                }
+            }
+        });
+
+        SerializeComponent<MeshRendererComponent>([&](void* component)
+        {
+            const auto& mesh = ComponentCast<MeshRendererComponent>(component);
+
+            std::stringstream stringStream;
+
+            const Asset& meshAsset = Assets::GetAsset(mesh.MeshAssetID);
+            stringStream << "Mesh Path " << meshAsset.Path << "\n";
+
+            const Asset& textureAsset = Assets::GetAsset(mesh.TextureAssetID);
+            Texture* texture = Assets::GetTexture(mesh.TextureAssetID);
+
+            stringStream << "Texture Path " << textureAsset.Path << "\n";
+            stringStream << "Texture Wrap X " << (uint32)texture->WrapX << "\n";
+            stringStream << "Texture Wrap Y " << (uint32)texture->WrapY << "\n";
+            stringStream << "Texture Fliter Mode " << (uint32)texture->Filter << "\n";
+
+            return stringStream.str();
+        });
+
+        DeserializeComponent<MeshRendererComponent>([&](void* component, const std::string& contents)
+        {
+            auto& mesh = ComponentCast<MeshRendererComponent>(component);
+
+            std::string prop;
+
+            std::stringstream stringStream(contents);
+
+            std::string meshPath;
+            stringStream >> prop >> prop >> meshPath;
+            mesh.MeshAssetID = Assets::RequestAsset(meshPath);
+
+            std::string texturePath;
+            stringStream >> prop >> prop >> texturePath;
+
+            mesh.TextureAssetID = Assets::RequestAsset(texturePath);
+            Texture* texture = Assets::GetTexture(mesh.TextureAssetID);
+
+            uint32 wrapX;
+            uint32 wrapY;
+            uint32 filter;
+
+            stringStream >> prop >> prop >> prop >> wrapX;
+            stringStream >> prop >> prop >> prop >> wrapY;
+            stringStream >> prop >> prop >> prop >> filter;
+
+            Renderer::SetTextureWrapMode(texture,
+                static_cast<WrapMode>(wrapX),
+                static_cast<WrapMode>(wrapY));
+
+            Renderer::SetTextureFilterMode(texture, static_cast<FilterMode>(filter));
+        });
 	}
 
 	void InspectorPanel::OnImGuiRender()

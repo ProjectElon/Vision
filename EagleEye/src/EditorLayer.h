@@ -28,6 +28,8 @@ namespace Vision
 		AssetID MainFontID     = 0;
 		AssetID DebugFontID    = 0;
 		AssetID SpriteShaderID = 0;
+		AssetID MeshShaderID   = 0;
+		AssetID CubeMeshID     = 0;
 
 		EditorLayer();
 		~EditorLayer();

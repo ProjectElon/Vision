@@ -8,6 +8,8 @@
 #include "Vision/Renderer/RendererTypes.h"
 
 #include "Vision/Renderer/Font.h"
+#include "Vision/Renderer/Mesh.h"
+#include "Vision/Assets/ObjLoader.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -16,8 +18,6 @@ namespace Vision
 {
     void Assets::Initialize()
     {
-        AssetsStorage.Assets.reserve(128);
-
         std::string textureExtensions[] =
         {
             "png",
@@ -65,6 +65,17 @@ namespace Vision
                       fontExtensions,
                       LoadBitmapFont,
                       UnloadBitmapFont);
+
+        std::string meshExtensions[] =
+        {
+            "obj"
+        };
+
+        RigisterAsset("Mesh",
+                      VnArrayCount(meshExtensions),
+                      meshExtensions,
+                      LoadMesh,
+                      UnloadMesh);
     }
 
     void Assets::Shutdown()
@@ -274,6 +285,18 @@ namespace Vision
         VnCoreAssert(assetInfo.Type == "BitmapFont", "asset type mismatch");
 
         return static_cast<BitmapFont*>(asset.Memory);
+    }
+
+    Mesh* Assets::GetMesh(AssetID meshAssetID)
+    {
+        const Asset& asset = GetAsset(meshAssetID);
+        VnCoreAssert(asset.State == AssetState::Loaded, "can't use an unloaded asset");
+
+        AssetInfoList& assetInfoList = AssetsStorage.AssetInfoList;
+        AssetInfo& assetInfo = assetInfoList[asset.AssetInfoIndex];
+        VnCoreAssert(assetInfo.Type == "Mesh", "asset type mismatch");
+
+        return static_cast<Mesh*>(asset.Memory);
     }
 
     void Assets::ReleaseAsset(AssetID assetID)
@@ -489,6 +512,48 @@ namespace Vision
         Scene* scene = static_cast<Scene*>(sceneAsset->Memory);
         DestroyScene(scene);
         delete scene;
+    }
+
+    AssetLoadingData LoadMesh(const std::string& meshPath)
+    {
+        AssetLoadingData meshAsset;
+
+        Mesh* mesh = new Mesh;
+        LoadObjMesh(meshPath.c_str(), mesh);
+
+        // Todo(Harlequin): Right now we are just assuming we have a position uv normal
+        VertexLayout layout =
+        {
+            { ShaderDataType_Float3, "a_Position",     false },
+            { ShaderDataType_Float2, "a_TextureCoord", false },
+            { ShaderDataType_Float3, "a_Normal",       false }
+        };
+
+        Renderer::InitVertexBuffer(&mesh->VertexBuffer,
+                                   mesh->Vertices.data(),
+                                   sizeof(Vertex) * mesh->Vertices.size(),
+                                   BufferUsage::Static);
+
+        Renderer::SetVertexBufferLayout(&mesh->VertexBuffer, &layout);
+
+        Renderer::InitIndexBuffer32(&mesh->IndexBuffer,
+                                    mesh->Indicies.data(),
+                                    sizeof(uint32) * mesh->Indicies.size(),
+                                    BufferUsage::Static);
+
+        // Todo(Harlequin): Should We Free mesh->Vertices and mesh->Indicies
+
+        meshAsset.Memory = mesh;
+        meshAsset.SizeInBytes = sizeof(Mesh);
+        meshAsset.TotalSizeInBytes = mesh->Vertices.size() * sizeof(Vertex) + mesh->Indicies.size() * sizeof(uint32);
+
+        return meshAsset;
+    }
+
+    void UnloadMesh(Asset* meshAsset)
+    {
+        Mesh* mesh = static_cast<Mesh*>(meshAsset->Memory);
+        delete mesh;
     }
 
     AssetsStorage Assets::AssetsStorage;

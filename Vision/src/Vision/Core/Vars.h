@@ -24,10 +24,9 @@ namespace Vision
         String ScenePath   = MakeString("none");
 
         uint32 FontSize = 72;
-        uint32 DebugFontSize    = 20;
-        String SpriteShaderPath = MakeString("Assets/Shaders/Sprite.glsl");
-        String MainFontPath     = MakeString("Assets/Fonts/FiraCode-Regular.ttf");
-        String DebugFontPath    = MakeString("Assets/Fonts/TitilliumWeb-Regular.ttf");
+        uint32 DebugFontSize = 20;
+        String MainFontPath  = MakeString("Assets/Fonts/FiraCode-Regular.ttf");
+        String DebugFontPath = MakeString("Assets/Fonts/TitilliumWeb-Regular.ttf");
     };
 
     introspect_struct("vars", true)

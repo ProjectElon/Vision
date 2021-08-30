@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "Vision/Core/Defines.h"
-#include "Vision/Core/Log.h"
+#include "Vision/Core/Logger.h"
 #include "Vision/Core/String.h"
 
 namespace Vision

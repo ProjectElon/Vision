@@ -50,6 +50,7 @@ enum MetaType
 	MetaType_OrthographicCameraComponent,
 	MetaType_PerspectiveCameraComponent,
 	MetaType_SpriteRendererComponent,
+	MetaType_MeshRendererComponent,
 	MetaType_Settings,
 	MetaType_Vars,
 	MetaType_String,
@@ -173,6 +174,17 @@ struct StructMember
 		InspectStruct(SpriteRendererComponentMembers,\
                   sizeof(SpriteRendererComponentMembers) / sizeof(SpriteRendererComponentMembers[0]),\
                   (SpriteRendererComponent*)MemberPointer,\
+                  member->Name,\
+                  memberFn,\
+                  arrayIndex,\
+                  depth + 1); \
+	}\
+	break;\
+	case MetaType_MeshRendererComponent:\
+	{\
+		InspectStruct(MeshRendererComponentMembers,\
+                  sizeof(MeshRendererComponentMembers) / sizeof(MeshRendererComponentMembers[0]),\
+                  (MeshRendererComponent*)MemberPointer,\
                   member->Name,\
                   memberFn,\
                   arrayIndex,\

@@ -234,12 +234,18 @@ namespace Vision
                         value);
     }
 
+
+    void OpenGLClearDepthAttachment(FrameBuffer* frameBuffer)
+    {
+        glClear(GL_DEPTH_BUFFER_BIT);
+    }
+
     void OpenGLBindFrameBuffer(FrameBuffer* frameBuffer)
     {
         auto& openglFrameBuffer = frameBuffer->OpenGL;
         glBindFramebuffer(GL_FRAMEBUFFER, openglFrameBuffer.FrameBufferObject);
         ViewportRect viewportRect = { 0, 0, frameBuffer->Width, frameBuffer->Height };
-        Renderer::API.SetViewport(&viewportRect);
+        Renderer::SetViewport(&viewportRect);
     }
 
     void OpenGLUnbindFrameBuffer(FrameBuffer* frameBuffer)

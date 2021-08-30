@@ -105,7 +105,6 @@ namespace Vision
 
 		ImVec2 currentViewportSize = ImGui::GetContentRegionAvail();
 
-		//@Incomplete: Right now we are just using opengl
 		uint32 textureID = FrameBuffer->OpenGL.ColorAttachments[0];
 		ImGui::Image((ImTextureID)textureID, { currentViewportSize.x, currentViewportSize.y }, ImVec2(0, 1), ImVec2(1, 0));
 

@@ -3,13 +3,13 @@
 
 #ifdef VN_RENDERER_API_OPENGL
 
-#include "Vision/Renderer/Texture.h"
 #include "Vision/Renderer/OpenGL/OpenGLTexture.h"
-#include "Vision/IO/FileSystem.h"
+
+#include "Vision/Platform/FileSystem.h"
 
 #include "Vision/Renderer/OpenGL/OpenGLUtils.h"
 
-#include "Vision/Renderer/Renderer.h"
+#include "Vision/Renderer/RendererTypes.h"
 #include "Vision/Platform/Memory.h"
 
 namespace Vision
@@ -35,20 +35,20 @@ namespace Vision
 
 		auto& openglTexture = texture->OpenGL;
 
-		glCreateTextures(GL_TEXTURE_2D, 1, &openglTexture.TextureID);
-		glTextureStorage2D(openglTexture.TextureID,
+		glCreateTextures(GL_TEXTURE_2D, 1, &openglTexture.TextureHandle);
+		glTextureStorage2D(openglTexture.TextureHandle,
 		                   1,
 		                   internalFormat,
 		                   width,
 		                   height);
 
-		glTextureParameteri(openglTexture.TextureID, GL_TEXTURE_MIN_FILTER, GLFilterMode(texture->Filter));
-		glTextureParameteri(openglTexture.TextureID, GL_TEXTURE_MAG_FILTER, GLFilterMode(texture->Filter));
+		glTextureParameteri(openglTexture.TextureHandle, GL_TEXTURE_MIN_FILTER, GLFilterMode(texture->Filter));
+		glTextureParameteri(openglTexture.TextureHandle, GL_TEXTURE_MAG_FILTER, GLFilterMode(texture->Filter));
 
-		glTextureParameteri(openglTexture.TextureID, GL_TEXTURE_WRAP_S, GLWrapMode(texture->WrapX));
-		glTextureParameteri(openglTexture.TextureID, GL_TEXTURE_WRAP_T, GLWrapMode(texture->WrapY));
+		glTextureParameteri(openglTexture.TextureHandle, GL_TEXTURE_WRAP_S, GLWrapMode(texture->WrapX));
+		glTextureParameteri(openglTexture.TextureHandle, GL_TEXTURE_WRAP_T, GLWrapMode(texture->WrapY));
 
-		glTextureSubImage2D(openglTexture.TextureID,
+		glTextureSubImage2D(openglTexture.TextureHandle,
 							0,
 							0,
 							0,
@@ -62,10 +62,10 @@ namespace Vision
 	void OpenGLUninitTexture(Texture* texture)
 	{
 		auto& openglTexture = texture->OpenGL;
-		glDeleteTextures(1, &openglTexture.TextureID);
+		glDeleteTextures(1, &openglTexture.TextureHandle);
 
 #ifndef VN_DIST
-		openglTexture.TextureID = 0;
+		openglTexture.TextureHandle = 0;
 		texture->Width  = 0;
 		texture->Height = 0;
 #endif
@@ -74,7 +74,7 @@ namespace Vision
 	void OpenGLBindTexture(Texture* texture, uint32 textureSlot)
 	{
 		auto& openglTexture = texture->OpenGL;
-		glBindTextureUnit(textureSlot, openglTexture.TextureID);
+		glBindTextureUnit(textureSlot, openglTexture.TextureHandle);
 	}
 
 	void OpenGLSetTextureWrapMode(Texture* texture, WrapMode wrapModeX, WrapMode wrapModeY)
@@ -82,15 +82,15 @@ namespace Vision
 		auto& openglTexture = texture->OpenGL;
 		texture->WrapX = wrapModeX;
 		texture->WrapY = wrapModeY;
-		glTextureParameteri(openglTexture.TextureID, GL_TEXTURE_WRAP_S, GLWrapMode(wrapModeX));
-		glTextureParameteri(openglTexture.TextureID, GL_TEXTURE_WRAP_T, GLWrapMode(wrapModeY));
+		glTextureParameteri(openglTexture.TextureHandle, GL_TEXTURE_WRAP_S, GLWrapMode(wrapModeX));
+		glTextureParameteri(openglTexture.TextureHandle, GL_TEXTURE_WRAP_T, GLWrapMode(wrapModeY));
 	}
 
 	void OpenGLSetTextureFilterMode(Texture* texture, FilterMode filter)
 	{
 		auto& openglTexture = texture->OpenGL;
 		texture->Filter = filter;
-		glTextureParameteri(openglTexture.TextureID,
+		glTextureParameteri(openglTexture.TextureHandle,
 							GL_TEXTURE_MAG_FILTER,
 							GLFilterMode(filter));
 	}

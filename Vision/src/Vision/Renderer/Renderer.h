@@ -136,6 +136,8 @@ namespace Vision
                                      uint32 attachmentIndex,
                                      const void* value);
 
+		void (*ClearDepthAttachment)(FrameBuffer* frameBuffer);
+
 		void (*BindFrameBuffer)(FrameBuffer* frameBuffer);
 		void (*UnbindFrameBuffer)(FrameBuffer* frameBuffer);
 
@@ -394,6 +396,11 @@ namespace Vision
                                      			const void* value)
 		{
 			API.ClearColorAttachment(frameBuffer, attachmentIndex, value);
+		}
+
+		inline static void ClearDepthAttachment(FrameBuffer* frameBuffer)
+		{
+			API.ClearDepthAttachment(frameBuffer);
 		}
 
 		inline static void BindFrameBuffer(FrameBuffer* frameBuffer)

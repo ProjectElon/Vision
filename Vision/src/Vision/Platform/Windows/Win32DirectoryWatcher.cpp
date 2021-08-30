@@ -1,11 +1,11 @@
 #include "pch.hpp"
 #include "Vision/Core/Defines.h"
-#include "Vision/Core/Log.h"
+#include "Vision/Core/Logger.h"
 
 #ifdef VN_PLATFORM_WINDOWS
 
-#include "Vision/IO/DirectoryWatcher.h"
-#include "Vision/IO/FileSystem.h"
+#include "Vision/Platform/DirectoryWatcher.h"
+#include "Vision/Platform/FileSystem.h"
 
 #include <windows.h>
 #include <winnt.h>

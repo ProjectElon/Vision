@@ -1,7 +1,7 @@
 #include "pch.hpp"
 
 #include "Vision/Core/Defines.h"
-#include "Vision/Core/Log.h"
+#include "Vision/Core/Logger.h"
 
 #include "Vision/Renderer/OpenGL/OpenGLUtils.h"
 
@@ -92,9 +92,10 @@ namespace Vision
     {
         switch (textureFormat)
         {
-            case FrameBufferTextureFormat_RGBA8:     return GL_RGBA8;
-            case FrameBufferTextureFormat_RedInt32:  return GL_R32I;
-            case FrameBufferTextureFormat_RedUInt32: return GL_R32UI;
+            case FrameBufferTextureFormat_RGBA8:           return GL_RGBA8;
+            case FrameBufferTextureFormat_Depth24Stencil8: return GL_DEPTH24_STENCIL8;
+            case FrameBufferTextureFormat_RedInt32:        return GL_R32I;
+            case FrameBufferTextureFormat_RedUInt32:       return GL_R32UI;
         }
 
         VnCoreAssert(false, "unsupported texture format");
@@ -105,9 +106,10 @@ namespace Vision
     {
         switch (textureFormat)
         {
-            case FrameBufferTextureFormat_RGBA8:     return GL_RGBA;
-            case FrameBufferTextureFormat_RedInt32:  return GL_RED_INTEGER;
-            case FrameBufferTextureFormat_RedUInt32: return GL_RED_INTEGER;
+            case FrameBufferTextureFormat_Depth24Stencil8: return GL_DEPTH_STENCIL;
+            case FrameBufferTextureFormat_RGBA8:           return GL_RGBA;
+            case FrameBufferTextureFormat_RedInt32:        return GL_RED_INTEGER;
+            case FrameBufferTextureFormat_RedUInt32:       return GL_RED_INTEGER;
         }
 
         VnCoreAssert(false, "unsupported texture format");

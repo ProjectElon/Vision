@@ -70,3 +70,10 @@ static StructMember SpriteRendererComponentMembers[] =
 	{ "TopRightUV", MetaType_Vector2, offsetof(Vision::SpriteRendererComponent, TopRightUV), 0, sizeof(Vision::Vector2), 0 },
 };
 
+static StructMember MeshRendererComponentMembers[] = 
+{
+	{ "MeshAssetID", MetaType_uint32, offsetof(Vision::MeshRendererComponent, MeshAssetID), 0, sizeof(uint32), 8 },
+	{ "TextureAssetID", MetaType_uint32, offsetof(Vision::MeshRendererComponent, TextureAssetID), 0, sizeof(uint32), 8 },
+	{ "ShaderAssetID", MetaType_uint32, offsetof(Vision::MeshRendererComponent, ShaderAssetID), 0, sizeof(uint32), 8 },
+};
+

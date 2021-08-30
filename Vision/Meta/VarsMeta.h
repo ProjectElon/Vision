@@ -17,7 +17,6 @@ static StructMember SettingsMembers[] =
 	{ "ScenePath", MetaType_String, offsetof(Vision::Settings, ScenePath), 0, sizeof(Vision::String), 0 },
 	{ "FontSize", MetaType_uint32, offsetof(Vision::Settings, FontSize), 0, sizeof(uint32), 8 },
 	{ "DebugFontSize", MetaType_uint32, offsetof(Vision::Settings, DebugFontSize), 0, sizeof(uint32), 8 },
-	{ "SpriteShaderPath", MetaType_String, offsetof(Vision::Settings, SpriteShaderPath), 0, sizeof(Vision::String), 0 },
 	{ "MainFontPath", MetaType_String, offsetof(Vision::Settings, MainFontPath), 0, sizeof(Vision::String), 0 },
 	{ "DebugFontPath", MetaType_String, offsetof(Vision::Settings, DebugFontPath), 0, sizeof(Vision::String), 0 },
 };

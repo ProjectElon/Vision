@@ -5,24 +5,26 @@
 namespace Vision
 {
     void OpenGLInitFrameBuffer(FrameBuffer* frameBuffer,
-        const FrameBufferAttachmentSpecification& specification,
-        uint32 width,
-        uint32 height);
+                               const FrameBufferAttachmentSpecification& specification,
+                               uint32 width,
+                               uint32 height);
 
     void OpenGLUninitFrameBuffer(FrameBuffer* frameBuffer);
     void OpenGLResizeFrameBuffer(FrameBuffer* frameBuffer,
-        uint32 width,
-        uint32 height);
+                                 uint32 width,
+                                 uint32 height);
     
     int32 OpenGLReadPixel(FrameBuffer* frameBuffer,
-        uint32 attachmentIndex,
-        int32 x,
-        int32 y);
+                          uint32 attachmentIndex,
+                          int32 x,
+                          int32 y);
     
     void OpenGLClearColorAttachment(FrameBuffer* frameBuffer,
-        uint32 attachmentIndex,
-        const void* value);
-    
+                                    uint32 attachmentIndex,
+                                    const void* value);
+
+    void OpenGLClearDepthAttachment(FrameBuffer* frameBuffer);
+
     void OpenGLBindFrameBuffer(FrameBuffer* frameBuffer);
     
     void OpenGLUnbindFrameBuffer(FrameBuffer* frameBuffer);

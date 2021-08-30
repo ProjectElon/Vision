@@ -4,7 +4,7 @@
 
 #ifdef VN_PLATFORM_WINDOWS
 
-#include "Vision/IO/FileSystem.h"
+#include "Vision/Platform/FileSystem.h"
 
 #include <windows.h>
 #include <fileapi.h>

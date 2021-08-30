@@ -51,6 +51,9 @@ namespace Vision
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LESS);
+
 		// Pipeline State Functions
 		rendererAPI->SetClearColor = &OpenGLSetClearColor;
 		rendererAPI->Clear 		   = &OpenGLClear;
@@ -96,6 +99,7 @@ namespace Vision
 		rendererAPI->ResizeFrameBuffer    = &OpenGLResizeFrameBuffer;
 		rendererAPI->ReadPixel 		      = &OpenGLReadPixel;
 		rendererAPI->ClearColorAttachment = &OpenGLClearColorAttachment;
+		rendererAPI->ClearDepthAttachment = &OpenGLClearDepthAttachment;
 		rendererAPI->BindFrameBuffer      = &OpenGLBindFrameBuffer;
 		rendererAPI->UnbindFrameBuffer    = &OpenGLUnbindFrameBuffer;
 

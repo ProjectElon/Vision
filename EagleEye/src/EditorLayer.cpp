@@ -6,7 +6,11 @@
 #include <fstream>
 #include <sstream>
 #include <imgui.h>
+
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/quaternion.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
 
 #include <algorithm>
 #include <ImGuizmo.h>
@@ -18,7 +22,7 @@ namespace Vision
 		, Menubar(this)
 		, Dialog(this)
 	{
-		Renderer::API.SetVSync(true);
+		Renderer::SetVSync(true);
 		SceneViewPanel.FrameBuffer = &SceneFrameBuffer;
 	}
 
@@ -33,9 +37,9 @@ namespace Vision
 		WatchDirectory("", VnBindWatcherFn(EditorLayer::OnFileChanged), true);
 		SceneViewPanel.EditorLayer = this;
 
-		Mesh mesh = {};
-		bool success = LoadObjMesh("Assets/Meshes/cube.obj", &mesh);
-		VnAssert(success);
+		SpriteShaderID = Assets::RequestAsset("Assets/Shaders/Sprite.glsl");
+		MeshShaderID = Assets::RequestAsset("Assets/Shaders/Mesh.glsl");
+		CubeMeshID = Assets::RequestAsset("Assets/Meshes/cube.obj");
 	}
 
 	void EditorLayer::OnDetach()
@@ -112,17 +116,46 @@ namespace Vision
 
 		if (ActiveSceneID)
 		{
+			Scene* scene = Assets::GetScene(ActiveSceneID);
+
 			float32 values[] = { 0.1f, 0.1f, 0.1f, 1.0f };
 			Renderer::ClearColorAttachment(&SceneFrameBuffer, 0, values);
+
+			Renderer::ClearDepthAttachment(&SceneFrameBuffer);
 
 			int value = -1;
 			Renderer::ClearColorAttachment(&SceneFrameBuffer, 1, &value);
 
+			Shader* shader = Assets::GetShader(MeshShaderID);
+			Renderer::BindShader(shader);
+			glm::mat4 viewProjection = SceneCamera->Projection * SceneCamera->View;
+			Renderer::SetUniformMatrix4(shader, "u_ViewProj", glm::value_ptr(viewProjection));
+
+			scene->EachGroup<TransformComponent, MeshRendererComponent>([&](Entity entity, auto& transform, auto& mesh)
+			{
+				glm::mat4 transformMatrix = glm::translate(glm::mat4(1.0f), (glm::vec3&)transform.Position) *
+					glm::toMat4(glm::quat((glm::vec3&)transform.Rotation)) *
+					glm::scale(glm::mat4(1.0f), (glm::vec3&)transform.Scale);
+
+				Renderer::SetUniformMatrix4(shader, "u_Transform", glm::value_ptr(transformMatrix));
+				Renderer::SetUniformInt(shader, "u_Texture", 0);
+				Renderer::SetUniformInt(shader, "u_EntityID", entity);
+
+				Texture* texture = Assets::GetTexture(mesh.TextureAssetID);
+				Renderer::BindTexture(texture, 0);
+
+				Mesh* meshAsset = Assets::GetMesh(mesh.MeshAssetID);
+
+				Renderer::BindVertexBuffer(&meshAsset->VertexBuffer);
+				Renderer::BindIndexBuffer(&meshAsset->IndexBuffer);
+				Renderer::DrawIndexed32(&meshAsset->VertexBuffer,
+				                        &meshAsset->IndexBuffer,
+				                        meshAsset->Indicies.size());
+			});
+
 			Renderer2D::BeginScene(SceneCamera->View,
 								   SceneCamera->Projection,
 								   Assets::GetShader(SpriteShaderID));
-
-			Scene* scene = Assets::GetScene(ActiveSceneID);
 
 			scene->EachGroup<TransformComponent, SpriteRendererComponent>([](Entity entity, auto& transform, auto& sprite)
 			{
@@ -292,8 +325,10 @@ namespace Vision
 			{
 				if (ActiveSceneID && SceneHierarchyPanel.IsInteractable)
 				{
-					Scene* scene = Assets::GetScene(ActiveSceneID);
 					EditorState& editorState = EagleEye::EditorState;
+
+					Scene* scene = Assets::GetScene(ActiveSceneID);
+
 					if (!editorState.SelectedEntityTag.empty())
 					{
 						scene->FreeEntity(editorState.SelectedEntityTag);
@@ -465,10 +500,6 @@ namespace Vision
 			DebugFontID = 0;
 		}
 
-
-		SpriteShaderID = Assets::RequestAsset(std::string(settings.SpriteShaderPath.Data,
-														  settings.SpriteShaderPath.Count));
-
 		MainFontID = Assets::RequestAsset(std::string(settings.MainFontPath.Data,
 													  settings.MainFontPath.Count));
 
@@ -496,10 +527,10 @@ namespace Vision
 			FrameBufferTextureFormat_Depth24Stencil8
 		};
 
-		Renderer::API.InitFrameBuffer(&SceneFrameBuffer,
-									  SceneBufferSpecification,
-									  vars.Settings.ViewportWidth,
-									  vars.Settings.ViewportHeight);
+		Renderer::InitFrameBuffer(&SceneFrameBuffer,
+								  SceneBufferSpecification,
+								  vars.Settings.ViewportWidth,
+								  vars.Settings.ViewportHeight);
 
 		EditorState& editorState = EagleEye::EditorState;
 		SceneCamera = &editorState.SceneCamera;

@@ -256,4 +256,13 @@ namespace Vision
         Vector2 BottomLeftUV = { 0.0f, 0.0f };
         Vector2 TopRightUV = { 1.0f, 1.0f };
     };
+
+    introspect_struct("component", true)
+    struct MeshRendererComponent
+    {
+        uint32 MeshAssetID = Assets::RequestAsset("Assets/Meshes/cube.obj");
+        // Todo(Harlequin): Material System
+        uint32 TextureAssetID = Assets::RequestAsset("Assets/Textures/wood.png");
+        uint32 ShaderAssetID = 0;
+    };
 }
